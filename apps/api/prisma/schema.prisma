@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  projects      Project[]
+  sharedWithMe  ProjectShare[]
+  subscriptions SubscriptionPlan[]
+  usage         UsageTracking[]
+
+  @@map("users")
+}
+
+model SubscriptionPlan {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  planType      String   @default("free") @map("plan_type")
+  pagesLimit    Int      @default(30) @map("pages_limit")
+  projectsLimit Int      @default(1) @map("projects_limit")
+  startedAt     DateTime @default(now()) @map("started_at")
+  expiresAt     DateTime? @map("expires_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscription_plans")
+}
+
+model UsageTracking {
+  id                    String @id @default(cuid())
+  userId                String @map("user_id")
+  periodMonth           String @map("period_month")
+  pagesUsed             Int    @default(0) @map("pages_used")
+  charactersProcessed   Int    @default(0) @map("characters_processed")
+  audioSecondsGenerated Int    @default(0) @map("audio_seconds_generated")
+  storageUsedBytes      BigInt @default(0) @map("storage_used_bytes")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodMonth])
+  @@map("usage_tracking")
+}
+
+model Project {
+  id                  String   @id @default(cuid())
+  ownerId             String   @map("owner_id")
+  title               String
+  coverUrl            String?  @map("cover_url")
+  language            String   @default("pl")
+  voiceId             String?  @map("voice_id")
+  interstitialPreset  String?  @map("interstitial_preset")
+  status              String   @default("draft")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  owner         User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  shares        ProjectShare[]
+  pageImages    PageImage[]
+  scenes        Scene[]
+  playlistItems PlaylistItem[]
+  qrLinks       QrShareLink[]
+
+  @@map("projects")
+}
+
+model ProjectShare {
+  id               String   @id @default(cuid())
+  projectId        String   @map("project_id")
+  sharedWithUserId String   @map("shared_with_user_id")
+  role             String   @default("viewer")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sharedWith User    @relation(fields: [sharedWithUserId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, sharedWithUserId])
+  @@map("project_shares")
+}
+
+model PageImage {
+  id               String   @id @default(cuid())
+  projectId        String   @map("project_id")
+  storagePath      String   @map("storage_path")
+  thumbnailPath    String?  @map("thumbnail_path")
+  orderIndex       Int      @map("order_index")
+  originalFilename String?  @map("original_filename")
+  fileSize         Int?     @map("file_size")
+  mimeType         String?  @map("mime_type")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  textRegions TextRegion[]
+  scene       Scene?
+
+  @@map("page_images")
+}
+
+model TextRegion {
+  id          String @id @default(cuid())
+  pageImageId String @map("page_image_id")
+  x           Float
+  y           Float
+  width       Float
+  height      Float
+
+  pageImage PageImage @relation(fields: [pageImageId], references: [id], onDelete: Cascade)
+
+  @@map("text_regions")
+}
+
+model Scene {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  pageImageId String   @unique @map("page_image_id")
+  ocrText     String?  @map("ocr_text")
+  editedText  String?  @map("edited_text")
+  status      String   @default("queued")
+  orderIndex  Int      @map("order_index")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  pageImage  PageImage   @relation(fields: [pageImageId], references: [id], onDelete: Cascade)
+  audioTrack AudioTrack?
+
+  @@map("scenes")
+}
+
+model VoiceProfile {
+  id                String  @id @default(cuid())
+  elevenlabsVoiceId String  @unique @map("elevenlabs_voice_id")
+  name              String
+  language          String
+  previewUrl        String? @map("preview_url")
+  isAvailableFree   Boolean @default(false) @map("is_available_free")
+  isAvailablePremium Boolean @default(true) @map("is_available_premium")
+  isAvailableMax    Boolean @default(true) @map("is_available_max")
+
+  @@map("voice_profiles")
+}
+
+model InterstitialPreset {
+  id        String @id @default(cuid())
+  name      String
+  audioUrl  String @map("audio_url")
+  durationMs Int   @map("duration_ms")
+
+  @@map("interstitial_presets")
+}
+
+model AudioTrack {
+  id          String   @id @default(cuid())
+  sceneId     String   @unique @map("scene_id")
+  storagePath String   @map("storage_path")
+  durationMs  Int      @map("duration_ms")
+  fileSize    Int      @map("file_size")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  scene Scene @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+
+  @@map("audio_tracks")
+}
+
+model PlaylistItem {
+  id          String @id @default(cuid())
+  projectId   String @map("project_id")
+  type        String
+  referenceId String @map("reference_id")
+  orderIndex  Int    @map("order_index")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("playlist_items")
+}
+
+model QrShareLink {
+  id          String   @id @default(cuid())
+  projectId   String   @map("project_id")
+  deepLinkUrl String   @map("deep_link_url")
+  qrImageUrl  String?  @map("qr_image_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("qr_share_links")
+}

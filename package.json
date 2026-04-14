@@ -1,0 +1,31 @@
+{
+  "name": "book-scanner",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w apps/api",
+    "dev:mobile": "npm run dev -w apps/mobile",
+    "build:api": "npm run build -w apps/api",
+    "test": "npm run test --workspaces --if-present",
+    "test:api": "npm run test -w apps/api",
+    "test:mobile": "npm run test -w apps/mobile",
+    "lint": "npm run lint --workspaces --if-present",
+    "postinstall": "npm run db:generate -w apps/api",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "db:migrate": "npm run db:migrate -w apps/api",
+    "db:generate": "npm run db:generate -w apps/api",
+    "db:seed": "npm run db:seed -w apps/api",
+    "db:studio": "npm run db:studio -w apps/api"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.0",
+    "turbo": "^2.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

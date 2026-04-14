@@ -1,0 +1,36 @@
+node_modules/
+dist/
+.expo/
+ios/
+android/
+*.tsbuildinfo
+.turbo/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+apps/api/prisma/*.db
+apps/api/prisma/migrations/**/migration_lock.toml
+
+# Storage
+storage-local/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+!.vscode/settings.json
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/

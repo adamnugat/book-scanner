@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Book Scanner",
+    "slug": "book-scanner",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "scheme": "bookscanner",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "splash": {
+      "backgroundColor": "#1a1a2e"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bookscanner.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.bookscanner.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": ["expo-router"]
+  }
+}
