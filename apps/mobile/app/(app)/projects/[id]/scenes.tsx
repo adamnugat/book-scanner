@@ -42,7 +42,6 @@ export default function ScenesScreen() {
   useFocusEffect(
     useCallback(() => {
       (async () => {
-        setLoading(true);
         await loadScenes();
         setLoading(false);
       })();

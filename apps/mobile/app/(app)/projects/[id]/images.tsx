@@ -42,7 +42,6 @@ export default function ProjectImagesScreen() {
 
   const loadImages = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await api.getImages(id);
       setImages(data);
     } catch {

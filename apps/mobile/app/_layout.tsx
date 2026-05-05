@@ -1,5 +1,6 @@
 import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '../lib/auth-context';
 import { ToastProvider } from '../components/Toast';
@@ -10,9 +11,15 @@ export default function RootLayout() {
       <AuthProvider>
         <ToastProvider>
           <StatusBar style="light" />
-          <Slot />
+          <View style={styles.root}>
+            <Slot />
+          </View>
         </ToastProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: '#1a1a2e' },
+});

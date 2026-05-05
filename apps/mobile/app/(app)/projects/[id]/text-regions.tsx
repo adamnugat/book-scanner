@@ -65,7 +65,6 @@ export default function TextRegionsScreen() {
     useCallback(() => {
       (async () => {
         try {
-          setLoading(true);
           const [imageData, regionData] = await Promise.all([
             api.getImages(id),
             api.getTextRegions(id),

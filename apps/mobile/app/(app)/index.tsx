@@ -56,7 +56,6 @@ export default function ProjectsScreen() {
 
   const loadProjects = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await api.getProjects();
       setProjects(data);
     } catch {

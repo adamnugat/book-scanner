@@ -1,12 +1,16 @@
 import { Stack } from 'expo-router';
 
+const SCREEN_BG = '#1a1a2e';
+
 export default function AppLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: '#1a1a2e' },
+        headerStyle: { backgroundColor: SCREEN_BG },
         headerTintColor: '#e0e0e0',
         headerTitleStyle: { fontWeight: 'bold' },
+        contentStyle: { flex: 1, backgroundColor: SCREEN_BG },
+        freezeOnBlur: false,
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Moje projekty', headerShown: false }} />

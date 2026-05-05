@@ -28,7 +28,6 @@ export default function ProjectDetailScreen() {
     useCallback(() => {
       (async () => {
         try {
-          setLoading(true);
           const data = await api.getProject(id);
           setProject(data);
         } catch {
