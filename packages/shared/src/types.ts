@@ -151,6 +151,7 @@ export interface AudioTrackResponse {
   id: string;
   sceneId: string;
   storagePath: string;
+  audioUrl: string;
   durationMs: number;
   fileSize: number;
   createdAt: string;

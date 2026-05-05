@@ -1,13 +1,84 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
+import { URLSearchParams } from 'url';
 import { randomUUID } from 'crypto';
 import { prisma } from '../lib/db';
 import { synthesizeSpeech } from '../lib/tts';
-import { uploadFile } from '../lib/storage';
+import { uploadFile, downloadFileWithMetadata } from '../lib/storage';
 import { requireAuth } from '../middleware/auth';
 import { requireProjectOwner } from '../middleware/project-owner';
 import { requireRouteParam } from '../lib/route-params';
+import { signAssetToken, verifyAssetToken } from '../lib/jwt';
 
 export const audioRouter = Router({ mergeParams: true });
+
+export function buildAudioTrackUrl(
+  req: Request,
+  projectId: string,
+  trackId: string,
+  userId: string,
+): string {
+  const host = req.get('host');
+  const baseUrl = host ? `${req.protocol}://${host}` : '';
+  const token = signAssetToken({
+    userId,
+    projectId,
+    audioTrackId: trackId,
+    variant: 'audio',
+  });
+  const path = `/projects/${projectId}/audio-tracks/${trackId}/file?${new URLSearchParams({ token }).toString()}`;
+  return baseUrl ? `${baseUrl}${path}` : path;
+}
+
+audioRouter.get('/audio-tracks/:trackId/file', async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
+  const trackId = requireRouteParam(req, 'trackId');
+  const token = typeof req.query.token === 'string' ? req.query.token : null;
+  if (!token) {
+    res
+      .status(401)
+      .json({ error: 'Unauthorized', message: 'Missing asset token', statusCode: 401 });
+    return;
+  }
+
+  let payload;
+  try {
+    payload = verifyAssetToken(token);
+  } catch {
+    res
+      .status(401)
+      .json({ error: 'Unauthorized', message: 'Invalid asset token', statusCode: 401 });
+    return;
+  }
+
+  if (
+    payload.variant !== 'audio' ||
+    payload.projectId !== projectId ||
+    payload.audioTrackId !== trackId
+  ) {
+    res.status(403).json({ error: 'Forbidden', message: 'Asset token mismatch', statusCode: 403 });
+    return;
+  }
+
+  const track = await prisma.audioTrack.findUnique({
+    where: { id: trackId },
+    include: { scene: { select: { projectId: true } } },
+  });
+  if (!track || track.scene.projectId !== projectId) {
+    res.status(404).json({ error: 'Not Found', message: 'Audio track not found', statusCode: 404 });
+    return;
+  }
+
+  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  if (!project || project.ownerId !== payload.userId) {
+    res.status(403).json({ error: 'Forbidden', message: 'Access denied', statusCode: 403 });
+    return;
+  }
+
+  const file = await downloadFileWithMetadata(track.storagePath);
+  res.setHeader('Content-Type', file.contentType || 'audio/mpeg');
+  res.setHeader('Cache-Control', 'private, max-age=300');
+  res.send(file.body);
+});
 
 audioRouter.use(requireAuth);
 
@@ -148,6 +219,7 @@ audioRouter.get('/audio-tracks', requireProjectOwner, async (req, res) => {
       id: t.id,
       sceneId: t.sceneId,
       storagePath: t.storagePath,
+      audioUrl: buildAudioTrackUrl(req, projectId, t.id, req.user!.userId),
       durationMs: t.durationMs,
       fileSize: t.fileSize,
       createdAt: t.createdAt.toISOString(),

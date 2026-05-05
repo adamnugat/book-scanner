@@ -14,8 +14,9 @@ export interface TokenPayload {
 export interface AssetTokenPayload {
   userId: string;
   projectId: string;
-  imageId: string;
-  variant: 'file' | 'thumbnail';
+  imageId?: string;
+  audioTrackId?: string;
+  variant: 'file' | 'thumbnail' | 'audio';
 }
 
 export function signAccessToken(payload: TokenPayload): string {

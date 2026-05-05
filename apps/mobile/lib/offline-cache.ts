@@ -5,7 +5,13 @@ const CACHE_PREFIX = 'bookscanner_audio_';
 
 interface CacheEntry {
   projectId: string;
-  items: { id: string; localUri: string; audioUrl: string; durationMs: number }[];
+  items: {
+    id: string;
+    localUri: string;
+    audioUrl: string;
+    durationMs: number;
+    audioTrackId?: string;
+  }[];
   cachedAt: string;
   totalSize: number;
 }
@@ -16,7 +22,7 @@ function getCacheKey(projectId: string) {
 
 async function getFileSystem() {
   if (Platform.OS === 'web') return null;
-  return await import('expo-file-system');
+  return await import('expo-file-system/legacy');
 }
 
 export const offlineCache = {
@@ -33,6 +39,7 @@ export const offlineCache = {
         localUri: item.audioUrl,
         audioUrl: item.audioUrl,
         durationMs: item.durationMs,
+        audioTrackId: item.type === 'scene' ? item.referenceId : undefined,
       }));
       const entry: CacheEntry = {
         projectId,
@@ -59,9 +66,17 @@ export const offlineCache = {
       const ext = item.audioUrl.split('.').pop() || 'mp3';
       const localPath = `${cacheDir}${item.id}.${ext}`;
 
+      const audioTrackId = item.type === 'scene' ? item.referenceId : undefined;
+
       const existing = await fs.getInfoAsync(localPath);
       if (existing.exists) {
-        entries.push({ id: item.id, localUri: localPath, audioUrl: item.audioUrl, durationMs: item.durationMs });
+        entries.push({
+          id: item.id,
+          localUri: localPath,
+          audioUrl: item.audioUrl,
+          durationMs: item.durationMs,
+          audioTrackId,
+        });
         totalSize += existing.size || 0;
         onProgress?.(i + 1, playlist.length);
         continue;
@@ -69,9 +84,15 @@ export const offlineCache = {
 
       const download = await fs.downloadAsync(item.audioUrl, localPath);
       const info = await fs.getInfoAsync(download.uri);
-      totalSize += info.exists ? (info.size || 0) : 0;
+      totalSize += info.exists ? info.size || 0 : 0;
 
-      entries.push({ id: item.id, localUri: download.uri, audioUrl: item.audioUrl, durationMs: item.durationMs });
+      entries.push({
+        id: item.id,
+        localUri: download.uri,
+        audioUrl: item.audioUrl,
+        durationMs: item.durationMs,
+        audioTrackId,
+      });
       onProgress?.(i + 1, playlist.length);
     }
 
@@ -82,10 +103,7 @@ export const offlineCache = {
       totalSize,
     };
 
-    await fs.writeAsStringAsync(
-      `${cacheDir}manifest.json`,
-      JSON.stringify(entry),
-    );
+    await fs.writeAsStringAsync(`${cacheDir}manifest.json`, JSON.stringify(entry));
   },
 
   async getCachedPlaylist(projectId: string): Promise<CacheEntry | null> {
@@ -127,6 +145,16 @@ export const offlineCache = {
   async getCacheSize(projectId: string): Promise<number> {
     const entry = await this.getCachedPlaylist(projectId);
     return entry?.totalSize || 0;
+  },
+
+  async getCachedAudioForTrack(
+    projectId: string,
+    audioTrackId: string,
+  ): Promise<{ localUri: string } | null> {
+    const entry = await this.getCachedPlaylist(projectId);
+    if (!entry) return null;
+    const match = entry.items.find((i) => i.audioTrackId === audioTrackId);
+    return match ? { localUri: match.localUri } : null;
   },
 
   async getTotalCacheSize(): Promise<number> {

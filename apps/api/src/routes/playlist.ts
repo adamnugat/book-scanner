@@ -3,6 +3,7 @@ import { prisma } from '../lib/db';
 import { requireAuth } from '../middleware/auth';
 import { requireProjectOwner } from '../middleware/project-owner';
 import { requireRouteParam } from '../lib/route-params';
+import { buildAudioTrackUrl } from './audio';
 
 export const playlistRouter = Router({ mergeParams: true });
 
@@ -96,7 +97,7 @@ playlistRouter.get('/playlist', requireProjectOwner, async (req, res) => {
           type: item.type,
           referenceId: item.referenceId,
           orderIndex: item.orderIndex,
-          audioUrl: track.storagePath,
+          audioUrl: buildAudioTrackUrl(req, projectId, track.id, req.user!.userId),
           durationMs: track.durationMs,
           sceneText: track.scene.editedText || track.scene.ocrText || '',
           sceneOrderIndex: track.scene.orderIndex,
