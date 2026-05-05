@@ -1,6 +1,11 @@
 export const SUPPORTED_LANGUAGES = ['pl', 'en'] as const;
 
-export const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/heic'] as const;
+export const SUPPORTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/heic',
+  'image/heif',
+] as const;
 
 export const MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
 

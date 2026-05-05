@@ -27,8 +27,8 @@ app.use(express.json());
 
 app.use('/health', healthRouter);
 app.use('/auth', authLimiter, authRouter);
-app.use('/projects', projectsRouter);
 app.use('/projects/:projectId/images', imagesRouter);
+app.use('/projects', projectsRouter);
 app.use('/projects/:projectId/scenes', scenesRouter);
 app.use('/voices', voicesRouter);
 app.use('/projects/:projectId', audioRouter);

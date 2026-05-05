@@ -32,7 +32,9 @@ jest.mock('expo-router', () => ({
   router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
   useFocusEffect: (callback: () => void) => {
     const react = require('react');
-    react.useEffect(() => { callback(); }, [callback]);
+    react.useEffect(() => {
+      callback();
+    }, [callback]);
   },
   useLocalSearchParams: () => ({ id: 'proj-1' }),
 }));
@@ -54,6 +56,10 @@ jest.mock('../lib/auth-context', () => ({
     register: jest.fn(),
     logout: jest.fn(),
   }),
+}));
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
 
 import ProjectsScreen from '../app/(app)/index';
