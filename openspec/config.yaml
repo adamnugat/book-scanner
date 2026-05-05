@@ -1,0 +1,77 @@
+schema: spec-driven
+
+context: |
+  Project: Book Scanner, an npm workspaces monorepo for creating audiobooks from book page photos.
+  Product: authenticated users create private projects, upload and reorder page images, optionally mark OCR text regions, generate/edit scenes, synthesize audio, build playlists with interstitial tracks, cache audio offline, and share projects through authenticated links/QR codes.
+  MVP status: progress.md says iterations 0-12 are complete and validated. Treat the current codebase as the baseline unless the user explicitly asks to redesign it.
+
+  Workspaces:
+  - apps/api: Express 5 + TypeScript ESM backend with Prisma ORM, PostgreSQL, S3-compatible storage, Vitest, Supertest, and ESLint.
+  - apps/mobile: Expo SDK 54 + React Native + expo-router app targeting web, iOS, and Android; Jest for tests.
+  - packages/shared: shared TypeScript types, constants, request/response contracts, and domain enums.
+
+  Runtime services and integrations:
+  - Local infrastructure uses docker-compose for PostgreSQL 16 and MinIO.
+  - OCR is abstracted in apps/api/src/lib/ocr.ts with mock and Google Cloud Vision providers selected by OCR_PROVIDER.
+  - TTS is abstracted in apps/api/src/lib/tts.ts with mock and ElevenLabs providers selected by TTS_PROVIDER.
+  - File storage is S3-compatible; local development uses MinIO.
+  - Mobile/web API base URL comes from EXPO_PUBLIC_API_URL, falling back to http://localhost:3001.
+
+  Domain model:
+  - Core Prisma models: User, SubscriptionPlan, UsageTracking, Project, ProjectShare, PageImage, TextRegion, Scene, VoiceProfile, InterstitialPreset, AudioTrack, PlaylistItem, QrShareLink.
+  - Supported languages are pl and en.
+  - Project statuses are draft, ocr_processing, ready_for_tts, and completed.
+  - Scene statuses include queued, ocr_processing, ocr_done, ocr_error, needs_review, ready_for_audio, audio_generating, audio_done, and audio_error.
+  - Plans are free, premium, and max; limits are defined in packages/shared/src/constants.ts and enforced in apps/api/src/lib/limits.ts.
+
+  Architecture and behavior:
+  - Auth uses email/password, bcryptjs, access tokens, refresh tokens, token refresh, and protected Express middleware.
+  - Project access is private by default. Owners can mutate; shared viewers are read-only.
+  - Image upload validates MIME type, size, and magic bytes; thumbnails are generated with Sharp.
+  - OCR and TTS endpoints return 202 and run background work in-process. Keep idempotency and partial-failure behavior when changing these flows.
+  - Playlists interleave scene audio and interstitial tracks; player navigation is scene-aware, not just track-index-based.
+  - Offline cache stores generated audio per project and should stay cache-first when offline.
+  - Deep links use the bookscanner scheme and should open project/player flows after authentication.
+
+  Code conventions:
+  - Use TypeScript throughout. Prefer shared contracts in packages/shared before duplicating request/response types.
+  - Preserve existing REST route shape and error response shape: { error, message, statusCode }.
+  - Keep backend route handlers small and reuse middleware/lib helpers for auth, ownership, validation, storage, OCR/TTS, limits, and JWT assets.
+  - Follow current formatting: 2 spaces, semicolons, single quotes, trailing commas, and printWidth 100.
+  - Do not introduce secrets into the repository. Use .env.example for documented configuration only.
+
+  Verification commands:
+  - npm test runs workspace tests.
+  - npm run test:api runs Vitest tests for apps/api.
+  - npm run test:mobile runs Jest tests for apps/mobile.
+  - npm run lint runs workspace lint tasks.
+  - npm run format:check checks Prettier formatting.
+  - npm run build:api builds the backend TypeScript project.
+
+rules:
+  proposal:
+    - Write proposals in Polish unless the user asks for another language.
+    - Explain the user-visible problem, expected outcome, and why the change belongs now.
+    - Include explicit non-goals for anything touching billing, sharing, OCR/TTS providers, storage, or auth.
+    - Mention affected workspaces and the expected verification scope.
+
+  specs:
+    - Use normative MUST/SHALL language and concrete acceptance scenarios.
+    - Preserve privacy defaults: projects are private, sharing requires authenticated users, and viewers remain read-only unless a change explicitly expands roles.
+    - Specify state transitions for Project and Scene changes instead of relying on prose only.
+    - Cover both successful flows and relevant failure/permission/limit cases.
+    - Keep web, iOS, and Android behavior aligned unless the requirement intentionally differs by platform.
+
+  design:
+    - Ground designs in existing modules, route patterns, Prisma models, and shared package contracts.
+    - Call out data model, API contract, authorization, background processing, storage, offline cache, and migration impacts when relevant.
+    - Prefer extending existing abstractions over adding new services or frameworks.
+    - For OCR, TTS, storage, auth, and billing changes, include provider/configuration implications and test strategy.
+    - Identify backwards-compatibility risks for persisted data, API responses, deep links, and cached offline data.
+
+  tasks:
+    - Break work into small, reviewable tasks grouped by workspace or domain flow.
+    - Include tests with each behavior change; prefer API tests for backend contracts and focused Jest tests for mobile UI/client behavior.
+    - Add verification steps using the repository commands listed in context.
+    - Include Prisma migration, seed, environment, or documentation tasks when a change affects schema or runtime configuration.
+    - Do not mark implementation complete until relevant tests and lint have been run or a blocker is documented.

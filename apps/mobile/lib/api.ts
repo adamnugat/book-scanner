@@ -16,7 +16,43 @@ import { tokenStorage } from './token-storage';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001';
 
-async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+let refreshInFlight: Promise<boolean> | null = null;
+
+function shouldAttemptTokenRefresh(path: string): boolean {
+  return path !== '/auth/login' && path !== '/auth/register' && path !== '/auth/refresh';
+}
+
+async function refreshAccessToken(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      const refreshToken = await tokenStorage.getRefreshToken();
+      if (!refreshToken) return false;
+
+      const res = await fetch(`${API_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          await tokenStorage.clear();
+        }
+        return false;
+      }
+
+      const data = (await res.json()) as AuthResponse;
+      await tokenStorage.setTokens(data.accessToken, data.refreshToken);
+      return true;
+    })().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+
+  return refreshInFlight;
+}
+
+async function apiFetch<T>(path: string, options: RequestInit = {}, didRefresh = false): Promise<T> {
   const token = await tokenStorage.getAccessToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -27,6 +63,13 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   }
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
+
+  if (res.status === 401 && !didRefresh && shouldAttemptTokenRefresh(path)) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      return apiFetch<T>(path, options, true);
+    }
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -97,21 +140,29 @@ export const api = {
   },
 
   async uploadImages(projectId: string, files: { uri: string; name: string; type: string }[]) {
-    const token = await tokenStorage.getAccessToken();
-    const formData = new FormData();
-    for (const file of files) {
-      formData.append('images', {
-        uri: file.uri,
-        name: file.name,
-        type: file.type,
-      } as unknown as Blob);
-    }
+    const doUpload = async (didRefresh: boolean) => {
+      const token = await tokenStorage.getAccessToken();
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append('images', {
+          uri: file.uri,
+          name: file.name,
+          type: file.type,
+        } as unknown as Blob);
+      }
 
-    const res = await fetch(`${API_URL}/projects/${projectId}/images`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData,
-    });
+      return fetch(`${API_URL}/projects/${projectId}/images`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+    };
+
+    let res = await doUpload(false);
+
+    if (res.status === 401 && (await refreshAccessToken())) {
+      res = await doUpload(true);
+    }
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
