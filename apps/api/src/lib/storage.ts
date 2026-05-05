@@ -7,6 +7,7 @@ import {
   HeadBucketCommand,
   CreateBucketCommand,
 } from '@aws-sdk/client-s3';
+import type { BucketLocationConstraint, CreateBucketCommandInput } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 
 const s3 = new S3Client({
@@ -32,18 +33,14 @@ async function createBucketIfMissing(): Promise<void> {
     return;
   } catch {
     try {
-      await s3.send(
-        new CreateBucketCommand({
-          Bucket: BUCKET,
-          ...(process.env.STORAGE_REGION && process.env.STORAGE_REGION !== 'us-east-1'
-            ? {
-                CreateBucketConfiguration: {
-                  LocationConstraint: process.env.STORAGE_REGION,
-                },
-              }
-            : {}),
-        }),
-      );
+      const createBucketInput: CreateBucketCommandInput = { Bucket: BUCKET };
+      if (process.env.STORAGE_REGION && process.env.STORAGE_REGION !== 'us-east-1') {
+        createBucketInput.CreateBucketConfiguration = {
+          LocationConstraint: process.env.STORAGE_REGION as BucketLocationConstraint,
+        };
+      }
+
+      await s3.send(new CreateBucketCommand(createBucketInput));
     } catch (error) {
       const code =
         typeof error === 'object' && error && 'name' in error ? String(error.name) : '';

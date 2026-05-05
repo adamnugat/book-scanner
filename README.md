@@ -47,6 +47,19 @@ npm run dev:api
 
 Sprawdź: http://localhost:3001/health
 
+#### Google Cloud Vision OCR
+
+Domyślnie backend używa mock OCR. Aby włączyć prawdziwy OCR, zapisz klucz service account JSON poza repozytorium, np. `~/secrets/book-scanner-google-vision.json`, i ustaw w `apps/api/.env`:
+
+```env
+OCR_PROVIDER=google
+GOOGLE_APPLICATION_CREDENTIALS=/Users/<user>/secrets/book-scanner-google-vision.json
+```
+
+Nie wklejaj prawdziwego JSON do kodu, `package.json`, `.env.example` ani plików śledzonych przez git. Jeśli środowisko deploymentowe wymaga sekretów bez pliku, potrzebne pola z JSON to `project_id`, `client_email` i `private_key`.
+
+Backend obsługuje wtedy albo pojedynczą zmienną `GOOGLE_CLOUD_CREDENTIALS_JSON` z całym JSON-em, albo zestaw `GOOGLE_CLOUD_PROJECT_ID`, `GOOGLE_CLOUD_CLIENT_EMAIL` i `GOOGLE_CLOUD_PRIVATE_KEY`.
+
 ### 6. Uruchom aplikację
 
 ```bash

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import { URLSearchParams } from 'url';
 import multer from 'multer';
 import sharp from 'sharp';
@@ -11,6 +11,7 @@ import { requireAuth } from '../middleware/auth';
 import { requireProjectOwner } from '../middleware/project-owner';
 import { validateUploadContent } from '../middleware/validate-upload';
 import { signAssetToken, verifyAssetToken } from '../lib/jwt';
+import { requireRouteParam } from '../lib/route-params';
 
 export const imagesRouter = Router({ mergeParams: true });
 
@@ -41,7 +42,7 @@ function imageResponse(
     mimeType: string | null;
     createdAt: Date;
   },
-  req: { protocol: string; get(name: string): string | undefined },
+  req: Request,
 ) {
   const host = req.get('host');
   const baseUrl = host ? `${req.protocol}://${host}` : '';
@@ -87,7 +88,7 @@ imagesRouter.post(
   upload.array('images', 20),
   validateUploadContent,
   async (req, res) => {
-    const projectId = req.params.projectId;
+    const projectId = requireRouteParam(req, 'projectId');
     const files = req.files as Express.Multer.File[] | undefined;
 
     if (!files || files.length === 0) {
@@ -166,8 +167,9 @@ imagesRouter.post(
 );
 
 imagesRouter.get('/', requireAuth, requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
   const images = await prisma.pageImage.findMany({
-    where: { projectId: req.params.projectId },
+    where: { projectId },
     orderBy: { orderIndex: 'asc' },
   });
 
@@ -175,6 +177,7 @@ imagesRouter.get('/', requireAuth, requireProjectOwner, async (req, res) => {
 });
 
 imagesRouter.put('/reorder', requireAuth, requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
   const { imageIds } = req.body as ReorderImagesRequest;
 
   if (!Array.isArray(imageIds) || imageIds.length === 0) {
@@ -194,7 +197,7 @@ imagesRouter.put('/reorder', requireAuth, requireProjectOwner, async (req, res) 
   await prisma.$transaction(updates);
 
   const images = await prisma.pageImage.findMany({
-    where: { projectId: req.params.projectId },
+    where: { projectId },
     orderBy: { orderIndex: 'asc' },
   });
 
@@ -202,6 +205,8 @@ imagesRouter.put('/reorder', requireAuth, requireProjectOwner, async (req, res) 
 });
 
 imagesRouter.get('/:imageId/file', async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
+  const imageId = requireRouteParam(req, 'imageId');
   const token = typeof req.query.token === 'string' ? req.query.token : null;
   if (!token) {
     res
@@ -222,20 +227,20 @@ imagesRouter.get('/:imageId/file', async (req, res) => {
 
   if (
     payload.variant !== 'file' ||
-    payload.projectId !== req.params.projectId ||
-    payload.imageId !== req.params.imageId
+    payload.projectId !== projectId ||
+    payload.imageId !== imageId
   ) {
     res.status(403).json({ error: 'Forbidden', message: 'Asset token mismatch', statusCode: 403 });
     return;
   }
 
-  const image = await prisma.pageImage.findUnique({ where: { id: req.params.imageId } });
-  if (!image || image.projectId !== req.params.projectId) {
+  const image = await prisma.pageImage.findUnique({ where: { id: imageId } });
+  if (!image || image.projectId !== projectId) {
     res.status(404).json({ error: 'Not Found', message: 'Image not found', statusCode: 404 });
     return;
   }
 
-  const project = await prisma.project.findUnique({ where: { id: req.params.projectId } });
+  const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project || project.ownerId !== payload.userId) {
     res.status(403).json({ error: 'Forbidden', message: 'Access denied', statusCode: 403 });
     return;
@@ -248,6 +253,8 @@ imagesRouter.get('/:imageId/file', async (req, res) => {
 });
 
 imagesRouter.get('/:imageId/thumbnail', async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
+  const imageId = requireRouteParam(req, 'imageId');
   const token = typeof req.query.token === 'string' ? req.query.token : null;
   if (!token) {
     res
@@ -268,20 +275,20 @@ imagesRouter.get('/:imageId/thumbnail', async (req, res) => {
 
   if (
     payload.variant !== 'thumbnail' ||
-    payload.projectId !== req.params.projectId ||
-    payload.imageId !== req.params.imageId
+    payload.projectId !== projectId ||
+    payload.imageId !== imageId
   ) {
     res.status(403).json({ error: 'Forbidden', message: 'Asset token mismatch', statusCode: 403 });
     return;
   }
 
-  const image = await prisma.pageImage.findUnique({ where: { id: req.params.imageId } });
-  if (!image || image.projectId !== req.params.projectId) {
+  const image = await prisma.pageImage.findUnique({ where: { id: imageId } });
+  if (!image || image.projectId !== projectId) {
     res.status(404).json({ error: 'Not Found', message: 'Image not found', statusCode: 404 });
     return;
   }
 
-  const project = await prisma.project.findUnique({ where: { id: req.params.projectId } });
+  const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project || project.ownerId !== payload.userId) {
     res.status(403).json({ error: 'Forbidden', message: 'Access denied', statusCode: 403 });
     return;
@@ -299,14 +306,16 @@ imagesRouter.get('/:imageId/thumbnail', async (req, res) => {
 });
 
 imagesRouter.delete('/:imageId', requireAuth, requireProjectOwner, async (req, res) => {
-  const image = await prisma.pageImage.findUnique({ where: { id: req.params.imageId } });
+  const projectId = requireRouteParam(req, 'projectId');
+  const imageId = requireRouteParam(req, 'imageId');
+  const image = await prisma.pageImage.findUnique({ where: { id: imageId } });
 
   if (!image) {
     res.status(404).json({ error: 'Not Found', message: 'Image not found', statusCode: 404 });
     return;
   }
 
-  if (image.projectId !== req.params.projectId) {
+  if (image.projectId !== projectId) {
     res.status(400).json({
       error: 'Bad Request',
       message: 'Image does not belong to this project',
@@ -322,7 +331,7 @@ imagesRouter.delete('/:imageId', requireAuth, requireProjectOwner, async (req, r
     // Storage deletion failed — proceed with DB cleanup
   }
 
-  await prisma.pageImage.delete({ where: { id: req.params.imageId } });
+  await prisma.pageImage.delete({ where: { id: imageId } });
 
   res.json({ message: 'Image deleted' });
 });

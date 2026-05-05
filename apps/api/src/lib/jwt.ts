@@ -1,9 +1,10 @@
 import jwt from 'jsonwebtoken';
+import type { Secret, SignOptions } from 'jsonwebtoken';
 
-const SECRET = process.env.JWT_SECRET || 'dev-secret';
-const ACCESS_EXPIRES = process.env.JWT_EXPIRES_IN || '15m';
-const REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
-const ASSET_EXPIRES = process.env.JWT_ASSET_EXPIRES_IN || '1h';
+const SECRET: Secret = process.env.JWT_SECRET || 'dev-secret';
+const ACCESS_EXPIRES = (process.env.JWT_EXPIRES_IN || '15m') as SignOptions['expiresIn'];
+const REFRESH_EXPIRES = (process.env.JWT_REFRESH_EXPIRES_IN || '7d') as SignOptions['expiresIn'];
+const ASSET_EXPIRES = (process.env.JWT_ASSET_EXPIRES_IN || '1h') as SignOptions['expiresIn'];
 
 export interface TokenPayload {
   userId: string;

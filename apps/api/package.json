@@ -19,6 +19,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.750.0",
     "@book-scanner/shared": "*",
+    "@google-cloud/vision": "^5.3.6",
     "@prisma/client": "^6.5.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",

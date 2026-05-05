@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { URLSearchParams } from 'url';
-import type { SceneResponse, SaveTextRegionsRequest } from '@book-scanner/shared';
+import type { SceneResponse, SaveTextRegionsRequest, TextRegionResponse } from '@book-scanner/shared';
 import { prisma } from '../lib/db';
 import { recognizeText } from '../lib/ocr';
 import { requireAuth } from '../middleware/auth';
 import { requireProjectOwner } from '../middleware/project-owner';
 import { checkPageLimit, incrementPageUsage } from '../lib/limits';
 import { signAssetToken } from '../lib/jwt';
+import { requireRouteParam } from '../lib/route-params';
 
 export const scenesRouter = Router({ mergeParams: true });
 
@@ -70,8 +71,28 @@ function toSceneResponse(s: {
   };
 }
 
+function toTextRegionResponse(region: {
+  id: string;
+  pageImageId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  orderIndex: number;
+}): TextRegionResponse {
+  return {
+    id: region.id,
+    pageImageId: region.pageImageId,
+    x: region.x,
+    y: region.y,
+    width: region.width,
+    height: region.height,
+    orderIndex: region.orderIndex,
+  };
+}
+
 scenesRouter.post('/process-ocr', requireProjectOwner, async (req, res) => {
-  const projectId = req.params.projectId;
+  const projectId = requireRouteParam(req, 'projectId');
 
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) {
@@ -82,7 +103,7 @@ scenesRouter.post('/process-ocr', requireProjectOwner, async (req, res) => {
   const images = await prisma.pageImage.findMany({
     where: { projectId },
     orderBy: { orderIndex: 'asc' },
-    include: { textRegions: true },
+    include: { textRegions: { orderBy: { orderIndex: 'asc' } } },
   });
 
   if (images.length === 0) {
@@ -154,7 +175,7 @@ async function processOcrInBackground(projectId: string, language: string) {
   const scenes = await prisma.scene.findMany({
     where: { projectId, status: 'queued' },
     orderBy: { orderIndex: 'asc' },
-    include: { pageImage: { include: { textRegions: true } } },
+    include: { pageImage: { include: { textRegions: { orderBy: { orderIndex: 'asc' } } } } },
   });
 
   for (const scene of scenes) {
@@ -204,21 +225,34 @@ async function processOcrInBackground(projectId: string, language: string) {
 }
 
 scenesRouter.get('/', requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
   const scenes = await prisma.scene.findMany({
-    where: { projectId: req.params.projectId },
+    where: { projectId },
     orderBy: { orderIndex: 'asc' },
   });
 
   res.json(scenes.map(toSceneResponse));
 });
 
+scenesRouter.get('/text-regions', requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
+  const regions = await prisma.textRegion.findMany({
+    where: { pageImage: { projectId } },
+    orderBy: [{ pageImage: { orderIndex: 'asc' } }, { orderIndex: 'asc' }],
+  });
+
+  res.json(regions.map(toTextRegionResponse));
+});
+
 scenesRouter.get('/:sceneId', requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
+  const sceneId = requireRouteParam(req, 'sceneId');
   const scene = await prisma.scene.findUnique({
-    where: { id: req.params.sceneId },
+    where: { id: sceneId },
     include: { pageImage: true },
   });
 
-  if (!scene || scene.projectId !== req.params.projectId) {
+  if (!scene || scene.projectId !== projectId) {
     res.status(404).json({ error: 'Not Found', message: 'Scene not found', statusCode: 404 });
     return;
   }
@@ -239,9 +273,11 @@ scenesRouter.get('/:sceneId', requireProjectOwner, async (req, res) => {
 });
 
 scenesRouter.put('/:sceneId', requireProjectOwner, async (req, res) => {
-  const scene = await prisma.scene.findUnique({ where: { id: req.params.sceneId } });
+  const projectId = requireRouteParam(req, 'projectId');
+  const sceneId = requireRouteParam(req, 'sceneId');
+  const scene = await prisma.scene.findUnique({ where: { id: sceneId } });
 
-  if (!scene || scene.projectId !== req.params.projectId) {
+  if (!scene || scene.projectId !== projectId) {
     res.status(404).json({ error: 'Not Found', message: 'Scene not found', statusCode: 404 });
     return;
   }
@@ -264,7 +300,7 @@ scenesRouter.put('/:sceneId', requireProjectOwner, async (req, res) => {
   }
 
   const updated = await prisma.scene.update({
-    where: { id: req.params.sceneId },
+    where: { id: sceneId },
     data,
   });
 
@@ -272,9 +308,10 @@ scenesRouter.put('/:sceneId', requireProjectOwner, async (req, res) => {
 });
 
 scenesRouter.post('/text-regions', requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
   const { regions } = req.body as SaveTextRegionsRequest;
 
-  if (!Array.isArray(regions) || regions.length === 0) {
+  if (!Array.isArray(regions)) {
     res.status(400).json({
       error: 'Validation failed',
       message: 'Regions array required',
@@ -296,12 +333,26 @@ scenesRouter.post('/text-regions', requireProjectOwner, async (req, res) => {
   }
 
   const imageIds = [...new Set(regions.map((r) => r.pageImageId))];
-  for (const imgId of imageIds) {
-    await prisma.textRegion.deleteMany({ where: { pageImageId: imgId } });
+  if (imageIds.length > 0) {
+    const projectImages = await prisma.pageImage.findMany({
+      where: { projectId, id: { in: imageIds } },
+    });
+    const ownedImageIds = new Set(projectImages.map((image) => image.id));
+
+    if (imageIds.some((imageId) => !ownedImageIds.has(imageId))) {
+      res.status(400).json({
+        error: 'Validation failed',
+        message: 'Each region pageImageId must belong to this project',
+        statusCode: 400,
+      });
+      return;
+    }
   }
 
+  await prisma.textRegion.deleteMany({ where: { pageImage: { projectId } } });
+
   const created = [];
-  for (const r of regions) {
+  for (const [orderIndex, r] of regions.entries()) {
     const region = await prisma.textRegion.create({
       data: {
         pageImageId: r.pageImageId,
@@ -309,10 +360,11 @@ scenesRouter.post('/text-regions', requireProjectOwner, async (req, res) => {
         y: r.y,
         width: r.width,
         height: r.height,
+        orderIndex,
       },
     });
     created.push(region);
   }
 
-  res.status(201).json(created);
+  res.status(201).json(created.map(toTextRegionResponse));
 });

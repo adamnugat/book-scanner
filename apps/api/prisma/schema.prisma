@@ -112,6 +112,7 @@ model TextRegion {
   y           Float
   width       Float
   height      Float
+  orderIndex  Int    @default(0) @map("order_index")
 
   pageImage PageImage @relation(fields: [pageImageId], references: [id], onDelete: Cascade)
 

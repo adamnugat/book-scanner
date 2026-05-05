@@ -1,12 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/db';
+import { routeParam } from '../lib/route-params';
 
 export async function requireProjectOwner(
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  const projectId = req.params.id || req.params.projectId;
+  const projectId = routeParam(req, 'id') || routeParam(req, 'projectId');
   if (!projectId) {
     res.status(400).json({ error: 'Bad Request', message: 'Project ID required', statusCode: 400 });
     return;

@@ -1,3 +1,4 @@
+import { ImageAnnotatorClient, type protos } from '@google-cloud/vision';
 import { downloadFile } from './storage';
 
 export interface OcrResult {
@@ -5,10 +6,15 @@ export interface OcrResult {
   confidence?: number;
 }
 
+type TextRegion = { x: number; y: number; width: number; height: number };
+type GoogleVisionClientOptions = NonNullable<ConstructorParameters<typeof ImageAnnotatorClient>[0]>;
+type GoogleVisionResponse = protos.google.cloud.vision.v1.IAnnotateImageResponse;
+type GoogleTextAnnotation = protos.google.cloud.vision.v1.ITextAnnotation;
+
 export async function recognizeText(
   storagePath: string,
   language: string,
-  regions?: { x: number; y: number; width: number; height: number }[],
+  regions?: TextRegion[],
 ): Promise<OcrResult> {
   if (process.env.OCR_PROVIDER === 'google') {
     return recognizeWithGoogle(storagePath, language, regions);
@@ -19,55 +25,24 @@ export async function recognizeText(
 async function recognizeWithGoogle(
   storagePath: string,
   language: string,
-  regions?: { x: number; y: number; width: number; height: number }[],
+  regions?: TextRegion[],
 ): Promise<OcrResult> {
+  const client = new ImageAnnotatorClient(getGoogleVisionClientOptions());
   const imageBuffer = await downloadFile(storagePath);
-  const base64Image = imageBuffer.toString('base64');
-
-  const apiKey = process.env.GOOGLE_CLOUD_API_KEY;
-  if (!apiKey) throw new Error('GOOGLE_CLOUD_API_KEY not configured');
-
   const languageHints = language === 'pl' ? ['pl', 'en'] : ['en', 'pl'];
 
-  const features = regions && regions.length > 0
-    ? [{ type: 'DOCUMENT_TEXT_DETECTION' }]
-    : [{ type: 'TEXT_DETECTION' }];
+  const annotations = await annotateImageWithGoogle(client, imageBuffer, languageHints);
 
-  const response = await fetch(
-    `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        requests: [
-          {
-            image: { content: base64Image },
-            features,
-            imageContext: { languageHints },
-          },
-        ],
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Google Vision API error: ${err}`);
-  }
-
-  const data = await response.json();
-  const annotations = data.responses?.[0];
-
-  if (annotations?.error) {
-    throw new Error(`OCR error: ${annotations.error.message}`);
+  if (annotations.error?.message) {
+    throw new Error(`Google Cloud Vision OCR failed: ${sanitizeErrorMessage(annotations.error.message)}`);
   }
 
   const fullText =
-    annotations?.fullTextAnnotation?.text ||
-    annotations?.textAnnotations?.[0]?.description ||
+    annotations.fullTextAnnotation?.text ||
+    annotations.textAnnotations?.[0]?.description ||
     '';
 
-  if (regions && regions.length > 0 && annotations?.fullTextAnnotation) {
+  if (regions && regions.length > 0 && annotations.fullTextAnnotation) {
     const croppedText = extractRegionText(annotations.fullTextAnnotation, regions);
     return { text: croppedText || fullText };
   }
@@ -75,34 +50,157 @@ async function recognizeWithGoogle(
   return { text: fullText.trim() };
 }
 
-function extractRegionText(
-  fullAnnotation: { pages?: Array<{ blocks?: Array<{ boundingBox?: { vertices?: Array<{ x: number; y: number }> }; paragraphs?: Array<{ words?: Array<{ symbols?: Array<{ text: string }> }> }> }> }> },
-  regions: { x: number; y: number; width: number; height: number }[],
-): string {
+async function annotateImageWithGoogle(
+  client: ImageAnnotatorClient,
+  imageBuffer: Buffer,
+  languageHints: string[],
+): Promise<GoogleVisionResponse> {
+  try {
+    const [response] = await client.batchAnnotateImages({
+      requests: [
+        {
+          image: { content: imageBuffer },
+          features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+          imageContext: { languageHints },
+        },
+      ],
+    });
+
+    return response.responses?.[0] || {};
+  } catch (error) {
+    throw new Error(`Google Cloud Vision OCR failed: ${sanitizeErrorMessage(error)}`);
+  }
+}
+
+function getGoogleVisionClientOptions(): GoogleVisionClientOptions {
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    return {};
+  }
+
+  const jsonCredentials = getGoogleCredentialsFromJson();
+  if (jsonCredentials) {
+    return jsonCredentials;
+  }
+
+  const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+  const clientEmail = process.env.GOOGLE_CLOUD_CLIENT_EMAIL;
+  const privateKey = process.env.GOOGLE_CLOUD_PRIVATE_KEY;
+
+  if (projectId && clientEmail && privateKey) {
+    return {
+      projectId,
+      credentials: {
+        client_email: clientEmail,
+        private_key: normalizePrivateKey(privateKey),
+      },
+    };
+  }
+
+  throw new Error(
+    'Google Cloud Vision credentials are not configured. Set GOOGLE_APPLICATION_CREDENTIALS ' +
+      'to a service account JSON file path, or set GOOGLE_CLOUD_PROJECT_ID, ' +
+      'GOOGLE_CLOUD_CLIENT_EMAIL, and GOOGLE_CLOUD_PRIVATE_KEY.',
+  );
+}
+
+function getGoogleCredentialsFromJson(): GoogleVisionClientOptions | null {
+  const rawCredentials = process.env.GOOGLE_CLOUD_CREDENTIALS_JSON;
+  if (!rawCredentials) {
+    return null;
+  }
+
+  let parsedCredentials: unknown;
+  try {
+    parsedCredentials = JSON.parse(rawCredentials);
+  } catch {
+    throw new Error(
+      'Google Cloud Vision credentials are invalid. GOOGLE_CLOUD_CREDENTIALS_JSON must be valid JSON.',
+    );
+  }
+
+  if (!isServiceAccountCredentials(parsedCredentials)) {
+    throw new Error(
+      'Google Cloud Vision credentials are incomplete. Required fields: project_id, client_email, private_key.',
+    );
+  }
+
+  return {
+    projectId: parsedCredentials.project_id,
+    credentials: {
+      client_email: parsedCredentials.client_email,
+      private_key: normalizePrivateKey(parsedCredentials.private_key),
+    },
+  };
+}
+
+function isServiceAccountCredentials(value: unknown): value is {
+  project_id: string;
+  client_email: string;
+  private_key: string;
+} {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'project_id' in value &&
+    'client_email' in value &&
+    'private_key' in value &&
+    typeof value.project_id === 'string' &&
+    typeof value.client_email === 'string' &&
+    typeof value.private_key === 'string' &&
+    value.project_id.length > 0 &&
+    value.client_email.length > 0 &&
+    value.private_key.length > 0
+  );
+}
+
+function normalizePrivateKey(privateKey: string): string {
+  return privateKey.replace(/\\n/g, '\n');
+}
+
+function sanitizeErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error || 'Unknown Google Vision error');
+  let sanitized = message.replace(
+    /-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/g,
+    '[REDACTED_PRIVATE_KEY]',
+  );
+
+  for (const secret of [
+    process.env.GOOGLE_CLOUD_PRIVATE_KEY,
+    process.env.GOOGLE_CLOUD_CREDENTIALS_JSON,
+  ]) {
+    if (secret) {
+      sanitized = sanitized.split(secret).join('[REDACTED_GOOGLE_CREDENTIAL]');
+    }
+  }
+
+  return sanitized;
+}
+
+function extractRegionText(fullAnnotation: GoogleTextAnnotation, regions: TextRegion[]): string {
   const texts: string[] = [];
 
   for (const page of fullAnnotation.pages || []) {
-    for (const block of page.blocks || []) {
-      const v = block.boundingBox?.vertices;
-      if (!v || v.length < 4) continue;
+    const pageWidth = page.width || 0;
+    const pageHeight = page.height || 0;
 
-      const blockX = Math.min(...v.map((p) => p.x || 0));
-      const blockY = Math.min(...v.map((p) => p.y || 0));
-      const blockX2 = Math.max(...v.map((p) => p.x || 0));
-      const blockY2 = Math.max(...v.map((p) => p.y || 0));
+    for (const region of regions) {
+      const resolvedRegion = resolveRegionCoordinates(region, pageWidth, pageHeight);
 
-      for (const region of regions) {
-        const rx2 = region.x + region.width;
-        const ry2 = region.y + region.height;
+      for (const block of page.blocks || []) {
+        const v = block.boundingBox?.vertices;
+        if (!v || v.length < 4) continue;
+
+        const blockX = Math.min(...v.map((p) => p.x || 0));
+        const blockY = Math.min(...v.map((p) => p.y || 0));
+        const blockX2 = Math.max(...v.map((p) => p.x || 0));
+        const blockY2 = Math.max(...v.map((p) => p.y || 0));
+        const rx2 = resolvedRegion.x + resolvedRegion.width;
+        const ry2 = resolvedRegion.y + resolvedRegion.height;
         const overlap =
-          blockX < rx2 && blockX2 > region.x && blockY < ry2 && blockY2 > region.y;
+          blockX < rx2 && blockX2 > resolvedRegion.x && blockY < ry2 && blockY2 > resolvedRegion.y;
 
         if (overlap) {
-          const blockText = (block.paragraphs || [])
-            .flatMap((p) => (p.words || []).map((w) => (w.symbols || []).map((s) => s.text).join('')))
-            .join(' ');
-          texts.push(blockText);
-          break;
+          texts.push(getBlockText(block));
         }
       }
     }
@@ -111,10 +209,43 @@ function extractRegionText(
   return texts.join('\n').trim();
 }
 
+function resolveRegionCoordinates(region: TextRegion, pageWidth: number, pageHeight: number): TextRegion {
+  const isNormalized =
+    pageWidth > 0 &&
+    pageHeight > 0 &&
+    region.x >= 0 &&
+    region.y >= 0 &&
+    region.width >= 0 &&
+    region.height >= 0 &&
+    region.x <= 1 &&
+    region.y <= 1 &&
+    region.width <= 1 &&
+    region.height <= 1;
+
+  if (!isNormalized) {
+    return region;
+  }
+
+  return {
+    x: region.x * pageWidth,
+    y: region.y * pageHeight,
+    width: region.width * pageWidth,
+    height: region.height * pageHeight,
+  };
+}
+
+function getBlockText(
+  block: NonNullable<NonNullable<GoogleTextAnnotation['pages']>[number]['blocks']>[number],
+): string {
+  return (block.paragraphs || [])
+    .flatMap((p) => (p.words || []).map((w) => (w.symbols || []).map((s) => s.text).join('')))
+    .join(' ');
+}
+
 async function recognizeWithMock(
   _storagePath: string,
   language: string,
-  regions?: { x: number; y: number; width: number; height: number }[],
+  regions?: TextRegion[],
 ): Promise<OcrResult> {
   await new Promise((r) => setTimeout(r, 100));
 

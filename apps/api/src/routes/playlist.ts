@@ -2,13 +2,14 @@ import { Router } from 'express';
 import { prisma } from '../lib/db';
 import { requireAuth } from '../middleware/auth';
 import { requireProjectOwner } from '../middleware/project-owner';
+import { requireRouteParam } from '../lib/route-params';
 
 export const playlistRouter = Router({ mergeParams: true });
 
 playlistRouter.use(requireAuth);
 
 playlistRouter.post('/build-playlist', requireProjectOwner, async (req, res) => {
-  const projectId = req.params.projectId;
+  const projectId = requireRouteParam(req, 'projectId');
 
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) {
@@ -73,7 +74,7 @@ playlistRouter.post('/build-playlist', requireProjectOwner, async (req, res) => 
 });
 
 playlistRouter.get('/playlist', requireProjectOwner, async (req, res) => {
-  const projectId = req.params.projectId;
+  const projectId = requireRouteParam(req, 'projectId');
 
   const items = await prisma.playlistItem.findMany({
     where: { projectId },

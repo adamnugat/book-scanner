@@ -20,7 +20,7 @@ vi.mock('../src/lib/db', () => ({
       update: vi.fn(), count: vi.fn(),
     },
     textRegion: {
-      create: vi.fn(), deleteMany: vi.fn(),
+      create: vi.fn(), deleteMany: vi.fn(), findMany: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -155,9 +155,10 @@ describe('Scenes endpoints', () => {
   describe('POST /projects/:projectId/scenes/text-regions', () => {
     it('saves text regions for image', async () => {
       db.project.findUnique.mockResolvedValue(projectA);
+      db.pageImage.findMany.mockResolvedValue([img1]);
       db.textRegion.deleteMany.mockResolvedValue({ count: 0 });
       db.textRegion.create.mockResolvedValue({
-        id: 'tr-1', pageImageId: 'img-1', x: 10, y: 20, width: 100, height: 50,
+        id: 'tr-1', pageImageId: 'img-1', x: 10, y: 20, width: 100, height: 50, orderIndex: 0,
       });
 
       const res = await request(app)
@@ -171,18 +172,101 @@ describe('Scenes endpoints', () => {
 
       expect(res.status).toBe(201);
       expect(res.body).toHaveLength(1);
-      expect(db.textRegion.deleteMany).toHaveBeenCalledWith({ where: { pageImageId: 'img-1' } });
+      expect(db.textRegion.deleteMany).toHaveBeenCalledWith({
+        where: { pageImage: { projectId: 'proj-1' } },
+      });
     });
 
-    it('rejects empty regions → 400', async () => {
+    it('clears project text regions when saving an empty list', async () => {
       db.project.findUnique.mockResolvedValue(projectA);
+      db.textRegion.deleteMany.mockResolvedValue({ count: 2 });
 
       const res = await request(app)
         .post('/projects/proj-1/scenes/text-regions')
         .set('Authorization', `Bearer ${tokenA}`)
         .send({ regions: [] });
 
+      expect(res.status).toBe(201);
+      expect(res.body).toEqual([]);
+      expect(db.textRegion.deleteMany).toHaveBeenCalledWith({
+        where: { pageImage: { projectId: 'proj-1' } },
+      });
+      expect(db.textRegion.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects text regions for images outside the project', async () => {
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.pageImage.findMany.mockResolvedValue([img1]);
+
+      const res = await request(app)
+        .post('/projects/proj-1/scenes/text-regions')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({
+          regions: [
+            { pageImageId: 'img-1', x: 0.1, y: 0.1, width: 0.3, height: 0.2 },
+            { pageImageId: 'other-project-image', x: 0.2, y: 0.2, width: 0.3, height: 0.2 },
+          ],
+        });
+
       expect(res.status).toBe(400);
+      expect(res.body.message).toContain('project');
+      expect(db.textRegion.deleteMany).not.toHaveBeenCalled();
+      expect(db.textRegion.create).not.toHaveBeenCalled();
+    });
+
+    it('persists text regions in submitted order', async () => {
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.pageImage.findMany.mockResolvedValue([img1, img2]);
+      db.textRegion.deleteMany.mockResolvedValue({ count: 0 });
+      db.textRegion.create
+        .mockResolvedValueOnce({
+          id: 'tr-1', pageImageId: 'img-2', x: 0.2, y: 0.1, width: 0.4, height: 0.2, orderIndex: 0,
+        })
+        .mockResolvedValueOnce({
+          id: 'tr-2', pageImageId: 'img-1', x: 0.1, y: 0.3, width: 0.5, height: 0.1, orderIndex: 1,
+        });
+
+      const res = await request(app)
+        .post('/projects/proj-1/scenes/text-regions')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({
+          regions: [
+            { pageImageId: 'img-2', x: 0.2, y: 0.1, width: 0.4, height: 0.2 },
+            { pageImageId: 'img-1', x: 0.1, y: 0.3, width: 0.5, height: 0.1 },
+          ],
+        });
+
+      expect(res.status).toBe(201);
+      expect(db.textRegion.create).toHaveBeenNthCalledWith(1, {
+        data: { pageImageId: 'img-2', x: 0.2, y: 0.1, width: 0.4, height: 0.2, orderIndex: 0 },
+      });
+      expect(db.textRegion.create).toHaveBeenNthCalledWith(2, {
+        data: { pageImageId: 'img-1', x: 0.1, y: 0.3, width: 0.5, height: 0.1, orderIndex: 1 },
+      });
+    });
+  });
+
+  describe('GET /projects/:projectId/scenes/text-regions', () => {
+    it('returns saved text regions ordered by page and region order', async () => {
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.textRegion.findMany.mockResolvedValue([
+        { id: 'tr-1', pageImageId: 'img-1', x: 0.1, y: 0.2, width: 0.3, height: 0.4, orderIndex: 0 },
+        { id: 'tr-2', pageImageId: 'img-1', x: 0.5, y: 0.2, width: 0.2, height: 0.2, orderIndex: 1 },
+      ]);
+
+      const res = await request(app)
+        .get('/projects/proj-1/scenes/text-regions')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([
+        { id: 'tr-1', pageImageId: 'img-1', x: 0.1, y: 0.2, width: 0.3, height: 0.4, orderIndex: 0 },
+        { id: 'tr-2', pageImageId: 'img-1', x: 0.5, y: 0.2, width: 0.2, height: 0.2, orderIndex: 1 },
+      ]);
+      expect(db.textRegion.findMany).toHaveBeenCalledWith({
+        where: { pageImage: { projectId: 'proj-1' } },
+        orderBy: [{ pageImage: { orderIndex: 'asc' } }, { orderIndex: 'asc' }],
+      });
     });
   });
 

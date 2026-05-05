@@ -122,10 +122,21 @@ export interface TextRegionInput {
   y: number;
   width: number;
   height: number;
+  orderIndex?: number;
 }
 
 export interface SaveTextRegionsRequest {
   regions: TextRegionInput[];
+}
+
+export interface TextRegionResponse {
+  id: string;
+  pageImageId: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  orderIndex: number;
 }
 
 export interface VoiceResponse {

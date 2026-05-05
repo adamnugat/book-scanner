@@ -5,13 +5,14 @@ import { synthesizeSpeech } from '../lib/tts';
 import { uploadFile } from '../lib/storage';
 import { requireAuth } from '../middleware/auth';
 import { requireProjectOwner } from '../middleware/project-owner';
+import { requireRouteParam } from '../lib/route-params';
 
 export const audioRouter = Router({ mergeParams: true });
 
 audioRouter.use(requireAuth);
 
 audioRouter.post('/generate-audio', requireProjectOwner, async (req, res) => {
-  const projectId = req.params.projectId;
+  const projectId = requireRouteParam(req, 'projectId');
 
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) {
@@ -135,8 +136,9 @@ async function generateAudioInBackground(
 }
 
 audioRouter.get('/audio-tracks', requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
   const tracks = await prisma.audioTrack.findMany({
-    where: { scene: { projectId: req.params.projectId } },
+    where: { scene: { projectId } },
     include: { scene: { select: { orderIndex: true } } },
     orderBy: { scene: { orderIndex: 'asc' } },
   });

@@ -4,13 +4,14 @@ import { prisma } from '../lib/db';
 import { uploadFile } from '../lib/storage';
 import { requireAuth } from '../middleware/auth';
 import { requireProjectOwner } from '../middleware/project-owner';
+import { requireRouteParam } from '../lib/route-params';
 
 export const sharingRouter = Router({ mergeParams: true });
 
 sharingRouter.use(requireAuth);
 
 sharingRouter.post('/share', requireProjectOwner, async (req, res) => {
-  const projectId = req.params.projectId;
+  const projectId = requireRouteParam(req, 'projectId');
   const { email } = req.body as { email: string };
 
   if (!email || typeof email !== 'string') {
@@ -55,8 +56,9 @@ sharingRouter.post('/share', requireProjectOwner, async (req, res) => {
 });
 
 sharingRouter.get('/shares', requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
   const shares = await prisma.projectShare.findMany({
-    where: { projectId: req.params.projectId },
+    where: { projectId },
     include: { sharedWith: { select: { id: true, email: true } } },
   });
 
@@ -73,7 +75,8 @@ sharingRouter.get('/shares', requireProjectOwner, async (req, res) => {
 });
 
 sharingRouter.delete('/share/:userId', requireProjectOwner, async (req, res) => {
-  const { projectId, userId } = req.params;
+  const projectId = requireRouteParam(req, 'projectId');
+  const userId = requireRouteParam(req, 'userId');
 
   const share = await prisma.projectShare.findUnique({
     where: { projectId_sharedWithUserId: { projectId, sharedWithUserId: userId } },
@@ -90,7 +93,7 @@ sharingRouter.delete('/share/:userId', requireProjectOwner, async (req, res) => 
 });
 
 sharingRouter.post('/qr', requireProjectOwner, async (req, res) => {
-  const projectId = req.params.projectId;
+  const projectId = requireRouteParam(req, 'projectId');
   const appScheme = process.env.APP_SCHEME || 'bookscanner';
   const webUrl = process.env.WEB_URL || 'http://localhost:8081';
 
@@ -121,8 +124,9 @@ sharingRouter.post('/qr', requireProjectOwner, async (req, res) => {
 });
 
 sharingRouter.get('/qr', requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
   const qrLink = await prisma.qrShareLink.findFirst({
-    where: { projectId: req.params.projectId },
+    where: { projectId },
   });
 
   if (!qrLink) {

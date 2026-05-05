@@ -8,6 +8,7 @@ import type {
   PageImageResponse,
   SceneResponse,
   TextRegionInput,
+  TextRegionResponse,
   VoiceResponse,
   AudioTrackResponse,
   PlaylistItemResponse,
@@ -204,6 +205,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ regions }),
     });
+  },
+
+  getTextRegions(projectId: string) {
+    return apiFetch<TextRegionResponse[]>(`/projects/${projectId}/scenes/text-regions`);
   },
 
   getScene(projectId: string, sceneId: string) {
