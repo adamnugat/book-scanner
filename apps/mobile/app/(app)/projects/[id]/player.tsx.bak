@@ -62,7 +62,24 @@ export default function PlayerScreen() {
         } else if (!isOnline) {
           Alert.alert('Offline', 'Brak połączenia i brak pobranego cache. Pobierz audio online.');
         } else {
-          const items = await api.getPlaylist(id);
+          let items = await api.getPlaylist(id);
+          if (items.length === 0) {
+            try {
+              await api.buildPlaylist(id);
+            } catch (buildErr) {
+              const status = (buildErr as { status?: number } | null)?.status;
+              const msg = buildErr instanceof Error ? buildErr.message : 'Nieznany błąd';
+              if (status === 400) {
+                Alert.alert(
+                  'Brak audio',
+                  'Najpierw wygeneruj audio w zakładce „Głos i audio”, zanim odtworzysz audiobook.',
+                );
+                return;
+              }
+              throw new Error(`Nie udało się zbudować playlisty: ${msg}`);
+            }
+            items = await api.getPlaylist(id);
+          }
           setPlaylist(items);
           setIsCached(cached !== null);
           if (cached) setCacheSize(cached.totalSize);

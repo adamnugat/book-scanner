@@ -9,13 +9,10 @@ export const playlistRouter = Router({ mergeParams: true });
 
 playlistRouter.use(requireAuth);
 
-playlistRouter.post('/build-playlist', requireProjectOwner, async (req, res) => {
-  const projectId = requireRouteParam(req, 'projectId');
-
+async function rebuildPlaylist(projectId: string): Promise<number> {
   const project = await prisma.project.findUnique({ where: { id: projectId } });
   if (!project) {
-    res.status(404).json({ error: 'Not Found', message: 'Project not found', statusCode: 404 });
-    return;
+    throw new Error('Project not found');
   }
 
   const scenes = await prisma.scene.findMany({
@@ -25,12 +22,7 @@ playlistRouter.post('/build-playlist', requireProjectOwner, async (req, res) => 
   });
 
   if (scenes.length === 0) {
-    res.status(400).json({
-      error: 'Validation failed',
-      message: 'No scenes with generated audio',
-      statusCode: 400,
-    });
-    return;
+    return 0;
   }
 
   await prisma.playlistItem.deleteMany({ where: { projectId } });
@@ -71,11 +63,49 @@ playlistRouter.post('/build-playlist', requireProjectOwner, async (req, res) => 
     }
   }
 
-  res.json({ message: 'Playlist built', itemCount: items.length });
+  return items.length;
+}
+
+playlistRouter.post('/build-playlist', requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
+
+  try {
+    const itemCount = await rebuildPlaylist(projectId);
+
+    if (itemCount === 0) {
+      res.status(400).json({
+        error: 'Validation failed',
+        message: 'No scenes with generated audio',
+        statusCode: 400,
+      });
+      return;
+    }
+
+    res.json({ message: 'Playlist built', itemCount });
+  } catch {
+    res.status(404).json({ error: 'Not Found', message: 'Project not found', statusCode: 404 });
+  }
 });
 
 playlistRouter.get('/playlist', requireProjectOwner, async (req, res) => {
   const projectId = requireRouteParam(req, 'projectId');
+
+  const audioTracksCount = await prisma.audioTrack.count({
+    where: {
+      scene: {
+        projectId,
+        status: 'audio_done',
+      },
+    },
+  });
+
+  const playlistSceneItemsCount = await prisma.playlistItem.count({
+    where: { projectId, type: 'scene' },
+  });
+
+  if (audioTracksCount > playlistSceneItemsCount) {
+    await rebuildPlaylist(projectId);
+  }
 
   const items = await prisma.playlistItem.findMany({
     where: { projectId },

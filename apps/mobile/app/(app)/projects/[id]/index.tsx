@@ -4,11 +4,14 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  ActivityIndicator,
   Alert,
   ScrollView,
+  Dimensions,
+  Image,
+  Platform,
+  ActionSheetIOS,
 } from 'react-native';
-import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
+import { Stack, useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { api } from '../../../../lib/api';
 import type { ProjectResponse } from '@book-scanner/shared';
 
@@ -19,24 +22,37 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Gotowe',
 };
 
+const COVER_HEIGHT = Dimensions.get('window').height * 0.5;
+
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [project, setProject] = useState<ProjectResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [hasAudio, setHasAudio] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
+      let isActive = true;
+
       (async () => {
         try {
-          const data = await api.getProject(id);
-          setProject(data);
+          const [projectData, audioTracks] = await Promise.all([
+            api.getProject(id),
+            api.getAudioTracks(id),
+          ]);
+
+          if (!isActive) return;
+
+          setProject(projectData);
+          setHasAudio(audioTracks.length > 0);
         } catch {
           Alert.alert('Błąd', 'Nie udało się pobrać projektu');
           router.back();
-        } finally {
-          setLoading(false);
         }
       })();
+
+      return () => {
+        isActive = false;
+      };
     }, [id]),
   );
 
@@ -58,128 +74,275 @@ export default function ProjectDetailScreen() {
     ]);
   };
 
-  if (loading || !project) {
+  const handleEdit = () => {
+    router.push(`/(app)/projects/${id}/edit`);
+  };
+
+  const handleProjectOptions = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Anuluj', 'Edytuj projekt', 'Usuń projekt'],
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: 2,
+          title: project?.title,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) handleEdit();
+          if (buttonIndex === 2) handleDelete();
+        },
+      );
+      return;
+    }
+
+    Alert.alert('Opcje projektu', 'Wybierz akcję', [
+      { text: 'Edytuj projekt', onPress: handleEdit },
+      { text: 'Usuń projekt', style: 'destructive', onPress: handleDelete },
+      { text: 'Anuluj', style: 'cancel' },
+    ]);
+  };
+
+  if (!project) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#e94560" />
-      </View>
+      <>
+        <Stack.Screen
+          options={{
+            headerTitle: '',
+            headerTransparent: true,
+            headerTintColor: '#fff',
+          }}
+        />
+        <View style={styles.emptyState} />
+      </>
     );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{project.title}</Text>
+    <>
+      <Stack.Screen
+        options={{
+          headerTitle: '',
+          headerTransparent: hasAudio,
+          headerTintColor: '#fff',
+          headerRight: () => (
+            <Pressable
+              accessibilityLabel="Opcje projektu"
+              style={styles.headerAction}
+              onPress={handleProjectOptions}
+            >
+              <Text style={styles.headerActionText}>...</Text>
+            </Pressable>
+          ),
+        }}
+      />
 
-      <View
-        style={[
-          styles.nextStepCard,
-          project.status === 'ready_for_tts' && styles.nextStepCardReady,
-        ]}
-      >
-        <Text style={styles.nextStepKicker}>Etap audiobooka</Text>
-        <Text style={styles.nextStepTitle}>
-          {project.status === 'ready_for_tts'
-            ? 'Następny krok: Text to Speech'
-            : 'Przygotuj tekst przed nagraniem'}
-        </Text>
-        <Text style={styles.nextStepBody}>
-          {project.status === 'ready_for_tts'
-            ? 'OCR jest gotowy. Wybierz głos lektora, a potem uruchom generowanie audio dla zatwierdzonych scen.'
-            : 'Najpierw zakończ OCR i zatwierdź tekst scen.'}
-        </Text>
-        {project.status === 'ready_for_tts' && (
-          <Pressable
-            style={styles.nextStepBtn}
-            onPress={() => router.push(`/(app)/projects/${id}/voice`)}
-          >
-            <Text style={styles.nextStepBtnText}>Wybierz głos i generuj audio</Text>
-          </Pressable>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {hasAudio ? (
+          <View style={[styles.coverHero, { height: COVER_HEIGHT }]}>
+            {project.coverUrl ? (
+              <Image source={{ uri: project.coverUrl }} style={styles.coverImage} />
+            ) : (
+              <View style={styles.mockCover}>
+                <View style={styles.coverOrbPrimary} />
+                <View style={styles.coverOrbSecondary} />
+                <Text style={styles.coverKicker}>Audiobook</Text>
+                <Text style={styles.coverTitle}>{project.title}</Text>
+                <Text style={styles.coverSubtitle}>
+                  {STATUS_LABELS[project.status] || project.status}
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.coverScrim} />
+            <View style={styles.coverControls}>
+              <Text style={styles.coverControlsTitle}>{project.title}</Text>
+              <Pressable
+                style={styles.playButton}
+                onPress={() => router.push(`/(app)/projects/${id}/player`)}
+              >
+                <Text style={styles.playButtonText}>Odtwarzaj audiobooka</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.creationHeader}>
+            <Text style={styles.title}>{project.title}</Text>
+            <Text style={styles.statusPill}>{STATUS_LABELS[project.status] || project.status}</Text>
+            <View
+              style={[
+                styles.nextStepCard,
+                project.status === 'ready_for_tts' && styles.nextStepCardReady,
+              ]}
+            >
+              <Text style={styles.nextStepKicker}>Etap audiobooka</Text>
+              <Text style={styles.nextStepTitle}>
+                {project.status === 'ready_for_tts'
+                  ? 'Następny krok: Text to Speech'
+                  : 'Przygotuj tekst przed nagraniem'}
+              </Text>
+              <Text style={styles.nextStepBody}>
+                {project.status === 'ready_for_tts'
+                  ? 'OCR jest gotowy. Wybierz głos lektora, a potem uruchom generowanie audio dla zatwierdzonych scen.'
+                  : 'Najpierw zakończ OCR i zatwierdź tekst scen.'}
+              </Text>
+              {project.status === 'ready_for_tts' && (
+                <Pressable
+                  style={styles.nextStepBtn}
+                  onPress={() => router.push(`/(app)/projects/${id}/voice`)}
+                >
+                  <Text style={styles.nextStepBtnText}>Wybierz głos i generuj audio</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
         )}
-      </View>
 
-      <View style={styles.field}>
-        <Text style={styles.fieldLabel}>Status</Text>
-        <Text style={styles.fieldValue}>{STATUS_LABELS[project.status] || project.status}</Text>
-      </View>
+        <View style={styles.toolsSection}>
+          <Text style={styles.sectionTitle}>Narzędzia projektu</Text>
+          <View style={styles.toolsGrid}>
+            <Pressable
+              style={styles.toolCard}
+              onPress={() => router.push(`/(app)/projects/${id}/images`)}
+            >
+              <Text style={styles.toolKicker}>Treść</Text>
+              <Text style={styles.toolTitle}>Zdjęcia stron</Text>
+              <Text style={styles.toolBody}>Dodaj lub popraw materiał źródłowy.</Text>
+            </Pressable>
 
-      <View style={styles.field}>
-        <Text style={styles.fieldLabel}>Język</Text>
-        <Text style={styles.fieldValue}>{project.language === 'pl' ? 'Polski' : 'English'}</Text>
-      </View>
+            <Pressable
+              style={styles.toolCard}
+              onPress={() => router.push(`/(app)/projects/${id}/voice`)}
+            >
+              <Text style={styles.toolKicker}>Audio</Text>
+              <Text style={styles.toolTitle}>Głos i audio</Text>
+              <Text style={styles.toolBody}>
+                {project.voiceId ? project.voiceId : 'Wybierz lektora i przebuduj ścieżki.'}
+              </Text>
+            </Pressable>
 
-      <View style={styles.field}>
-        <Text style={styles.fieldLabel}>Głos lektora</Text>
-        <Text style={styles.fieldValue}>{project.voiceId || 'Nie wybrano'}</Text>
-      </View>
-
-      <View style={styles.field}>
-        <Text style={styles.fieldLabel}>Wstawka</Text>
-        <Text style={styles.fieldValue}>{project.interstitialPreset || 'Domyślna'}</Text>
-      </View>
-
-      <View style={styles.field}>
-        <Text style={styles.fieldLabel}>Utworzono</Text>
-        <Text style={styles.fieldValue}>{new Date(project.createdAt).toLocaleString('pl-PL')}</Text>
-      </View>
-
-      <View style={styles.field}>
-        <Text style={styles.fieldLabel}>Ostatnia zmiana</Text>
-        <Text style={styles.fieldValue}>{new Date(project.updatedAt).toLocaleString('pl-PL')}</Text>
-      </View>
-
-      <View style={styles.actions}>
-        <Pressable
-          style={styles.primaryBtn}
-          onPress={() => router.push(`/(app)/projects/${id}/images`)}
-        >
-          <Text style={styles.primaryBtnText}>Zdjęcia stron</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.primaryBtn}
-          onPress={() => router.push(`/(app)/projects/${id}/voice`)}
-        >
-          <Text style={styles.primaryBtnText}>Głos i audio</Text>
-        </Pressable>
-
-        <Pressable
-          style={[styles.primaryBtn, { backgroundColor: '#06d6a0' }]}
-          onPress={() => router.push(`/(app)/projects/${id}/player`)}
-        >
-          <Text style={[styles.primaryBtnText, { color: '#1a1a2e' }]}>Odtwarzacz</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.editBtn}
-          onPress={() => router.push(`/(app)/projects/${id}/sharing`)}
-        >
-          <Text style={styles.editBtnText}>Udostępnij / QR</Text>
-        </Pressable>
-
-        <Pressable style={styles.editBtn} onPress={() => router.push(`/(app)/projects/${id}/edit`)}>
-          <Text style={styles.editBtnText}>Edytuj projekt</Text>
-        </Pressable>
-
-        <Pressable style={styles.deleteBtn} onPress={handleDelete}>
-          <Text style={styles.deleteBtnText}>Usuń projekt</Text>
-        </Pressable>
-      </View>
-    </ScrollView>
+            <Pressable
+              style={styles.toolCard}
+              onPress={() => router.push(`/(app)/projects/${id}/sharing`)}
+            >
+              <Text style={styles.toolKicker}>Dostęp</Text>
+              <Text style={styles.toolTitle}>Udostępnij</Text>
+              <Text style={styles.toolBody}>Link i kod QR dla odbiorców.</Text>
+            </Pressable>
+          </View>
+        </View>
+      </ScrollView>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
-  content: { padding: 24 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1a2e' },
-  title: { fontSize: 26, fontWeight: 'bold', color: '#e0e0e0', marginBottom: 24 },
-  nextStepCard: {
-    backgroundColor: '#16213e',
+  container: { flex: 1, backgroundColor: '#101320' },
+  content: { paddingBottom: 32 },
+  emptyState: { flex: 1, backgroundColor: '#101320' },
+  headerAction: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(16, 19, 32, 0.45)',
+    marginRight: 4,
+  },
+  headerActionText: { color: '#fff', fontSize: 24, fontWeight: '700', marginTop: -8 },
+  coverHero: {
+    width: '100%',
+    overflow: 'hidden',
+    backgroundColor: '#14182a',
+  },
+  coverImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  mockCover: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+    backgroundColor: '#20233d',
+  },
+  coverOrbPrimary: {
+    position: 'absolute',
+    top: -80,
+    right: -70,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(233, 69, 96, 0.38)',
+  },
+  coverOrbSecondary: {
+    position: 'absolute',
+    bottom: 42,
+    left: -60,
+    width: 210,
+    height: 210,
+    borderRadius: 105,
+    backgroundColor: 'rgba(6, 214, 160, 0.2)',
+  },
+  coverKicker: {
+    color: '#f0a500',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: 12,
+    textTransform: 'uppercase',
+  },
+  coverTitle: {
+    color: '#fff',
+    fontSize: 34,
+    fontWeight: '800',
+    lineHeight: 40,
+    maxWidth: '78%',
+  },
+  coverSubtitle: {
+    color: '#d7e4ef',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 14,
+  },
+  coverScrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.18)',
+  },
+  coverControls: {
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    bottom: 24,
+  },
+  coverControlsTitle: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 12 },
+  playButton: {
+    backgroundColor: '#06d6a0',
     borderRadius: 18,
-    padding: 18,
-    marginBottom: 24,
+    paddingVertical: 17,
+    paddingHorizontal: 18,
+    alignItems: 'center',
+  },
+  playButtonText: { color: '#101320', fontSize: 16, fontWeight: '800' },
+  creationHeader: { padding: 24, paddingBottom: 4 },
+  title: { fontSize: 30, fontWeight: '800', color: '#fff', marginBottom: 10 },
+  statusPill: {
+    alignSelf: 'flex-start',
+    color: '#d7e4ef',
+    fontSize: 13,
+    fontWeight: '700',
+    backgroundColor: '#20233d',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 18,
+  },
+  nextStepCard: {
+    backgroundColor: '#18213d',
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#0f3460',
+    borderColor: '#29355c',
   },
   nextStepCardReady: {
     borderColor: '#06d6a0',
@@ -188,45 +351,45 @@ const styles = StyleSheet.create({
   nextStepKicker: {
     color: '#f0a500',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: 0.8,
     marginBottom: 8,
     textTransform: 'uppercase',
   },
-  nextStepTitle: { color: '#fff', fontSize: 19, fontWeight: '700', marginBottom: 8 },
+  nextStepTitle: { color: '#fff', fontSize: 20, fontWeight: '800', marginBottom: 8 },
   nextStepBody: { color: '#c9d6df', fontSize: 14, lineHeight: 20 },
   nextStepBtn: {
     backgroundColor: '#06d6a0',
-    borderRadius: 10,
-    padding: 14,
+    borderRadius: 14,
+    padding: 15,
     alignItems: 'center',
     marginTop: 16,
   },
-  nextStepBtnText: { color: '#102027', fontSize: 15, fontWeight: '700' },
-  field: { marginBottom: 16 },
-  fieldLabel: { fontSize: 13, color: '#666', marginBottom: 4 },
-  fieldValue: { fontSize: 16, color: '#e0e0e0' },
-  actions: { marginTop: 32, gap: 12 },
-  primaryBtn: {
-    backgroundColor: '#e94560',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
+  nextStepBtnText: { color: '#102027', fontSize: 15, fontWeight: '800' },
+  toolsSection: { paddingHorizontal: 24, paddingTop: 24 },
+  sectionTitle: { color: '#fff', fontSize: 19, fontWeight: '800', marginBottom: 14 },
+  toolsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
-  primaryBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  editBtn: {
-    backgroundColor: '#0f3460',
-    borderRadius: 8,
+  toolCard: {
+    width: '48%',
+    minHeight: 148,
+    backgroundColor: '#18213d',
+    borderRadius: 22,
     padding: 16,
-    alignItems: 'center',
-  },
-  editBtnText: { color: '#e0e0e0', fontSize: 16, fontWeight: '600' },
-  deleteBtn: {
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e94560',
+    borderColor: '#29355c',
   },
-  deleteBtnText: { color: '#e94560', fontSize: 16, fontWeight: '600' },
+  toolKicker: {
+    color: '#f0a500',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+    marginBottom: 18,
+  },
+  toolTitle: { color: '#fff', fontSize: 17, fontWeight: '800', marginBottom: 8 },
+  toolBody: { color: '#aebbd3', fontSize: 13, lineHeight: 18 },
 });

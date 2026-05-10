@@ -151,3 +151,12 @@ System SHALL pokazywać w zakładce „Głos i audio” listę wygenerowanych po
 
 - **WHEN** użytkownik opuszcza ekran „Głos i audio” podczas odtwarzania
 - **THEN** aplikacja zatrzymuje odtwarzanie i zwalnia zasoby `Audio.Sound`, a po powrocie na ekran nie odtwarza automatycznie poprzedniej ścieżki
+
+### Requirement: Playlista musi być spójna z wygenerowanymi ścieżkami audio
+
+System SHALL zapewniać, że playlista projektu zawiera wszystkie wygenerowane ścieżki audio dla scen o statusie `audio_done`. Jeśli po wygenerowaniu nowego audio playlista nie została jeszcze zaktualizowana, system MUST automatycznie ją przebudować przed udostępnieniem jej użytkownikowi w odtwarzaczu.
+
+#### Scenario: Pobranie playlisty po wygenerowaniu nowej ścieżki
+
+- **WHEN** użytkownik pobiera `GET /projects/:projectId/playlist`, a liczba gotowych ścieżek `AudioTrack` jest większa niż liczba pozycji `scene` w aktualnej playliście
+- **THEN** system automatycznie wywołuje logikę przebudowania playlisty i zwraca zaktualizowaną listę zawierającą nową ścieżkę

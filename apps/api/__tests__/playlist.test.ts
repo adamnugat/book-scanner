@@ -33,8 +33,14 @@ vi.mock('../src/lib/db', () => ({
     },
     textRegion: { create: vi.fn(), deleteMany: vi.fn() },
     voiceProfile: { findMany: vi.fn() },
-    audioTrack: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), delete: vi.fn() },
-    playlistItem: { create: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() },
+    audioTrack: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      delete: vi.fn(),
+      count: vi.fn(),
+    },
+    playlistItem: { create: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn(), count: vi.fn() },
     interstitialPreset: { findFirst: vi.fn(), findUnique: vi.fn() },
     $transaction: vi.fn(),
   },
@@ -223,6 +229,58 @@ describe('Playlist', () => {
       expect(res.body[2].type).toBe('scene');
       expect(res.body[2].audioUrl).toMatch(/\/projects\/proj-1\/audio-tracks\/at-2\/file\?token=/);
       expect(res.body[2].sceneText).toBe('Tekst 2');
+    });
+
+    it('automatically rebuilds playlist when new audio track is added', async () => {
+      db.audioTrack.count.mockResolvedValue(2);
+      db.playlistItem.count.mockResolvedValue(1);
+
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.scene.findMany.mockResolvedValue([scene1, scene2]);
+      db.playlistItem.deleteMany.mockResolvedValue({ count: 1 });
+      db.interstitialPreset.findFirst.mockResolvedValue(interstitial);
+
+      let order = 0;
+      db.playlistItem.create.mockImplementation(async (args) => ({
+        id: `pl-${++order}`,
+        projectId: 'proj-1',
+        type: (args as { data: { type: string } }).data.type,
+        referenceId: (args as { data: { referenceId: string } }).data.referenceId,
+        orderIndex: (args as { data: { orderIndex: number } }).data.orderIndex,
+      }));
+
+      db.playlistItem.findMany.mockResolvedValue([
+        { id: 'pl-1', projectId: 'proj-1', type: 'scene', referenceId: 'at-1', orderIndex: 0 },
+        {
+          id: 'pl-2',
+          projectId: 'proj-1',
+          type: 'interstitial',
+          referenceId: 'int-1',
+          orderIndex: 1,
+        },
+        { id: 'pl-3', projectId: 'proj-1', type: 'scene', referenceId: 'at-2', orderIndex: 2 },
+      ]);
+
+      db.audioTrack.findUnique
+        .mockResolvedValueOnce({
+          ...track1,
+          scene: { editedText: 'Poprawiony 1', ocrText: 'Tekst 1', orderIndex: 0 },
+        } as never)
+        .mockResolvedValueOnce({
+          ...track2,
+          scene: { editedText: null, ocrText: 'Tekst 2', orderIndex: 1 },
+        } as never);
+
+      db.interstitialPreset.findUnique.mockResolvedValue(interstitial);
+
+      const res = await request(app)
+        .get('/projects/proj-1/playlist')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(res.status).toBe(200);
+      expect(db.playlistItem.deleteMany).toHaveBeenCalledWith({ where: { projectId: 'proj-1' } });
+      expect(db.playlistItem.create).toHaveBeenCalledTimes(3);
+      expect(res.body).toHaveLength(3);
     });
   });
 });
