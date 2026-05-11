@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { api } from '../../../../lib/api';
+import { AudioFlowScreen } from '../../../../components/audioflow';
 
 interface ShareEntry {
   id: string;
@@ -111,14 +112,17 @@ export default function SharingScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#e94560" />
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#e94560" />
+        </View>
+      </AudioFlowScreen>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <AudioFlowScreen>
+      <View style={styles.container}>
       <Text style={styles.sectionTitle}>Udostępnij projekt</Text>
       <View style={styles.shareRow}>
         <TextInput
@@ -184,7 +188,8 @@ export default function SharingScreen() {
           )}
         </Pressable>
       )}
-    </View>
+      </View>
+    </AudioFlowScreen>
   );
 }
 

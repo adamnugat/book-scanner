@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { api } from '../../../../lib/api';
+import { AudioFlowScreen } from '../../../../components/audioflow';
 import type { SceneResponse } from '@book-scanner/shared';
 
 export default function NewProjectReviewScreen() {
@@ -79,60 +80,64 @@ export default function NewProjectReviewScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator color="#06d6a0" size="large" />
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.centered}>
+          <ActivityIndicator color="#06d6a0" size="large" />
+        </View>
+      </AudioFlowScreen>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.hero}>
-          <Text style={styles.stepLabel}>Krok 3 z 3</Text>
-          <Text style={styles.title}>Sprawdź tekst przed audio</Text>
-          <Text style={styles.subtitle}>
-            Popraw transkrypcję każdej strony. Po zatwierdzeniu powstaną osobne pliki audio.
-          </Text>
-        </View>
-
-        {scenes.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Brak scen do sprawdzenia.</Text>
+    <AudioFlowScreen>
+      <View style={styles.container}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={styles.hero}>
+            <Text style={styles.stepLabel}>Krok 3 z 3</Text>
+            <Text style={styles.title}>Sprawdź tekst przed audio</Text>
+            <Text style={styles.subtitle}>
+              Popraw transkrypcję każdej strony. Po zatwierdzeniu powstaną osobne pliki audio.
+            </Text>
           </View>
-        ) : (
-          scenes.map((scene) => (
-            <View key={scene.id} style={styles.sceneCard}>
-              <Text style={styles.sceneTitle}>Strona {scene.orderIndex + 1}</Text>
-              <TextInput
-                style={styles.textArea}
-                multiline
-                textAlignVertical="top"
-                value={drafts[scene.id] ?? ''}
-                onChangeText={(text) => updateDraft(scene.id, text)}
-              />
-            </View>
-          ))
-        )}
-      </ScrollView>
 
-      <View style={styles.bottomBar}>
-        <Pressable
-          style={[
-            styles.submitButton,
-            (submitting || scenes.length === 0) && styles.submitButtonDisabled,
-          ]}
-          onPress={handleSubmit}
-          disabled={submitting || scenes.length === 0}
-        >
-          {submitting ? (
-            <ActivityIndicator color="#101320" />
+          {scenes.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Brak scen do sprawdzenia.</Text>
+            </View>
           ) : (
-            <Text style={styles.submitButtonText}>Zatwierdź i generuj audio</Text>
+            scenes.map((scene) => (
+              <View key={scene.id} style={styles.sceneCard}>
+                <Text style={styles.sceneTitle}>Strona {scene.orderIndex + 1}</Text>
+                <TextInput
+                  style={styles.textArea}
+                  multiline
+                  textAlignVertical="top"
+                  value={drafts[scene.id] ?? ''}
+                  onChangeText={(text) => updateDraft(scene.id, text)}
+                />
+              </View>
+            ))
           )}
-        </Pressable>
+        </ScrollView>
+
+        <View style={styles.bottomBar}>
+          <Pressable
+            style={[
+              styles.submitButton,
+              (submitting || scenes.length === 0) && styles.submitButtonDisabled,
+            ]}
+            onPress={handleSubmit}
+            disabled={submitting || scenes.length === 0}
+          >
+            {submitting ? (
+              <ActivityIndicator color="#101320" />
+            ) : (
+              <Text style={styles.submitButtonText}>Zatwierdź i generuj audio</Text>
+            )}
+          </Pressable>
+        </View>
       </View>
-    </View>
+    </AudioFlowScreen>
   );
 }
 

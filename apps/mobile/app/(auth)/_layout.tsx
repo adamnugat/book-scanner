@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 
-const SCREEN_BG = '#6b4c4c';
+const SCREEN_BG = '#131316';
 
 export default function AuthLayout() {
   return (

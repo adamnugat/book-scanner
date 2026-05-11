@@ -14,6 +14,7 @@ import {
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { api } from '../../../../lib/api';
 import { PageImagePreview } from '../../../../components/PageImagePreview';
+import { AudioFlowScreen } from '../../../../components/audioflow';
 import {
   createNormalizedRegion,
   denormalizeRegion,
@@ -183,9 +184,11 @@ export default function TextRegionsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#e94560" />
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#e94560" />
+        </View>
+      </AudioFlowScreen>
     );
   }
 
@@ -210,7 +213,8 @@ export default function TextRegionsScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <AudioFlowScreen>
+      <View style={styles.container}>
       <Text style={styles.title}>Zaznacz regiony tekstu</Text>
       <Text style={styles.subtitle}>Opcjonalne - pomiń jeśli OCR ma skanować całe strony</Text>
 
@@ -335,7 +339,8 @@ export default function TextRegionsScreen() {
           )}
         </Pressable>
       </View>
-    </View>
+      </View>
+    </AudioFlowScreen>
   );
 }
 

@@ -45,7 +45,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreen variant="login">
       <View style={styles.container}>
         <Text style={styles.title}>Utwórz konto</Text>
 

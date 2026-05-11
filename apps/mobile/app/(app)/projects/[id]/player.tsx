@@ -13,6 +13,7 @@ import { Audio } from 'expo-av';
 import { api } from '../../../../lib/api';
 import { offlineCache } from '../../../../lib/offline-cache';
 import { useNetwork } from '../../../../lib/use-network';
+import { AudioFlowScreen } from '../../../../components/audioflow';
 import type { PlaylistItemResponse } from '@book-scanner/shared';
 
 export default function PlayerScreen() {
@@ -214,22 +215,27 @@ export default function PlayerScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#e94560" />
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#e94560" />
+        </View>
+      </AudioFlowScreen>
     );
   }
 
   if (playlist.length === 0) {
     return (
-      <View style={styles.centered}>
-        <Text style={styles.emptyText}>Brak audio. Wygeneruj audio ze scen.</Text>
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.centered}>
+          <Text style={styles.emptyText}>Brak audio. Wygeneruj audio ze scen.</Text>
+        </View>
+      </AudioFlowScreen>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <AudioFlowScreen>
+      <View style={styles.container}>
       {(isOfflineMode || !isOnline) && (
         <View style={styles.offlineBanner}>
           <Text style={styles.offlineBannerText}>
@@ -333,7 +339,8 @@ export default function PlayerScreen() {
         }}
         contentContainerStyle={styles.trackList}
       />
-    </View>
+      </View>
+    </AudioFlowScreen>
   );
 }
 

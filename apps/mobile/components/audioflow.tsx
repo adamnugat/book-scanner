@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -97,18 +98,25 @@ interface AudioFlowScreenProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   testID?: string;
+  variant?: 'login' | 'dimmed';
 }
 
 export function AudioFlowScreen({
   children,
   style,
   testID = 'audioflow-screen',
+  variant = 'dimmed',
 }: AudioFlowScreenProps) {
   return (
     <View style={[styles.screen, style]} testID={testID}>
-      <View pointerEvents="none" style={[styles.ambientOrb, styles.ambientOrbTop]} />
-      <View pointerEvents="none" style={[styles.ambientOrb, styles.ambientOrbRight]} />
-      <View pointerEvents="none" style={[styles.ambientOrb, styles.ambientOrbLeft]} />
+      <Image
+        source={require('../assets/images/background.jpg')}
+        style={[
+          StyleSheet.absoluteFill,
+          { opacity: variant === 'login' ? 1 : 0.3, width: '100%', height: '100%' },
+        ]}
+        resizeMode="cover"
+      />
       {children}
     </View>
   );
@@ -226,7 +234,7 @@ export function PickerCard({
   return (
     <Pressable
       accessibilityRole="radio"
-      accessibilityState={{ checked: selected, disabled }}
+      accessibilityState={{ checked: selected, disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}
       testID={testID}
@@ -701,34 +709,8 @@ export const audioFlowStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: t.color.background.heroBase,
+    backgroundColor: '#131316',
     overflow: 'hidden',
-  },
-  ambientOrb: {
-    position: 'absolute',
-    borderRadius: t.radius.full,
-    opacity: 0.68,
-  },
-  ambientOrbTop: {
-    top: -140,
-    alignSelf: 'center',
-    width: 360,
-    height: 300,
-    backgroundColor: t.color.background.roseBloom,
-  },
-  ambientOrbRight: {
-    right: -120,
-    bottom: -90,
-    width: 280,
-    height: 280,
-    backgroundColor: t.color.background.mauveBloom,
-  },
-  ambientOrbLeft: {
-    left: -120,
-    bottom: -120,
-    width: 280,
-    height: 280,
-    backgroundColor: t.color.background.deepRoseBloom,
   },
   glassPanel: {
     backgroundColor: t.color.surface.glass,

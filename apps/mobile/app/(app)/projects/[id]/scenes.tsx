@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { api } from '../../../../lib/api';
+import { AudioFlowScreen } from '../../../../components/audioflow';
 import type { SceneResponse } from '@book-scanner/shared';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -119,14 +120,17 @@ export default function ScenesScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#e94560" />
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#e94560" />
+        </View>
+      </AudioFlowScreen>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <AudioFlowScreen>
+      <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Sceny ({scenes.length})</Text>
         {hasPending && (
@@ -169,7 +173,8 @@ export default function ScenesScreen() {
           )}
         </>
       )}
-    </View>
+      </View>
+    </AudioFlowScreen>
   );
 }
 

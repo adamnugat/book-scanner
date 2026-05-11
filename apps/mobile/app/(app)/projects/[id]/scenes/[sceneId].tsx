@@ -15,6 +15,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { api } from '../../../../../lib/api';
 import { useToast } from '../../../../../components/Toast';
 import { PageImagePreview } from '../../../../../components/PageImagePreview';
+import { AudioFlowScreen } from '../../../../../components/audioflow';
 import type { SceneResponse } from '@book-scanner/shared';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -127,9 +128,11 @@ export default function SceneEditorScreen() {
 
   if (loading || !scene) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#e94560" />
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#e94560" />
+        </View>
+      </AudioFlowScreen>
     );
   }
 
@@ -194,7 +197,8 @@ export default function SceneEditorScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <AudioFlowScreen>
+      <View style={styles.container}>
       {isDesktop ? (
         <View style={styles.desktopLayout}>
           <ScrollView style={styles.sidePanel}>
@@ -246,7 +250,8 @@ export default function SceneEditorScreen() {
           </Text>
         </Pressable>
       </View>
-    </View>
+      </View>
+    </AudioFlowScreen>
   );
 }
 

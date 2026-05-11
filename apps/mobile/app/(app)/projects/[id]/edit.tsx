@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { api } from '../../../../lib/api';
+import { AudioFlowScreen } from '../../../../components/audioflow';
 import type { SupportedLanguage } from '@book-scanner/shared';
 
 export default function EditProjectScreen() {
@@ -53,47 +54,51 @@ export default function EditProjectScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#e94560" />
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#e94560" />
+        </View>
+      </AudioFlowScreen>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Edytuj projekt</Text>
+    <AudioFlowScreen>
+      <View style={styles.container}>
+        <Text style={styles.heading}>Edytuj projekt</Text>
 
-      <Text style={styles.label}>Tytuł</Text>
-      <TextInput
-        style={styles.input}
-        value={title}
-        onChangeText={setTitle}
-        placeholderTextColor="#666"
-      />
+        <Text style={styles.label}>Tytuł</Text>
+        <TextInput
+          style={styles.input}
+          value={title}
+          onChangeText={setTitle}
+          placeholderTextColor="#666"
+        />
 
-      <Text style={styles.label}>Język</Text>
-      <View style={styles.langRow}>
-        {(['pl', 'en'] as const).map((lang) => (
-          <Pressable
-            key={lang}
-            style={[styles.langBtn, language === lang && styles.langBtnActive]}
-            onPress={() => setLanguage(lang)}
-          >
-            <Text style={[styles.langText, language === lang && styles.langTextActive]}>
-              {lang === 'pl' ? 'Polski' : 'English'}
-            </Text>
-          </Pressable>
-        ))}
+        <Text style={styles.label}>Język</Text>
+        <View style={styles.langRow}>
+          {(['pl', 'en'] as const).map((lang) => (
+            <Pressable
+              key={lang}
+              style={[styles.langBtn, language === lang && styles.langBtnActive]}
+              onPress={() => setLanguage(lang)}
+            >
+              <Text style={[styles.langText, language === lang && styles.langTextActive]}>
+                {lang === 'pl' ? 'Polski' : 'English'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <Pressable style={styles.button} onPress={handleSave} disabled={saving}>
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Zapisz zmiany</Text>
+          )}
+        </Pressable>
       </View>
-
-      <Pressable style={styles.button} onPress={handleSave} disabled={saving}>
-        {saving ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Zapisz zmiany</Text>
-        )}
-      </Pressable>
-    </View>
+    </AudioFlowScreen>
   );
 }
 

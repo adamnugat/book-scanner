@@ -12,6 +12,7 @@ import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import { api } from '../../../../lib/api';
 import { offlineCache } from '../../../../lib/offline-cache';
+import { AudioFlowScreen } from '../../../../components/audioflow';
 import type {
   AudioTrackResponse,
   ProjectResponse,
@@ -283,14 +284,17 @@ export default function VoiceSelectScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#e94560" />
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#e94560" />
+        </View>
+      </AudioFlowScreen>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <AudioFlowScreen>
+      <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Głos i audio</Text>
         <Text style={styles.subtitle}>
@@ -371,7 +375,8 @@ export default function VoiceSelectScreen() {
           )}
         </Pressable>
       </View>
-    </View>
+      </View>
+    </AudioFlowScreen>
   );
 }
 

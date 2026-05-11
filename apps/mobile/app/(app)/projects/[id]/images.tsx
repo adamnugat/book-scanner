@@ -15,6 +15,7 @@ import { api } from '../../../../lib/api';
 import { uploadFileFromImagePickerAsset } from '../../../../lib/image-upload';
 import { useToast } from '../../../../components/Toast';
 import { PageImagePreview } from '../../../../components/PageImagePreview';
+import { AudioFlowScreen } from '../../../../components/audioflow';
 import type { PageImageResponse } from '@book-scanner/shared';
 
 interface FileProgress {
@@ -226,9 +227,11 @@ export default function ProjectImagesScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#e94560" />
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#e94560" />
+        </View>
+      </AudioFlowScreen>
     );
   }
 
@@ -245,7 +248,8 @@ export default function ProjectImagesScreen() {
       : {};
 
   return (
-    <View style={styles.container} ref={dropRef} {...dropZoneProps}>
+    <AudioFlowScreen>
+      <View style={styles.container} ref={dropRef} {...dropZoneProps}>
       <View style={styles.header}>
         <Text style={styles.title}>Zdjęcia stron ({images.length})</Text>
       </View>
@@ -370,7 +374,8 @@ export default function ProjectImagesScreen() {
           </Pressable>
         )}
       </View>
-    </View>
+      </View>
+    </AudioFlowScreen>
   );
 }
 
