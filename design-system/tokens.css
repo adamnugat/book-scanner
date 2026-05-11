@@ -1,0 +1,101 @@
+/* AudioFlow — Design tokens as CSS custom properties.
+   Drop into the :root of any view to inherit the system. */
+
+:root {
+  /* ---------- Color: background ---------- */
+  --bg-hero-base: #6b4c4c;
+  --bg-surface-muted: #1b1b1e;
+  --bg-deep-1: #2a1a1d;
+  --bg-deep-2: #150b10;
+
+  --bg-hero-image:
+    radial-gradient(circle at 50% 0%,   rgba(204,153,153,0.5) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(179,128,128,0.4) 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%,   rgba(153,102,102,0.5) 0%, transparent 50%);
+
+  /* ---------- Color: glass surfaces ---------- */
+  --surface-glass:        rgba(45, 30, 30, 0.45);
+  --surface-glass-muted:  rgba(45, 30, 30, 0.35);
+  --surface-glass-light:  rgba(255, 255, 255, 0.06);
+  --surface-glass-lighter:rgba(255, 255, 255, 0.08);
+  --surface-glass-hover:  rgba(255, 255, 255, 0.12);
+  --glass-edge:           rgba(15, 10, 11, 0.6);
+
+  /* ---------- Color: pearl accent ---------- */
+  --pearl:               #F0EAD6;
+  --pearl-bright:        #FBFCF8;
+  --pearl-grad:          linear-gradient(135deg, #F0EAD6 0%, #FBFCF8 50%, #F0EAD6 100%);
+  --pearl-glow:          rgba(240, 234, 214, 0.40);
+  --pearl-glow-strong:   rgba(240, 234, 214, 0.85);
+  --pearl-border:        rgba(240, 234, 214, 0.55);
+  --pearl-tint:          rgba(240, 234, 214, 0.10);
+
+  /* secondary accents (used inside cover-art only) */
+  --accent-pink:  rgba(255, 177, 200, 0.45);
+  --accent-green: rgba(139, 168, 142, 0.30);
+
+  /* ---------- Color: text ---------- */
+  --text-on-dark:           #ffffff;
+  --text-on-pearl:          #131316;
+  --text-on-surface-subtle: #d4c0d7;
+  --text-on-surface-muted:  rgba(255, 255, 255, 0.6);
+
+  /* ---------- Type ---------- */
+  --font-headline: "Quicksand", system-ui, sans-serif;
+  --font-body:     "Varela Round", system-ui, sans-serif;
+  --font-mono:     ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-icon:     "Material Symbols Outlined";
+
+  --fs-headline-lg: 32px; --lh-headline-lg: 40px;
+  --fs-headline-md: 24px; --lh-headline-md: 32px;
+  --fs-body-lg:     18px; --lh-body-lg:     28px;
+  --fs-body-md:     16px; --lh-body-md:     24px;
+  --fs-label-md:    14px; --lh-label-md:    20px;
+  --fs-label-sm:    12px; --lh-label-sm:    16px;
+
+  --tracking-eyebrow: 0.18em;
+  --tracking-status:  0.14em;
+  --shadow-glow-text: 0 0 12px rgba(255,255,255,0.30);
+
+  /* ---------- Spacing ---------- */
+  --stack-sm:      8px;
+  --stack-md:     16px;
+  --stack-lg:     32px;
+  --section-gap:  48px;
+  --gutter-mobile:16px;
+  --margin-mobile:20px;
+
+  /* ---------- Radius ---------- */
+  --r-sm:    0.25rem;
+  --r-md:    0.5rem;
+  --r-lg:    0.75rem;
+  --r-card:  16px;
+  --r-panel: 24px;
+  --r-full:  9999px;
+
+  /* ---------- Elevation ---------- */
+  --e-pearl-cta:        0 4px 20px rgba(240, 234, 214, 0.40);
+  --e-pearl-glow:       0 0 12px rgba(240, 234, 214, 0.90);
+  --e-pearl-soft:       0 0 22px rgba(240, 234, 214, 0.18);
+  --e-nav-shadow:       0 -4px 20px rgba(0, 0, 0, 0.20);
+  --e-inset-highlight:  inset 1px 1px 0 rgba(255, 255, 255, 0.10);
+  --e-inset-highlight-faint: inset 1px 1px 0 rgba(255, 255, 255, 0.08);
+
+  /* ---------- Blur / motion ---------- */
+  --blur-glass: 3px;
+  --dur-fast:  120ms;
+  --dur-base:  200ms;
+  --dur-slow:  220ms;
+  --dur-pulse: 2400ms;
+
+  /* ---------- Layout ---------- */
+  --app-max-width: 480px;
+  --topbar-h:  56px;
+  --bottomnav-h: 64px;
+  --fab-size: 56px;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 4px 24px rgba(240, 234, 214, 0.45); }
+  50%      { box-shadow: 0 4px 36px rgba(240, 234, 214, 0.85); }
+}

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AudioFlow - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&amp;family=Varela+Round&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "glass-surface": "rgba(45, 30, 30, 0.45)",
+                "surface-muted": "#1b1b1e",
+                "on-surface-subtle": "#d4c0d7",
+                "accent-glow": "#F0EAD6",
+                "glass-edge": "rgba(15, 10, 11, 0.6)"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "gutter-mobile": "16px",
+                "stack-sm": "8px",
+                "section-gap": "48px",
+                "margin-mobile": "20px",
+                "stack-md": "16px",
+                "stack-lg": "32px"
+        },
+        "fontFamily": {
+                "label-md": [
+                        "Varela Round"
+                ],
+                "headline-md": [
+                        "Quicksand"
+                ],
+                "label-sm": [
+                        "Varela Round"
+                ],
+                "body-md": [
+                        "Varela Round"
+                ],
+                "headline-lg": [
+                        "Quicksand"
+                ],
+                "body-lg": [
+                        "Varela Round"
+                ]
+        },
+        "fontSize": {
+                "label-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "fontWeight": "500"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ]
+        }
+},
+    },
+  }</script>
+<style>
+        .bg-login-hero {
+            background-image: radial-gradient(circle at 50% 0%, rgba(204, 153, 153, 0.5) 0%, transparent 60%),
+                              radial-gradient(circle at 100% 100%, rgba(179, 128, 128, 0.4) 0%, transparent 50%),
+                              radial-gradient(circle at 0% 100%, rgba(153, 102, 102, 0.5) 0%, transparent 50%);
+            background-color: #6b4c4c;
+        }
+        .glass-panel {
+            background: rgba(45, 30, 30, 0.45);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            border: 1px solid rgba(15, 10, 11, 0.6);
+            box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        .pearl-outline {
+            border: 1px solid rgba(240, 234, 214, 0.3);
+            background: transparent;
+        }
+        .glow-accent {
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="text-on-surface-subtle min-h-screen flex flex-col relative bg-login-hero overflow-x-hidden pb-24">
+<!-- Ambient Abstract Background Image -->
+<div class="fixed inset-0 z-0 opacity-40 mix-blend-screen pointer-events-none" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3uaDkojqCjCJ3gq00umcI-SEzCjvKGI1qUQ-dzDzaZ2MSt-3uKUlnxjcqCMOXq1iDdmgXGDtQcebOxr2Rhhc_h4ACbrpdy26WELUuHGWd1cdArIoQPQAnH3wbh8WQD9pPQMasQ3L1PYCdtKYGg_R4GutGVQe-_k6CxP-6G8GMXOwXqCJ1zElnT0g0GEFbSK7cRQ1WZzd5WGUhnUxymq84zBlmSquM0FIu3KKwWX5yUlL36fbkdbB2Fn_vfvPxpTz_yU7p5f3Q1ev0'); background-size: cover; background-position: center;">
+</div>
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-margin-mobile py-4 fixed top-0 z-50 bg-transparent max-w-[480px] left-1/2 -translate-x-1/2">
+  <div class="w-10 h-10" aria-hidden="true"></div>
+  <div class="flex items-center gap-2">
+    <span class="material-symbols-outlined text-[28px] text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">graphic_eq</span>
+    <div class="text-label-md font-label-md text-white tracking-tight">AudioFlow</div>
+  </div>
+  <button class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+    <span class="material-symbols-outlined">more_vert</span>
+  </button>
+</header>
+<!-- Main Content Canvas -->
+<main class="relative z-10 flex-1 w-full max-w-[480px] mx-auto px-margin-mobile pt-24 pb-section-gap flex flex-col gap-section-gap">
+<!-- Welcome Section -->
+<section class="flex flex-col gap-stack-sm mt-4 text-center items-center">
+<h1 class="text-headline-lg font-headline-lg text-white inline-block drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">Witaj ponownie, Alex</h1>
+<p class="text-body-md font-body-md text-on-surface-subtle">Wygenerowałeś 12 audiobooków. Łączny czas słuchania to 42 godziny.</p>
+</section><div class="glass-panel rounded-[24px] p-3 flex items-center gap-4 relative overflow-hidden transition-all duration-300 w-full">
+<div class="absolute bottom-0 left-0 w-full h-[2px] bg-white/10">
+<div class="h-full bg-[#F0EAD6] w-[45%] shadow-[0_0_8px_rgba(240,234,214,0.8)]"></div>
+</div>
+<div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+<img alt="Playing Cover" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7tMbAc4Nn0Vo-nuO1-ODGo1WELMT0DpR6-UO_3E4aPMtYHpo0-3kbLGq38duv1bCBlLx1MEHJjffqkwDTR96hStKCO8MDPV0m3BX5LdRGOmTk2jUAvbCH0oWjrH3rfZTlBytlYYaFkVqRuOJ2K3jAU9zhiU98P7t_VJfG74KDKDUnFfG9Bp8U9iHJX7Uz6ALYOpjXvORCEj7PTf18DI5cgEWODIMGH8hi3_1dsdQDC_modAAQH7_ZNgJRD4Y1VaSBTI-3S5M_k_SI"/>
+</div>
+<div class="flex-1 min-w-0">
+<p class="text-label-sm font-label-sm text-on-surface-subtle uppercase tracking-wider mb-0.5 truncate">Ostatnio odtwarzane</p>
+<p class="text-label-md font-label-md text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] truncate">Ethereal Echoes - Rozdział 4</p>
+</div>
+<button class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 text-white hover:bg-white hover:text-black transition-colors border border-[rgba(15,10,11,0.6)]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<!-- Quick Stats -->
+<section class="flex flex-col gap-stack-md">
+<div class="flex justify-between items-center mb-2">
+<h2 class="text-headline-md font-headline-md text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">Twoje Projekty</h2>
+<button class="text-label-sm font-label-sm text-on-surface-subtle hover:text-white transition-colors px-4 py-1.5 rounded-full bg-white/25 hover:bg-white/40">Zobacz wszystkie</button>
+</div>
+<div class="flex flex-col gap-stack-md">
+<div class="glass-panel rounded-[24px] overflow-hidden flex items-stretch h-24 relative group cursor-pointer transition-all duration-300">
+<div class="w-32 h-full flex-shrink-0 relative overflow-hidden">
+<div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-10"></div>
+<img alt="Ethereal Echoes Cover" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfKV43Ed24cDQGO46AyWIWQ8JHuZGJm6edDzekrLUxas6MILQEGauNIkm07epZLMUsnAkP15Gr-rrvX8k49IPvUHhJUvPURPxxZJuUX7OWs-WU8Np41hmnuNUdy5cGQlGWzyixwdbUcYyMWRhxhbzMqGJf_NBufvufd6-MGVWkqUeAcguf_RBm746z6Cn5YgO4cXkTkGHW6R5M7DXQxIxk4eMvGd9GQhi8AwPN2VBXqNq5pN7h6OnadMu6r7NxTFifvqg_k03-gn7v"/>
+</div>
+<div class="flex-1 p-4 flex flex-col justify-between">
+<div>
+<h3 class="text-label-md font-label-md text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] mb-1">Ethereal Echoes</h3>
+<p class="text-label-sm font-label-sm text-on-surface-subtle">Rozdział 4: Rezonans</p>
+</div>
+<div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#F0EAD6] h-full rounded-full w-[45%] shadow-[0_0_8px_rgba(240,234,214,0.5)]"></div>
+</div>
+</div>
+</div>
+<div class="glass-panel rounded-[24px] overflow-hidden flex items-stretch h-24 relative group cursor-pointer transition-all duration-300">
+<div class="w-32 h-full flex-shrink-0 relative overflow-hidden">
+<div class="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors z-10"></div>
+<img alt="Neon Nights Cover" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCv03FUMStTi2XxxKHKQEi3fpX5GOQT8sPhnaJjzgTfOxbDsDZa-P-1smq4RdRCKAAYLYBq6o1KIc1B6AXk2xO1T48sl7MFpf7wARc7ffq9e5cqpoLd-UN9naAI-N--NKehh8h1QMJO2DudY-mnE0a0KiQmlscccUeZPNf5JqcyToZYt8dN5T-Upek-e7JSBU9QtiLzb24kDlu-xjIK6HJOP0CFEViw1A4fG5Rn2iPB04ZJedOKqey14IDCYtQuCuuKN5Yg_SXmBh2w"/>
+</div>
+<div class="flex-1 p-4 flex flex-col justify-between">
+<div>
+<h3 class="text-label-md font-label-md text-white drop-shadow-[0_0_10_rgba(255,255,255,0.3)] mb-1">Neonowe Noce</h3>
+<p class="text-label-sm font-label-sm text-on-surface-subtle">Wstęp</p>
+</div>
+<div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#F0EAD6] h-full rounded-full w-[10%] shadow-[0_0_8px_rgba(240,234,214,0.5)]"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Main Section: Projects -->
+<!-- Action Button -->
+</main>
+<!-- Persistent Mini Player -->
+<!-- BottomNavBar -->
+<nav class="glass-panel fixed bottom-0 w-full z-50 rounded-t-[24px] border-t-0 border-b-0 border-x-0 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] flex justify-around items-center h-16 w-full max-w-[480px] left-1/2 -translate-x-1/2"><a href="Dashboard.html" class="flex flex-col items-center justify-center text-white transition-colors group w-20">
+<span class="material-symbols-outlined mb-1 transition-transform group-active:scale-90" style="font-variation-settings: 'FILL' 1;">library_books</span>
+<span class="text-label-sm font-label-sm">Biblioteka</span>
+</a>
+<div class="relative -top-6">
+<a href="New Project.html" class="bg-[#F0EAD6] text-[#131316] rounded-full w-14 h-14 flex items-center justify-center shadow-[0_4px_20px_rgba(240,234,214,0.4)] active:scale-95 transition-all" style="background: linear-gradient(135deg, #F0EAD6 0%, #FBFCF8 50%, #F0EAD6 100%);" aria-label="Nowy projekt">
+<span class="material-symbols-outlined text-3xl">add</span>
+</a>
+</div>
+<a href="Project Details.html" class="flex flex-col items-center justify-center text-on-surface-subtle hover:text-white transition-colors group w-20">
+<span class="material-symbols-outlined mb-1 transition-transform group-active:scale-90">play_circle</span>
+<span class="text-label-sm font-label-sm">Odtwarzacz</span>
+</a></nav>
+</body></html>

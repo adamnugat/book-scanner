@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html class="dark" lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>AudioFlow — Szczegóły projektu</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&amp;family=Varela+Round&amp;display=swap" rel="stylesheet" />
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "glass-surface": "rgba(45, 30, 30, 0.45)",
+          "surface-muted": "#1b1b1e",
+          "on-surface-subtle": "#d4c0d7",
+          "accent-glow": "#F0EAD6",
+                "glass-edge": "rgba(15, 10, 11, 0.6)",
+        },
+        borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+        spacing: {
+          "gutter-mobile": "16px",
+          "stack-sm": "8px",
+          "stack-md": "16px",
+          "stack-lg": "32px",
+          "section-gap": "48px",
+          "margin-mobile": "20px",
+        },
+        fontFamily: {
+          "headline-lg": ["Quicksand"],
+          "headline-md": ["Quicksand"],
+          "body-lg": ["Varela Round"],
+          "body-md": ["Varela Round"],
+          "label-md": ["Varela Round"],
+          "label-sm": ["Varela Round"],
+        },
+        fontSize: {
+          "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+          "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+          "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+          "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+          "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+          "label-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+        },
+      },
+    },
+  };
+</script>
+<style>
+  body { min-height: max(884px, 100dvh); }
+
+  .bg-login-hero {
+    background-image:
+      radial-gradient(circle at 50% 0%, rgba(204, 153, 153, 0.5) 0%, transparent 60%),
+      radial-gradient(circle at 100% 100%, rgba(179, 128, 128, 0.4) 0%, transparent 50%),
+      radial-gradient(circle at 0% 100%, rgba(153, 102, 102, 0.5) 0%, transparent 50%);
+    background-color: #6b4c4c;
+  }
+  .glass-panel {
+    background: rgba(45, 30, 30, 0.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  .glass-panel-light {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  .glow-text { text-shadow: 0 0 12px rgba(255, 255, 255, 0.3); }
+
+  /* Cover dark gradient overlay so text is legible */
+  .cover-overlay {
+    background:
+      linear-gradient(180deg, rgba(20,10,10,0.0) 0%, rgba(20,10,10,0.25) 35%, rgba(20,10,10,0.85) 100%);
+  }
+
+  /* Range slider styling for the progress bar */
+  input[type="range"].progress {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to right,
+      #F0EAD6 0%,
+      #F0EAD6 var(--p, 35%),
+      rgba(255, 255, 255, 0.15) var(--p, 35%),
+      rgba(255, 255, 255, 0.15) 100%
+    );
+    box-shadow: 0 0 8px rgba(240, 234, 214, 0.35);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"].progress::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: #F0EAD6;
+    box-shadow: 0 0 12px rgba(240, 234, 214, 0.9);
+    border: 2px solid #fff;
+    cursor: pointer;
+  }
+  input[type="range"].progress::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: #F0EAD6;
+    box-shadow: 0 0 12px rgba(240, 234, 214, 0.9);
+    border: 2px solid #fff;
+    cursor: pointer;
+  }
+
+  /* Subtle "live" pulse on play */
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 4px 24px rgba(240, 234, 214, 0.45); }
+    50%      { box-shadow: 0 4px 36px rgba(240, 234, 214, 0.85); }
+  }
+  .play-pulse { animation: pulseGlow 2.4s ease-in-out infinite; }
+
+  /* Tool tile hover */
+  .tool-tile { transition: transform 220ms ease, background 220ms ease, border-color 220ms ease; }
+  .tool-tile:hover { transform: translateY(-2px); border-color: rgba(240, 234, 214, 0.45); }
+  .tool-tile:active { transform: translateY(0); }
+
+  /* Status pill */
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 9999px;
+    background: #F0EAD6;
+    box-shadow: 0 0 10px rgba(240, 234, 214, 0.9);
+    animation: pulseGlow 2.4s ease-in-out infinite;
+  }
+
+  /* Cover placeholder visual — abstract sound-wave-ish layered bands */
+  .cover-art {
+    background:
+      radial-gradient(120% 80% at 30% 20%, rgba(240, 234, 214, 0.35) 0%, transparent 55%),
+      radial-gradient(80% 60% at 80% 90%, rgba(255, 177, 200, 0.35) 0%, transparent 60%),
+      radial-gradient(60% 50% at 50% 60%, rgba(139, 168, 142, 0.30) 0%, transparent 60%),
+      linear-gradient(180deg, #2a1a1d 0%, #150b10 100%);
+  }
+  .cover-art::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(
+      115deg,
+      rgba(255, 255, 255, 0.05) 0px,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 7px
+    );
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body class="text-on-surface-subtle min-h-screen flex flex-col relative bg-login-hero overflow-x-hidden pb-24">
+
+<!-- Ambient Abstract Background Image -->
+<div class="fixed inset-0 z-0 opacity-40 mix-blend-screen pointer-events-none"
+     style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3uaDkojqCjCJ3gq00umcI-SEzCjvKGI1qUQ-dzDzaZ2MSt-3uKUlnxjcqCMOXq1iDdmgXGDtQcebOxr2Rhhc_h4ACbrpdy26WELUuHGWd1cdArIoQPQAnH3wbh8WQD9pPQMasQ3L1PYCdtKYGg_R4GutGVQe-_k6CxP-6G8GMXOwXqCJ1zElnT0g0GEFbSK7cRQ1WZzd5WGUhnUxymq84zBlmSquM0FIu3KKwWX5yUlL36fbkdbB2Fn_vfvPxpTz_yU7p5f3Q1ev0'); background-size: cover; background-position: center;">
+</div>
+
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-margin-mobile py-4 fixed top-0 z-50 bg-transparent max-w-[480px] left-1/2 -translate-x-1/2">
+  <button id="back-btn"
+    class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+    <span class="material-symbols-outlined">arrow_back</span>
+  </button>
+  <div class="text-label-md font-label-md text-on-surface-subtle uppercase tracking-[0.18em]">Projekt</div>
+  <button class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+    <span class="material-symbols-outlined">more_vert</span>
+  </button>
+</header>
+
+<!-- Main column -->
+<main class="relative z-10 flex-1 w-full max-w-[480px] mx-auto flex flex-col">
+
+  <!-- ===== COVER (top half) ===== -->
+  <section class="relative w-full overflow-hidden rounded-b-[24px]" style="height: 50vh; min-height: 442px;">
+    <!-- Cover artwork -->
+    <div class="cover-art absolute inset-0 overflow-hidden rounded-b-[24px]">
+      <!-- Abstract decorative SVG waves -->
+      <svg class="absolute inset-0 w-full h-full opacity-70" viewBox="0 0 480 460" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#F0EAD6" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="#F0EAD6" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="g2" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#ffb1c8" stop-opacity="0.0"/>
+            <stop offset="50%" stop-color="#ffb1c8" stop-opacity="0.45"/>
+            <stop offset="100%" stop-color="#ffb1c8" stop-opacity="0.0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,180 C120,120 200,260 320,200 C400,160 440,240 480,210 L480,300 L0,300 Z" fill="url(#g1)"/>
+        <path d="M0,250 C100,200 220,310 340,250 C420,210 460,290 480,270 L480,360 L0,360 Z" fill="url(#g2)" opacity="0.7"/>
+        <g stroke="rgba(255,255,255,0.18)" stroke-width="1" fill="none">
+          <circle cx="360" cy="120" r="60"/>
+          <circle cx="360" cy="120" r="90"/>
+          <circle cx="360" cy="120" r="120"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Bottom-up dark gradient for legibility -->
+    <div class="cover-overlay absolute inset-0 pointer-events-none"></div>
+
+    <!-- Content overlaid on cover -->
+    <div class="absolute inset-x-0 bottom-0 px-margin-mobile pb-stack-lg pt-margin-mobile flex flex-col gap-stack-md">
+
+      <!-- Status + pages meta row -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-full glass-panel-light">
+          <span class="status-dot"></span>
+          <span class="text-label-sm font-label-sm uppercase tracking-[0.14em] text-white">W trakcie nagrywania</span>
+        </div>
+        <div class="flex items-center gap-1.5 text-on-surface-subtle">
+          <span class="material-symbols-outlined text-[18px]">menu_book</span>
+          <span class="text-label-md font-label-md">248 stron</span>
+        </div>
+      </div>
+
+      <!-- Title + author -->
+      <div class="flex flex-col gap-1">
+        <p class="text-label-sm font-label-sm uppercase tracking-[0.18em] text-on-surface-subtle">Audiobook</p>
+        <h1 class="text-headline-lg font-headline-lg text-white glow-text leading-tight">
+          Cisza między <br/>akapitami
+        </h1>
+        <p class="text-body-md font-body-md text-on-surface-subtle">Lektor: Maja — spokojna • Wstawka: Pianino nocą</p>
+      </div>
+
+      <!-- Player -->
+      <div class="glass-panel rounded-[24px] p-stack-md flex flex-col gap-stack-sm">
+
+        <!-- Progress bar + numeric range thumb -->
+        <input id="progress" type="range" min="0" max="100" value="35"
+               class="progress w-full" style="--p:35%;" aria-label="Postęp odtwarzania" />
+
+        <!-- Time row -->
+        <div class="flex items-center justify-between -mt-1">
+          <span id="time-current" class="text-label-sm font-label-sm font-mono text-white">01:14:22</span>
+          <span id="time-total"   class="text-label-sm font-label-sm font-mono text-on-surface-subtle">03:32:05</span>
+        </div>
+
+        <!-- Transport controls -->
+        <div class="flex items-center justify-between mt-1">
+          <!-- prev chapter -->
+          <button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-subtle hover:text-white hover:bg-white/10 transition"
+                  aria-label="Poprzedni rozdział">
+            <span class="material-symbols-outlined">skip_previous</span>
+          </button>
+
+          <!-- skip back 10s -->
+          <button id="skip-back" class="relative w-12 h-12 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition"
+                  aria-label="Cofnij 10 sekund">
+            <span class="material-symbols-outlined text-[34px]">replay_10</span>
+          </button>
+
+          <!-- play / pause -->
+          <button id="play-btn"
+                  class="w-16 h-16 rounded-full flex items-center justify-center text-[#131316] play-pulse active:scale-95 transition"
+                  style="background: linear-gradient(135deg, #F0EAD6 0%, #FBFCF8 50%, #F0EAD6 100%);"
+                  aria-label="Odtwarzaj / pauza">
+            <span id="play-icon" class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+          </button>
+
+          <!-- skip forward 10s -->
+          <button id="skip-fwd" class="relative w-12 h-12 rounded-full flex items-center justify-center text-white hover:bg-white/10 transition"
+                  aria-label="Do przodu 10 sekund">
+            <span class="material-symbols-outlined text-[34px]">forward_10</span>
+          </button>
+
+          <!-- next chapter -->
+          <button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-subtle hover:text-white hover:bg-white/10 transition"
+                  aria-label="Następny rozdział">
+            <span class="material-symbols-outlined">skip_next</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== TOOLS (bottom half) ===== -->
+  <section class="px-margin-mobile pt-stack-lg pb-stack-lg flex flex-col gap-stack-md">
+    <div class="flex items-baseline justify-between">
+      <h2 class="text-headline-md font-headline-md text-white glow-text">Narzędzia projektu</h2>
+      <span class="text-label-sm font-label-sm text-on-surface-subtle">4 dostępne</span>
+    </div>
+
+    <div class="grid grid-cols-2 gap-stack-md">
+
+      <!-- Tile: Page photos -->
+      <a href="Page Photos.html" class="tool-tile glass-panel rounded-[24px] p-stack-md aspect-square flex flex-col justify-between text-left">
+        <div class="flex items-center justify-between">
+          <span class="w-11 h-11 rounded-xl flex items-center justify-center bg-white/8 border border-[rgba(15,10,11,0.6)]">
+            <span class="material-symbols-outlined text-[#F0EAD6]" style="font-variation-settings: 'FILL' 0;">photo_library</span>
+          </span>
+          <span class="text-label-sm font-label-sm font-mono text-on-surface-subtle">248</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <h3 class="text-label-md font-label-md text-white">Zdjęcia stron</h3>
+          <p class="text-label-sm font-label-sm text-on-surface-subtle leading-snug">Skanuj, kadruj i porządkuj strony książki.</p>
+        </div>
+      </a>
+
+      <!-- Tile: Voice & audio -->
+      <a href="Voice and Audio.html" class="tool-tile glass-panel rounded-[24px] p-stack-md aspect-square flex flex-col justify-between text-left">
+        <div class="flex items-center justify-between">
+          <span class="w-11 h-11 rounded-xl flex items-center justify-center bg-white/8 border border-[rgba(15,10,11,0.6)]">
+            <span class="material-symbols-outlined text-[#F0EAD6]">graphic_eq</span>
+          </span>
+          <span class="text-label-sm font-label-sm font-mono text-on-surface-subtle">AI</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <h3 class="text-label-md font-label-md text-white">Głos i&nbsp;audio</h3>
+          <p class="text-label-sm font-label-sm text-on-surface-subtle leading-snug">Wybierz lektora, ton i&nbsp;tempo nagrania.</p>
+        </div>
+      </a>
+
+      <!-- Tile: Share -->
+      <a href="Share.html" class="tool-tile glass-panel rounded-[24px] p-stack-md aspect-square flex flex-col justify-between text-left">
+        <div class="flex items-center justify-between">
+          <span class="w-11 h-11 rounded-xl flex items-center justify-center bg-white/8 border border-[rgba(15,10,11,0.6)]">
+            <span class="material-symbols-outlined text-[#F0EAD6]">ios_share</span>
+          </span>
+          <span class="text-label-sm font-label-sm font-mono text-on-surface-subtle">3</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <h3 class="text-label-md font-label-md text-white">Udostępnij</h3>
+          <p class="text-label-sm font-label-sm text-on-surface-subtle leading-snug">Wyślij link, zaproś współautorów.</p>
+        </div>
+      </a>
+
+      <!-- Tile: Export -->
+      <a href="Export.html" class="tool-tile glass-panel rounded-[24px] p-stack-md aspect-square flex flex-col justify-between text-left">
+        <div class="flex items-center justify-between">
+          <span class="w-11 h-11 rounded-xl flex items-center justify-center bg-white/8 border border-[rgba(15,10,11,0.6)]">
+            <span class="material-symbols-outlined text-[#F0EAD6]">download</span>
+          </span>
+          <span class="text-label-sm font-label-sm font-mono text-on-surface-subtle">MP3</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <h3 class="text-label-md font-label-md text-white">Eksport</h3>
+          <p class="text-label-sm font-label-sm text-on-surface-subtle leading-snug">Pobierz audiobook lub plik PDF.</p>
+        </div>
+      </a>
+
+    </div>
+  </section>
+</main>
+
+<script>
+  // --- Player state ---
+  const TOTAL = 3 * 3600 + 32 * 60 + 5; // 03:32:05 in seconds
+  let current = Math.round(TOTAL * 0.35);
+  let playing = true; // pulse on, default
+  let timerId = null;
+
+  const $progress = document.getElementById("progress");
+  const $cur      = document.getElementById("time-current");
+  const $total    = document.getElementById("time-total");
+  const $playBtn  = document.getElementById("play-btn");
+  const $playIco  = document.getElementById("play-icon");
+
+  function fmt(sec) {
+    sec = Math.max(0, Math.min(TOTAL, Math.floor(sec)));
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  }
+  function render() {
+    const pct = (current / TOTAL) * 100;
+    $progress.value = pct;
+    $progress.style.setProperty("--p", pct.toFixed(2) + "%");
+    $cur.textContent   = fmt(current);
+    $total.textContent = fmt(TOTAL);
+  }
+  function tick() {
+    if (!playing) return;
+    current = Math.min(TOTAL, current + 1);
+    if (current >= TOTAL) { playing = false; updatePlayUI(); }
+    render();
+  }
+  function updatePlayUI() {
+    $playIco.textContent = playing ? "pause" : "play_arrow";
+    $playBtn.classList.toggle("play-pulse", playing);
+  }
+
+  $playBtn.addEventListener("click", () => {
+    playing = !playing;
+    updatePlayUI();
+  });
+  document.getElementById("skip-back").addEventListener("click", () => {
+    current = Math.max(0, current - 10); render();
+  });
+  document.getElementById("skip-fwd").addEventListener("click", () => {
+    current = Math.min(TOTAL, current + 10); render();
+  });
+  $progress.addEventListener("input", (e) => {
+    const pct = Number(e.target.value);
+    current = Math.round((pct / 100) * TOTAL);
+    render();
+  });
+
+  document.getElementById("back-btn").addEventListener("click", () => history.back());
+
+  render();
+  updatePlayUI();
+  timerId = setInterval(tick, 1000);
+</script>
+
+<!-- BottomNavBar (persistent across views) -->
+<nav class="glass-panel fixed bottom-0 w-full z-50 rounded-t-[24px] border-t-0 border-b-0 border-x-0 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] flex justify-around items-center h-16 max-w-[480px] left-1/2 -translate-x-1/2">
+  <a href="Dashboard.html" class="flex flex-col items-center justify-center text-on-surface-subtle hover:text-white transition-colors group w-20">
+    <span class="material-symbols-outlined mb-1 transition-transform group-active:scale-90">library_books</span>
+    <span class="text-label-sm font-label-sm">Biblioteka</span>
+  </a>
+  <div class="relative -top-6">
+    <a href="New Project.html" class="bg-[#F0EAD6] text-[#131316] rounded-full w-14 h-14 flex items-center justify-center shadow-[0_4px_20px_rgba(240,234,214,0.4)] active:scale-95 transition-all" style="background: linear-gradient(135deg, #F0EAD6 0%, #FBFCF8 50%, #F0EAD6 100%);" aria-label="Nowy projekt">
+<span class="material-symbols-outlined text-3xl">add</span>
+</a>
+  </div>
+  <a href="Project Details.html" class="flex flex-col items-center justify-center text-white transition-colors group w-20">
+    <span class="material-symbols-outlined mb-1 transition-transform group-active:scale-90" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+    <span class="text-label-sm font-label-sm">Odtwarzacz</span>
+  </a>
+</nav>
+</body>
+</html>

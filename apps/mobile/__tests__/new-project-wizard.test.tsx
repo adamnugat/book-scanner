@@ -59,13 +59,16 @@ describe('New audiobook wizard step 1', () => {
     render(<NewProjectScreen />);
 
     expect(await screen.findByText('Krok 1 z 3')).toBeTruthy();
+    expect(screen.getByText('Zacznijmy od podstaw')).toBeTruthy();
+    expect(screen.getByText('Lektor')).toBeTruthy();
+    expect(screen.getByText('Wstawka muzyczna')).toBeTruthy();
     expect(await screen.findByText('Marta')).toBeTruthy();
     expect(await screen.findByText('Page turn')).toBeTruthy();
 
     fireEvent.changeText(screen.getByPlaceholderText('np. Pan Tadeusz'), 'Pan Tadeusz');
     fireEvent.press(screen.getByText('Marta'));
     fireEvent.press(screen.getByText('Page turn'));
-    fireEvent.press(screen.getByText('Dalej: dodaj zdjęcia'));
+    fireEvent.press(screen.getByText('Dalej'));
 
     await waitFor(() => {
       expect(mockCreateProject).toHaveBeenCalledWith({

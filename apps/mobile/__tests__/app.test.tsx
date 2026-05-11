@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 
 const mockProjects = [
   {
@@ -27,9 +28,12 @@ const mockProjects = [
 ];
 
 const mockGetProjects = jest.fn(() => Promise.resolve(mockProjects));
+const mockDeleteProject = jest.fn();
+const mockPush = jest.fn();
+const mockLogout = jest.fn();
 
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
+  router: { push: (...args: unknown[]) => mockPush(...args), replace: jest.fn(), back: jest.fn() },
   useFocusEffect: (callback: () => void) => {
     const react = require('react');
     react.useEffect(() => {
@@ -43,7 +47,7 @@ jest.mock('../lib/api', () => ({
   api: {
     getProjects: (...args: unknown[]) => mockGetProjects(...args),
     getProject: jest.fn(),
-    deleteProject: jest.fn(),
+    deleteProject: (...args: unknown[]) => mockDeleteProject(...args),
   },
 }));
 
@@ -54,7 +58,7 @@ jest.mock('../lib/auth-context', () => ({
     isLoading: false,
     login: jest.fn(),
     register: jest.fn(),
-    logout: jest.fn(),
+    logout: (...args: unknown[]) => mockLogout(...args),
   }),
 }));
 
@@ -66,7 +70,9 @@ import ProjectsScreen from '../app/(app)/index';
 
 describe('ProjectsScreen – with projects', () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     mockGetProjects.mockImplementation(() => Promise.resolve(mockProjects));
+    mockDeleteProject.mockResolvedValue(undefined);
   });
 
   it('T-2.8: renders project list', async () => {
@@ -85,15 +91,54 @@ describe('ProjectsScreen – with projects', () => {
     expect(await screen.findByText('Szkic', {}, { timeout: 3000 })).toBeTruthy();
     expect(screen.getAllByText('Gotowe').length).toBeGreaterThanOrEqual(1);
   });
+
+  it('renders the AudioFlow dashboard shell and footer create action', async () => {
+    render(<ProjectsScreen />);
+
+    expect(await screen.findByText('Witaj ponownie')).toBeTruthy();
+    expect(screen.getByText('AudioFlow')).toBeTruthy();
+    expect(screen.getByLabelText('Logo AudioFlow equalizer')).toBeTruthy();
+    expect(screen.queryByText('≋')).toBeNull();
+    expect(screen.getByLabelText('Biblioteka')).toBeTruthy();
+    expect(screen.getByLabelText('Nowy audiobook')).toBeTruthy();
+    expect(screen.getAllByLabelText('Nowy audiobook')).toHaveLength(1);
+
+    fireEvent.press(screen.getByLabelText('Nowy audiobook'));
+
+    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/new');
+  });
+
+  it('keeps filtering and sorting controls after the AudioFlow redesign', async () => {
+    render(<ProjectsScreen />);
+
+    expect(await screen.findByText('Pan Tadeusz', {}, { timeout: 3000 })).toBeTruthy();
+    fireEvent.press(screen.getAllByText('Gotowe')[0]);
+
+    expect(screen.queryByText('Pan Tadeusz')).toBeNull();
+    expect(screen.getByText('Hamlet')).toBeTruthy();
+
+    fireEvent.press(screen.getByText('Tytuł'));
+
+    expect(screen.getByText('Hamlet')).toBeTruthy();
+  });
 });
 
 describe('ProjectsScreen – empty state', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('T-2.8: shows empty state with CTA when no projects', async () => {
     mockGetProjects.mockImplementation(() => Promise.resolve([]));
     render(<ProjectsScreen />);
     expect(
       await screen.findByText('Nie masz jeszcze żadnych projektów', {}, { timeout: 3000 }),
     ).toBeTruthy();
-    expect(screen.getByText('+ Nowy projekt')).toBeTruthy();
+    expect(screen.getByText('Stwórz swój pierwszy audiobook!')).toBeTruthy();
+    expect(StyleSheet.flatten(screen.getByTestId('dashboard-state-panel').props.style)).toEqual(
+      expect.objectContaining({ marginBottom: expect.any(Number) }),
+    );
+    fireEvent.press(screen.getByLabelText('Nowy audiobook'));
+    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/new');
   });
 });

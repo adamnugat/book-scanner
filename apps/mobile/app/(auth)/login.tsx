@@ -1,7 +1,17 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { Link, router } from 'expo-router';
 import { useAuth } from '../../lib/auth-context';
+import {
+  AudioFlowScreen,
+  AudioFlowTextField,
+  AudioFlowLogo,
+  FormLink,
+  GlassPanel,
+  PearlButton,
+  audioFlowStyles,
+  audioFlowTokens,
+} from '../../components/audioflow';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -27,94 +37,104 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Zaloguj się</Text>
+    <AudioFlowScreen style={styles.screen}>
+      <View style={styles.content}>
+        <View style={styles.brand}>
+          <AudioFlowLogo size="lg" />
+          <Text style={audioFlowStyles.headlineLg}>AudioFlow</Text>
+          <Text style={styles.brandSubtitle}>Wejdź do swojego studia audiobooków</Text>
+        </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#666"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+        <GlassPanel style={styles.panel}>
+          <AudioFlowTextField
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="email-address"
+            label="Email"
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            value={email}
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Hasło"
-        placeholderTextColor="#666"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+          <View style={styles.passwordLabelRow}>
+            <Text style={styles.passwordLabel}>Hasło</Text>
+            <Link href="/(auth)/reset-password" style={styles.resetLink}>
+              Zapomniałeś hasła?
+            </Link>
+          </View>
+          <AudioFlowTextField
+            onChangeText={setPassword}
+            placeholder="••••••••"
+            secureTextEntry
+            style={styles.passwordField}
+            value={password}
+          />
 
-      <Pressable style={styles.button} onPress={handleLogin} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Zaloguj</Text>
-        )}
-      </Pressable>
+          <PearlButton
+            disabled={loading}
+            label={loading ? 'Logowanie...' : 'Zaloguj'}
+            onPress={handleLogin}
+            style={styles.loginButton}
+          />
+          {loading ? <ActivityIndicator color={audioFlowTokens.color.text.onPearl} /> : null}
+        </GlassPanel>
 
-      <Link href="/(auth)/register" style={styles.link}>
-        Nie masz konta? Zarejestruj się
-      </Link>
-
-      <Link href="/(auth)/reset-password" style={styles.linkSecondary}>
-        Zapomniałeś hasła?
-      </Link>
-    </View>
+        <Link href="/(auth)/register" style={styles.registerLink}>
+          <FormLink>Nie masz konta? Zarejestruj się</FormLink>
+        </Link>
+      </View>
+    </AudioFlowScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    padding: 24,
-    justifyContent: 'center',
-    backgroundColor: '#1a1a2e',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#e0e0e0',
-    marginBottom: 32,
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: audioFlowTokens.spacing.marginMobile,
+    paddingVertical: audioFlowTokens.spacing.stackLg,
+  },
+  brand: {
+    alignItems: 'center',
+    marginBottom: audioFlowTokens.spacing.sectionGap,
+  },
+  brandSubtitle: {
+    ...audioFlowStyles.body,
+    marginTop: audioFlowTokens.spacing.stackSm,
     textAlign: 'center',
   },
-  input: {
-    backgroundColor: '#16213e',
-    color: '#e0e0e0',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: '#0f3460',
+  panel: {
+    gap: audioFlowTokens.spacing.stackMd,
+    padding: audioFlowTokens.spacing.stackLg,
   },
-  button: {
-    backgroundColor: '#e94560',
-    borderRadius: 8,
-    padding: 16,
+  passwordLabelRow: {
     alignItems: 'center',
-    marginTop: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: -audioFlowTokens.spacing.stackSm,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
+  passwordLabel: {
+    color: audioFlowTokens.color.text.onSurfaceSubtle,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  resetLink: {
+    color: audioFlowTokens.color.accent.pearl,
+    fontSize: 12,
     fontWeight: '600',
   },
-  link: {
-    color: '#e94560',
-    textAlign: 'center',
-    marginTop: 24,
-    fontSize: 14,
+  passwordField: {
+    marginTop: -audioFlowTokens.spacing.stackSm,
   },
-  linkSecondary: {
-    color: '#888',
+  loginButton: {
+    marginTop: audioFlowTokens.spacing.stackMd,
+  },
+  registerLink: {
+    marginTop: audioFlowTokens.spacing.sectionGap,
     textAlign: 'center',
-    marginTop: 12,
-    fontSize: 14,
   },
 });

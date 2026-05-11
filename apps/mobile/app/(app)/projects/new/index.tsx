@@ -11,6 +11,15 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { api } from '../../../../lib/api';
+import {
+  AudioFlowScreen,
+  GlassPanel,
+  PearlButton,
+  PickerCard,
+  SectionHeading,
+  audioFlowStyles,
+  audioFlowTokens,
+} from '../../../../components/audioflow';
 import type {
   InterstitialPresetResponse,
   SupportedLanguage,
@@ -50,12 +59,12 @@ export default function NewProjectScreen() {
         setSelectedVoiceId((current) =>
           current && voiceList.some((voice) => voice.elevenlabsVoiceId === current)
             ? current
-            : voiceList[0]?.elevenlabsVoiceId ?? null,
+            : (voiceList[0]?.elevenlabsVoiceId ?? null),
         );
         setSelectedPresetName((current) =>
           current && presetList.some((preset) => preset.name === current)
             ? current
-            : presetList[0]?.name ?? null,
+            : (presetList[0]?.name ?? null),
         );
       } catch {
         if (isActive) {
@@ -72,7 +81,11 @@ export default function NewProjectScreen() {
   }, [language]);
 
   const canSubmit = useMemo(
-    () => title.trim().length > 0 && Boolean(selectedVoiceId) && Boolean(selectedPresetName) && !submitting,
+    () =>
+      title.trim().length > 0 &&
+      Boolean(selectedVoiceId) &&
+      Boolean(selectedPresetName) &&
+      !submitting,
     [selectedPresetName, selectedVoiceId, submitting, title],
   );
 
@@ -105,121 +118,115 @@ export default function NewProjectScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.hero}>
-        <Text style={styles.stepLabel}>Krok 1 z 3</Text>
-        <Text style={styles.heading}>Ustaw brzmienie audiobooka</Text>
-        <Text style={styles.subheading}>
-          Najpierw wybierz podstawy. Zdjęcia dodasz w następnym kroku.
-        </Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Tytuł</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="np. Pan Tadeusz"
-          placeholderTextColor="#7f8aa3"
-          value={title}
-          onChangeText={setTitle}
-        />
-
-        <Text style={styles.label}>Język</Text>
-        <View style={styles.optionRow}>
-          {LANGUAGES.map((lang) => {
-            const selected = language === lang.id;
-            return (
-              <Pressable
-                key={lang.id}
-                style={[styles.choicePill, selected && styles.choicePillSelected]}
-                onPress={() => setLanguage(lang.id)}
-              >
-                <Text style={[styles.choiceText, selected && styles.choiceTextSelected]}>
-                  {lang.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+    <AudioFlowScreen>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.hero}>
+          <Text style={styles.stepLabel}>Krok 1 z 3</Text>
+          <Text style={styles.heading}>Zacznijmy od podstaw</Text>
+          <Text style={styles.subheading}>
+            Nadaj audiobookowi tytuł, wybierz język narracji i brzmienie, które poprowadzi słuchacza
+            przez kolejne strony.
+          </Text>
         </View>
-      </View>
 
-      {loadingOptions ? (
-        <View style={styles.loadingCard}>
-          <ActivityIndicator color="#06d6a0" />
-          <Text style={styles.loadingText}>Ładowanie głosów i wstawek...</Text>
-        </View>
-      ) : (
-        <>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Głos lektora</Text>
-            <Text style={styles.sectionHint}>Wybierz głos, który przeczyta wszystkie strony.</Text>
-            {voices.length === 0 ? (
-              <Text style={styles.emptyText}>Brak dostępnych głosów dla wybranego języka.</Text>
-            ) : (
-              voices.map((voice) => {
-                const selected = selectedVoiceId === voice.elevenlabsVoiceId;
-                return (
-                  <Pressable
-                    key={voice.id}
-                    style={[styles.optionCard, selected && styles.optionCardSelected]}
-                    onPress={() => setSelectedVoiceId(voice.elevenlabsVoiceId)}
-                  >
-                    <View>
-                      <Text style={[styles.optionTitle, selected && styles.optionTitleSelected]}>
-                        {voice.name}
-                      </Text>
-                      <Text style={styles.optionMeta}>{voice.language.toUpperCase()}</Text>
-                    </View>
-                    {selected && <Text style={styles.checkmark}>✓</Text>}
-                  </Pressable>
-                );
-              })
-            )}
+        <GlassPanel style={styles.card}>
+          <Text style={styles.label}>Tytuł</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="np. Pan Tadeusz"
+            placeholderTextColor={audioFlowTokens.color.text.onSurfaceMuted}
+            value={title}
+            onChangeText={setTitle}
+          />
+
+          <Text style={styles.label}>Język</Text>
+          <View style={styles.optionRow}>
+            {LANGUAGES.map((lang) => {
+              const selected = language === lang.id;
+              return (
+                <Pressable
+                  key={lang.id}
+                  style={[styles.choicePill, selected && styles.choicePillSelected]}
+                  onPress={() => setLanguage(lang.id)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                >
+                  <Text style={[styles.choiceText, selected && styles.choiceTextSelected]}>
+                    {lang.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
+        </GlassPanel>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Wstawka między stronami</Text>
-            <Text style={styles.sectionHint}>
-              Ten krótki dźwięk oddzieli pliki audio dla kolejnych stron.
-            </Text>
-            {presets.length === 0 ? (
-              <Text style={styles.emptyText}>Brak dostępnych wstawek audio.</Text>
-            ) : (
-              presets.map((preset) => {
-                const selected = selectedPresetName === preset.name;
-                return (
-                  <Pressable
-                    key={preset.id}
-                    style={[styles.optionCard, selected && styles.optionCardSelected]}
-                    onPress={() => setSelectedPresetName(preset.name)}
-                  >
-                    <View>
-                      <Text style={[styles.optionTitle, selected && styles.optionTitleSelected]}>
-                        {preset.name}
-                      </Text>
-                      <Text style={styles.optionMeta}>{formatDuration(preset.durationMs)}</Text>
-                    </View>
-                    {selected && <Text style={styles.checkmark}>✓</Text>}
-                  </Pressable>
-                );
-              })
-            )}
-          </View>
-        </>
-      )}
-
-      <Pressable
-        style={[styles.submitButton, !canSubmit && styles.submitButtonDisabled]}
-        onPress={handleCreate}
-        disabled={!canSubmit}
-      >
-        {submitting ? (
-          <ActivityIndicator color="#101320" />
+        {loadingOptions ? (
+          <GlassPanel style={styles.loadingCard}>
+            <ActivityIndicator color={audioFlowTokens.color.accent.pearl} />
+            <Text style={styles.loadingText}>Ładowanie głosów i wstawek...</Text>
+          </GlassPanel>
         ) : (
-          <Text style={styles.submitButtonText}>Dalej: dodaj zdjęcia</Text>
+          <>
+            <View style={styles.section}>
+              <SectionHeading
+                title="Lektor"
+                hint="Wybierz głos, który przeczyta wszystkie strony."
+                style={styles.sectionHeading}
+              />
+              {voices.length === 0 ? (
+                <Text style={styles.emptyText}>Brak dostępnych głosów dla wybranego języka.</Text>
+              ) : (
+                voices.map((voice) => {
+                  const selected = selectedVoiceId === voice.elevenlabsVoiceId;
+                  return (
+                    <PickerCard
+                      key={voice.id}
+                      selected={selected}
+                      title={voice.name}
+                      meta={voice.language.toUpperCase()}
+                      onPress={() => setSelectedVoiceId(voice.elevenlabsVoiceId)}
+                      style={styles.optionCard}
+                    />
+                  );
+                })
+              )}
+            </View>
+
+            <View style={styles.section}>
+              <SectionHeading
+                title="Wstawka muzyczna"
+                hint="Ten krótki dźwięk oddzieli pliki audio dla kolejnych stron."
+                style={styles.sectionHeading}
+              />
+              {presets.length === 0 ? (
+                <Text style={styles.emptyText}>Brak dostępnych wstawek audio.</Text>
+              ) : (
+                presets.map((preset) => {
+                  const selected = selectedPresetName === preset.name;
+                  return (
+                    <PickerCard
+                      key={preset.id}
+                      selected={selected}
+                      title={preset.name}
+                      meta={formatDuration(preset.durationMs)}
+                      onPress={() => setSelectedPresetName(preset.name)}
+                      style={styles.optionCard}
+                    />
+                  );
+                })
+              )}
+            </View>
+          </>
         )}
-      </Pressable>
-    </ScrollView>
+
+        <PearlButton
+          label={submitting ? 'Tworzenie...' : 'Dalej'}
+          onPress={handleCreate}
+          disabled={!canSubmit}
+          style={styles.submitButton}
+        />
+      </ScrollView>
+    </AudioFlowScreen>
   );
 }
 
@@ -229,96 +236,61 @@ function formatDuration(durationMs: number): string {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#101320' },
+  container: { flex: 1 },
   content: { padding: 20, paddingBottom: 36 },
   hero: {
-    borderRadius: 28,
-    padding: 24,
-    marginBottom: 18,
-    overflow: 'hidden',
-    backgroundColor: '#18213d',
-    borderWidth: 1,
-    borderColor: '#29355c',
+    marginBottom: 24,
+    marginTop: 10,
   },
   stepLabel: {
-    color: '#06d6a0',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.2,
+    ...audioFlowStyles.eyebrow,
     marginBottom: 10,
-    textTransform: 'uppercase',
   },
-  heading: { color: '#fff', fontSize: 30, fontWeight: '900', lineHeight: 34 },
-  subheading: { color: '#c9d6df', fontSize: 15, lineHeight: 21, marginTop: 12 },
+  heading: audioFlowStyles.headlineLg,
+  subheading: { ...audioFlowStyles.body, marginTop: 12 },
   card: {
-    backgroundColor: '#151b2f',
-    borderRadius: 22,
     padding: 18,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#29355c',
+    marginBottom: 24,
   },
-  label: { color: '#f0a500', fontSize: 12, fontWeight: '800', marginBottom: 8, textTransform: 'uppercase' },
+  label: {
+    ...audioFlowStyles.eyebrow,
+    color: audioFlowTokens.color.text.onDark,
+    marginBottom: 8,
+  },
   input: {
-    backgroundColor: '#0f1629',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#29355c',
-    color: '#fff',
-    fontSize: 17,
-    paddingHorizontal: 16,
-    paddingVertical: 15,
+    ...audioFlowStyles.field,
     marginBottom: 18,
   },
   optionRow: { flexDirection: 'row', gap: 10 },
   choicePill: {
     flex: 1,
-    borderRadius: 999,
+    borderRadius: audioFlowTokens.radius.card,
     borderWidth: 1,
-    borderColor: '#29355c',
+    borderColor: audioFlowTokens.color.surface.glassEdge,
     paddingVertical: 13,
     alignItems: 'center',
-    backgroundColor: '#0f1629',
+    backgroundColor: 'transparent',
   },
-  choicePillSelected: { borderColor: '#06d6a0', backgroundColor: '#073b3a' },
-  choiceText: { color: '#aebbd3', fontSize: 15, fontWeight: '700' },
-  choiceTextSelected: { color: '#06d6a0' },
+  choicePillSelected: {
+    borderColor: audioFlowTokens.color.accent.pearlBorder,
+    backgroundColor: audioFlowTokens.color.accent.pearlTint,
+  },
+  choiceText: {
+    color: audioFlowTokens.color.text.onSurfaceSubtle,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  choiceTextSelected: { color: audioFlowTokens.color.text.onDark },
   loadingCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
     padding: 24,
     marginBottom: 20,
-    backgroundColor: '#151b2f',
   },
-  loadingText: { color: '#c9d6df', marginTop: 10 },
+  loadingText: { color: audioFlowTokens.color.text.onSurfaceSubtle, marginTop: 10 },
   section: { marginBottom: 22 },
-  sectionTitle: { color: '#fff', fontSize: 20, fontWeight: '900', marginBottom: 6 },
-  sectionHint: { color: '#8f9bb3', fontSize: 14, lineHeight: 20, marginBottom: 12 },
-  emptyText: { color: '#ff8fa3', fontSize: 14, lineHeight: 20 },
-  optionCard: {
-    backgroundColor: '#151b2f',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#29355c',
-    padding: 16,
-    marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  optionCardSelected: { borderColor: '#06d6a0', backgroundColor: '#073b3a' },
-  optionTitle: { color: '#f6f8fb', fontSize: 17, fontWeight: '800' },
-  optionTitleSelected: { color: '#06d6a0' },
-  optionMeta: { color: '#8f9bb3', fontSize: 13, marginTop: 4 },
-  checkmark: { color: '#06d6a0', fontSize: 22, fontWeight: '900' },
-  submitButton: {
-    backgroundColor: '#06d6a0',
-    borderRadius: 18,
-    paddingVertical: 17,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  submitButtonDisabled: { opacity: 0.45 },
-  submitButtonText: { color: '#101320', fontSize: 16, fontWeight: '900' },
+  sectionHeading: { marginBottom: 12 },
+  emptyText: { color: audioFlowTokens.color.accent.danger, fontSize: 14, lineHeight: 20 },
+  optionCard: { marginBottom: 10 },
+  submitButton: { marginTop: 4 },
 });

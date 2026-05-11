@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -14,6 +14,15 @@ import * as ImagePicker from 'expo-image-picker';
 import { api } from '../../../../lib/api';
 import { uploadFileFromImagePickerAsset } from '../../../../lib/image-upload';
 import { PageImagePreview } from '../../../../components/PageImagePreview';
+import {
+  AudioFlowScreen,
+  GlassPanel,
+  PearlButton,
+  PickerCard,
+  TopAppBar,
+  audioFlowStyles,
+  audioFlowTokens,
+} from '../../../../components/audioflow';
 import type { AudioTrackResponse, PageImageResponse, SceneResponse } from '@book-scanner/shared';
 
 type WizardMode = 'auto' | 'advanced';
@@ -24,7 +33,10 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function waitForGeneratedAudio(projectId: string, expectedTrackCount: number): Promise<AudioTrackResponse[]> {
+async function waitForGeneratedAudio(
+  projectId: string,
+  expectedTrackCount: number,
+): Promise<AudioTrackResponse[]> {
   const requiredTrackCount = Math.max(1, expectedTrackCount);
 
   for (let attempt = 0; attempt < AUDIO_READY_MAX_ATTEMPTS; attempt++) {
@@ -42,11 +54,12 @@ async function waitForGeneratedAudio(projectId: string, expectedTrackCount: numb
 }
 
 function countExpectedAudioTracks(scenes: SceneResponse[]): number {
-  return scenes.filter((scene) => (
-    scene.status === 'audio_generating' ||
-    scene.status === 'audio_done' ||
-    scene.status === 'ready_for_audio'
-  )).length;
+  return scenes.filter(
+    (scene) =>
+      scene.status === 'audio_generating' ||
+      scene.status === 'audio_done' ||
+      scene.status === 'ready_for_audio',
+  ).length;
 }
 
 export default function NewProjectImagesScreen() {
@@ -213,17 +226,22 @@ export default function NewProjectImagesScreen() {
       );
     }
 
+    const pendingName = item.asset.fileName || `Strona ${item.index + 1}`;
+
     return (
       <View style={styles.photoCard}>
         <Text style={styles.photoIndex}>{images.length + item.index + 1}</Text>
         <PageImagePreview imageUrl={item.asset.uri} style={styles.photoThumb} />
         <View style={styles.photoInfo}>
           <Text style={styles.photoName} numberOfLines={1}>
-            {item.asset.fileName || `Strona ${item.index + 1}`}
+            {pendingName}
           </Text>
           <Text style={styles.inlineMuted}>Edytuj obszary po wysłaniu</Text>
           <View style={styles.photoActions}>
             <Pressable
+              accessibilityLabel={`Przenieś ${pendingName} wyżej`}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: item.index === 0 }}
               style={[styles.smallButton, item.index === 0 && styles.smallButtonDisabled]}
               onPress={() => movePendingAsset(item.index, -1)}
               disabled={item.index === 0}
@@ -231,6 +249,9 @@ export default function NewProjectImagesScreen() {
               <Text style={styles.smallButtonText}>↑</Text>
             </Pressable>
             <Pressable
+              accessibilityLabel={`Przenieś ${pendingName} niżej`}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: item.index === pendingAssets.length - 1 }}
               style={[
                 styles.smallButton,
                 item.index === pendingAssets.length - 1 && styles.smallButtonDisabled,
@@ -240,7 +261,11 @@ export default function NewProjectImagesScreen() {
             >
               <Text style={styles.smallButtonText}>↓</Text>
             </Pressable>
-            <Pressable onPress={() => removePendingAsset(item.index)}>
+            <Pressable
+              accessibilityLabel={`Usuń ${pendingName}`}
+              accessibilityRole="button"
+              onPress={() => removePendingAsset(item.index)}
+            >
               <Text style={styles.deleteText}>Usuń</Text>
             </Pressable>
           </View>
@@ -251,189 +276,283 @@ export default function NewProjectImagesScreen() {
 
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator color="#06d6a0" size="large" />
-      </View>
+      <AudioFlowScreen style={styles.centered}>
+        <ActivityIndicator color={audioFlowTokens.color.accent.pearl} size="large" />
+      </AudioFlowScreen>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.stepLabel}>Krok 2 z 3</Text>
-        <Text style={styles.title}>Dodaj strony książki</Text>
-        <Text style={styles.subtitle}>Wybierz zdjęcia z galerii albo zrób je aparatem.</Text>
-      </View>
-
-      <View style={styles.addRow}>
-        <Pressable style={styles.addButton} onPress={pickFromGallery}>
-          <Text style={styles.addButtonText}>Galeria</Text>
-        </Pressable>
-        {Platform.OS !== 'web' && (
-          <Pressable style={styles.addButton} onPress={takePhoto}>
-            <Text style={styles.addButtonText}>Aparat</Text>
+    <AudioFlowScreen>
+      <TopAppBar
+        title="Zdjęcia stron"
+        left={
+          <Pressable
+            style={styles.iconButton}
+            onPress={() => router.back()}
+            accessibilityRole="button"
+            accessibilityLabel="Wróć"
+          >
+            <Text style={styles.iconButtonText}>‹</Text>
           </Pressable>
-        )}
-      </View>
+        }
+        right={<View style={styles.iconButtonPlaceholder} />}
+      />
 
-      <View style={styles.modeGrid}>
-        <Pressable
-          style={[styles.modeCard, mode === 'auto' && styles.modeCardSelected]}
-          onPress={() => setMode('auto')}
-        >
-          <Text style={[styles.modeTitle, mode === 'auto' && styles.modeTitleSelected]}>
-            Konfiguracja automatyczna
-          </Text>
-          <Text style={styles.modeBody}>{countLabel}. OCR i audio wykonają się bez dodatkowych kroków.</Text>
-        </Pressable>
-
-        <Pressable
-          style={[styles.modeCard, mode === 'advanced' && styles.modeCardSelected]}
-          onPress={() => setMode('advanced')}
-        >
-          <Text style={[styles.modeTitle, mode === 'advanced' && styles.modeTitleSelected]}>
-            Konfiguracja zaawansowana
-          </Text>
-          <Text style={styles.modeBody}>Sprawdź kolejność, usuń strony i przygotuj edycję obszarów.</Text>
-        </Pressable>
-      </View>
-
-      {mode === 'advanced' && (
-        <FlatList
-          data={orderedPreviewItems}
-          keyExtractor={(item) => item.key}
-          renderItem={renderAdvancedItem}
-          contentContainerStyle={styles.photoList}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>Dodaj zdjęcia, aby zobaczyć listę stron.</Text>
-          }
-        />
-      )}
-
-      {mode === 'auto' && (
-        <View style={styles.autoSummary}>
-          <Text style={styles.autoTitle}>{countLabel}</Text>
-          <Text style={styles.autoBody}>
-            Po zatwierdzeniu aplikacja wykona OCR i wygeneruje osobny plik audio dla każdej strony.
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.stepLabel}>Krok 2 z 3</Text>
+          <Text style={styles.title}>Dodaj zdjęcia stron książki</Text>
+          <Text style={styles.subtitle}>
+            Wybierz strony z galerii albo zeskanuj je aparatem. Kolejność zdjęć odpowiada kolejności
+            rozdziałów.
           </Text>
         </View>
-      )}
 
-      <View style={styles.bottomBar}>
-        <Pressable
+        <View style={styles.sourceSection}>
+          <Text style={styles.sourceLabel}>Źródło zdjęć</Text>
+          <View style={styles.addRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Galeria"
+              style={styles.addButton}
+              onPress={pickFromGallery}
+            >
+              <View style={styles.sourceIcon}>
+                <Text style={styles.sourceIconText}>▧</Text>
+              </View>
+              <Text style={styles.addButtonText}>Galeria</Text>
+              <Text style={styles.addButtonSubtext}>Wybierz z urządzenia</Text>
+            </Pressable>
+            {Platform.OS !== 'web' && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Aparat"
+                style={styles.addButton}
+                onPress={takePhoto}
+              >
+                <View style={styles.sourceIcon}>
+                  <Text style={styles.sourceIconText}>◉</Text>
+                </View>
+                <Text style={styles.addButtonText}>Aparat</Text>
+                <Text style={styles.addButtonSubtext}>Zrób zdjęcie strony</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+
+        {imageCount === 0 ? (
+          <GlassPanel style={styles.emptyHint}>
+            <Text style={styles.emptyHintIcon}>i</Text>
+            <Text style={styles.emptyHintText}>
+              Dodaj co najmniej 1 zdjęcie, aby przejść dalej.
+            </Text>
+          </GlassPanel>
+        ) : null}
+
+        <View style={styles.modeGrid}>
+          <View style={styles.modeHeader}>
+            <Text style={styles.sourceLabel}>Tryb kreatora</Text>
+            <Text style={styles.modeMeta}>Dotyczy całego projektu</Text>
+          </View>
+          <PickerCard
+            selected={mode === 'auto'}
+            title="Kreator automatyczny"
+            body={`${countLabel}. AudioFlow przygotuje OCR i narrację bez dodatkowych kroków.`}
+            meta="Domyślne"
+            onPress={() => setMode('auto')}
+          />
+
+          {mode === 'auto' && (
+            <View style={styles.autoSummary}>
+              <Text style={styles.autoTitle}>{countLabel}</Text>
+              <Text style={styles.autoBody}>
+                Wykryjemy strony, odczytamy tekst i wygenerujemy osobny plik audio dla każdej z
+                nich.
+              </Text>
+            </View>
+          )}
+
+          <PickerCard
+            selected={mode === 'advanced'}
+            title="Kreator zaawansowany"
+            body="Ręcznie sprawdzisz kolejność, usuniesz strony i przygotujesz edycję obszarów."
+            onPress={() => setMode('advanced')}
+          />
+        </View>
+
+        {mode === 'advanced' && (
+          <View style={styles.photoList}>
+            {orderedPreviewItems.length === 0 ? (
+              <Text style={styles.emptyText}>Dodaj zdjęcia, aby zobaczyć listę stron.</Text>
+            ) : (
+              orderedPreviewItems.map((item) => (
+                <View key={item.key}>{renderAdvancedItem({ item })}</View>
+              ))
+            )}
+          </View>
+        )}
+      </ScrollView>
+
+      <GlassPanel style={styles.bottomBar}>
+        <PearlButton
+          label={processing ? 'Przetwarzanie...' : 'Dalej'}
           testID="wizard-continue"
-          style={[styles.continueButton, !canContinue && styles.continueButtonDisabled]}
           onPress={handleContinue}
           disabled={!canContinue}
-        >
-          {processing ? (
-            <ActivityIndicator color="#101320" />
-          ) : (
-            <Text style={styles.continueButtonText}>
-              {!canContinue
-                ? 'Najpierw dodaj zdjęcia'
-                : mode === 'auto'
-                  ? 'Utwórz audiobooka'
-                  : 'Dalej do OCR'}
-            </Text>
-          )}
-        </Pressable>
-      </View>
-    </View>
+        />
+      </GlassPanel>
+    </AudioFlowScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#101320' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#101320' },
-  header: { padding: 20, paddingBottom: 10 },
-  stepLabel: {
-    color: '#06d6a0',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    marginBottom: 8,
-    textTransform: 'uppercase',
+  container: { flex: 1 },
+  content: { paddingHorizontal: 20, paddingBottom: 116 },
+  centered: { alignItems: 'center', justifyContent: 'center' },
+  iconButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.10)',
+    borderColor: audioFlowTokens.color.surface.glassEdge,
+    borderRadius: audioFlowTokens.radius.full,
+    borderWidth: 1,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
-  title: { color: '#fff', fontSize: 28, fontWeight: '900', lineHeight: 32 },
-  subtitle: { color: '#aebbd3', fontSize: 15, lineHeight: 21, marginTop: 8 },
-  addRow: { flexDirection: 'row', gap: 10, paddingHorizontal: 20, marginBottom: 14 },
+  iconButtonPlaceholder: { width: 40 },
+  iconButtonText: { color: audioFlowTokens.color.text.onDark, fontSize: 30, lineHeight: 32 },
+  header: { paddingBottom: 24, paddingTop: 8 },
+  stepLabel: {
+    ...audioFlowStyles.eyebrow,
+    marginBottom: 8,
+  },
+  title: audioFlowStyles.headlineLg,
+  subtitle: { ...audioFlowStyles.body, marginTop: 8 },
+  sourceSection: { gap: 8, marginBottom: 16 },
+  sourceLabel: {
+    ...audioFlowTokens.typography.labelMd,
+    color: audioFlowTokens.color.text.onDark,
+    paddingLeft: 4,
+  },
+  addRow: { flexDirection: 'row', gap: 10 },
   addButton: {
     flex: 1,
-    backgroundColor: '#18213d',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#29355c',
-    paddingVertical: 15,
     alignItems: 'center',
-  },
-  addButtonText: { color: '#fff', fontSize: 15, fontWeight: '800' },
-  modeGrid: { paddingHorizontal: 20, gap: 10 },
-  modeCard: {
-    backgroundColor: '#151b2f',
+    backgroundColor: audioFlowTokens.color.surface.field,
+    borderColor: audioFlowTokens.color.accent.pearlBorder,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#29355c',
+    gap: 8,
+    justifyContent: 'center',
+    minHeight: 126,
+    paddingHorizontal: 14,
+    paddingVertical: 20,
+  },
+  sourceIcon: {
+    alignItems: 'center',
+    backgroundColor: audioFlowTokens.color.accent.pearlTint,
+    borderColor: audioFlowTokens.color.surface.glassEdge,
+    borderRadius: 14,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  sourceIconText: { color: audioFlowTokens.color.accent.pearl, fontSize: 22, fontWeight: '700' },
+  addButtonText: { color: audioFlowTokens.color.text.onDark, fontSize: 15, fontWeight: '800' },
+  addButtonSubtext: {
+    color: audioFlowTokens.color.text.onSurfaceSubtle,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  emptyHint: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 18,
     padding: 16,
   },
-  modeCardSelected: { backgroundColor: '#073b3a', borderColor: '#06d6a0' },
-  modeTitle: { color: '#fff', fontSize: 17, fontWeight: '900', marginBottom: 6 },
-  modeTitleSelected: { color: '#06d6a0' },
-  modeBody: { color: '#aebbd3', fontSize: 14, lineHeight: 20 },
-  autoSummary: {
-    margin: 20,
-    padding: 18,
-    borderRadius: 22,
-    backgroundColor: '#151b2f',
-    borderWidth: 1,
-    borderColor: '#29355c',
+  emptyHintIcon: {
+    color: audioFlowTokens.color.accent.pearl,
+    fontSize: 18,
+    fontWeight: '900',
   },
-  autoTitle: { color: '#fff', fontSize: 22, fontWeight: '900', marginBottom: 8 },
-  autoBody: { color: '#c9d6df', fontSize: 15, lineHeight: 22 },
-  photoList: { padding: 20, paddingBottom: 110 },
-  emptyText: { color: '#8f9bb3', fontSize: 15, lineHeight: 21, textAlign: 'center', marginTop: 22 },
+  emptyHintText: { color: audioFlowTokens.color.text.onSurfaceSubtle, flex: 1, fontSize: 13 },
+  modeGrid: { gap: 10, marginBottom: 16 },
+  modeHeader: {
+    alignItems: 'baseline',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modeMeta: { color: audioFlowTokens.color.text.onSurfaceSubtle, fontSize: 12 },
+  autoSummary: {
+    paddingHorizontal: 4,
+    paddingVertical: 12,
+  },
+  autoTitle: { ...audioFlowStyles.headlineMd, marginBottom: 8 },
+  autoBody: { ...audioFlowStyles.body },
+  photoList: { paddingTop: 6 },
+  emptyText: {
+    color: audioFlowTokens.color.text.onSurfaceSubtle,
+    fontSize: 15,
+    lineHeight: 21,
+    marginTop: 22,
+    textAlign: 'center',
+  },
   photoCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#151b2f',
-    borderRadius: 18,
+    backgroundColor: audioFlowTokens.color.surface.glass,
+    borderRadius: audioFlowTokens.radius.card,
     borderWidth: 1,
-    borderColor: '#29355c',
+    borderColor: audioFlowTokens.color.surface.glassEdge,
     padding: 12,
     marginBottom: 10,
   },
-  photoIndex: { color: '#06d6a0', fontSize: 16, fontWeight: '900', width: 28, textAlign: 'center' },
+  photoIndex: {
+    color: audioFlowTokens.color.accent.pearl,
+    fontSize: 16,
+    fontWeight: '900',
+    textAlign: 'center',
+    width: 28,
+  },
   photoThumb: { width: 58, height: 78, borderRadius: 10, marginHorizontal: 10 },
   photoInfo: { flex: 1 },
-  photoName: { color: '#fff', fontSize: 15, fontWeight: '800', marginBottom: 5 },
-  inlineAction: { color: '#06d6a0', fontSize: 13, fontWeight: '800' },
-  inlineMuted: { color: '#8f9bb3', fontSize: 13, marginBottom: 8 },
+  photoName: {
+    color: audioFlowTokens.color.text.onDark,
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 5,
+  },
+  inlineAction: { color: audioFlowTokens.color.accent.pearl, fontSize: 13, fontWeight: '800' },
+  inlineMuted: { color: audioFlowTokens.color.text.onSurfaceSubtle, fontSize: 13, marginBottom: 8 },
   photoActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   smallButton: {
-    backgroundColor: '#29355c',
+    backgroundColor: audioFlowTokens.color.surface.glassLight,
+    borderColor: audioFlowTokens.color.surface.glassEdge,
+    borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 5,
   },
   smallButtonDisabled: { opacity: 0.35 },
-  smallButtonText: { color: '#fff', fontSize: 14, fontWeight: '900' },
-  deleteText: { color: '#ff8fa3', fontSize: 13, fontWeight: '800', paddingHorizontal: 6 },
+  smallButtonText: { color: audioFlowTokens.color.text.onDark, fontSize: 14, fontWeight: '900' },
+  deleteText: {
+    color: audioFlowTokens.color.accent.danger,
+    fontSize: 13,
+    fontWeight: '800',
+    paddingHorizontal: 6,
+  },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     padding: 16,
-    backgroundColor: '#101320',
-    borderTopWidth: 1,
-    borderTopColor: '#29355c',
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderTopLeftRadius: audioFlowTokens.radius.panel,
+    borderTopRightRadius: audioFlowTokens.radius.panel,
   },
-  continueButton: {
-    backgroundColor: '#06d6a0',
-    borderRadius: 18,
-    paddingVertical: 17,
-    alignItems: 'center',
-  },
-  continueButtonDisabled: { opacity: 0.45 },
-  continueButtonText: { color: '#101320', fontSize: 16, fontWeight: '900' },
 });

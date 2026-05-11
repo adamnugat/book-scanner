@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html class="dark" lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>AudioFlow — Design System</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Varela+Round&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="tokens.css" />
+<style>
+  html, body { background: var(--bg-hero-base); color: #fff; font-family: var(--font-body); }
+  body {
+    min-height: 100dvh;
+    background-image: var(--bg-hero-image);
+    background-attachment: fixed;
+  }
+  .h-display { font-family: var(--font-headline); font-weight: 700; letter-spacing: -0.02em; }
+  .h-section { font-family: var(--font-headline); font-weight: 600; }
+  .mono { font-family: var(--font-mono); font-size: 12px; }
+  .eyebrow {
+    font-family: var(--font-body); font-size: 12px; font-weight: 600;
+    letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--text-on-surface-subtle);
+  }
+  .subtle { color: var(--text-on-surface-subtle); }
+  .glow-text { text-shadow: var(--shadow-glow-text); }
+
+  /* ---------- Glass surfaces ---------- */
+  .glass {
+    background: var(--surface-glass);
+    backdrop-filter: blur(var(--blur-glass));
+    -webkit-backdrop-filter: blur(var(--blur-glass));
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--e-inset-highlight);
+    border-radius: var(--r-panel);
+  }
+  .glass-light {
+    background: var(--surface-glass-light);
+    backdrop-filter: blur(var(--blur-glass));
+    -webkit-backdrop-filter: blur(var(--blur-glass));
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--e-inset-highlight-faint);
+    border-radius: var(--r-panel);
+  }
+
+  /* ---------- Buttons ---------- */
+  .pearl-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 18px; border-radius: var(--r-full);
+    color: var(--text-on-pearl);
+    background: var(--pearl-grad);
+    box-shadow: var(--e-pearl-cta);
+    font-family: var(--font-body); font-weight: 600;
+    transition: transform 120ms ease, filter 200ms ease;
+    cursor: pointer; border: none;
+  }
+  .pearl-btn:hover { filter: brightness(1.05); }
+  .pearl-btn:active { transform: scale(0.97); }
+  .pearl-btn.disabled { opacity: 0.35; filter: grayscale(0.6); pointer-events: none; box-shadow: none; }
+
+  .ghost-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 18px; border-radius: var(--r-full);
+    color: #fff;
+    background: var(--surface-glass-light);
+    border: 1px solid var(--glass-edge);
+    font-family: var(--font-body); font-weight: 500;
+    transition: background 200ms ease, border-color 200ms ease;
+    cursor: pointer;
+    backdrop-filter: blur(var(--blur-glass));
+  }
+  .ghost-btn:hover { background: var(--surface-glass-hover); border-color: var(--pearl-border); }
+
+  /* ---------- Picker card ---------- */
+  .picker-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 14px; border-radius: var(--r-card);
+    background: var(--surface-glass-muted);
+    border: 1px solid var(--glass-edge);
+    backdrop-filter: blur(var(--blur-glass));
+    transition: background 200ms ease, border-color 200ms ease;
+    cursor: pointer; text-align: left; width: 100%;
+  }
+  .picker-card[aria-checked="true"] {
+    border-color: var(--pearl-border);
+    background: var(--pearl-tint);
+    box-shadow: var(--e-pearl-soft);
+  }
+  .picker-card .radio-dot {
+    width: 20px; height: 20px; border-radius: 9999px;
+    border: 1.5px solid rgba(255,255,255,0.35);
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .picker-card[aria-checked="true"] .radio-dot {
+    border-color: var(--pearl);
+    background: radial-gradient(circle, var(--pearl) 0%, var(--pearl) 45%, transparent 50%);
+    box-shadow: 0 0 10px rgba(240,234,214,0.7);
+  }
+
+  /* ---------- Slider ---------- */
+  .audio-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px;
+    background: linear-gradient(to right, var(--pearl) var(--p, 50%), rgba(255,255,255,0.12) var(--p, 50%));
+    border-radius: 9999px; outline: none;
+  }
+  .audio-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 9999px;
+    background: var(--pearl); box-shadow: var(--e-pearl-glow); border: 2px solid #fff; cursor: pointer;
+  }
+
+  /* ---------- Status dot ---------- */
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 4px 24px rgba(240, 234, 214, 0.45); }
+    50%      { box-shadow: 0 4px 36px rgba(240, 234, 214, 0.85); }
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 9999px;
+    background: var(--pearl);
+    box-shadow: 0 0 10px rgba(240, 234, 214, 0.9);
+    animation: pulseGlow 2.4s ease-in-out infinite;
+  }
+
+  /* ---------- Tool tile ---------- */
+  .tool-tile {
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 16px; border-radius: var(--r-panel);
+    background: var(--surface-glass);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--e-inset-highlight);
+    backdrop-filter: blur(var(--blur-glass));
+    aspect-ratio: 1 / 1; transition: transform 220ms ease, border-color 220ms ease;
+    text-decoration: none; color: inherit;
+  }
+  .tool-tile:hover { transform: translateY(-2px); border-color: var(--pearl-border); }
+  .icon-chip {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.08); border: 1px solid var(--glass-edge);
+    color: var(--pearl);
+  }
+  .icon-chip .material-symbols-outlined { font-size: 24px; }
+
+  /* ---------- Layout chrome ---------- */
+  .topbar-demo {
+    height: 56px; max-width: 480px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 var(--margin-mobile);
+  }
+  .topbar-icon {
+    width: 40px; height: 40px; border-radius: 9999px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid var(--glass-edge);
+    backdrop-filter: blur(var(--blur-glass));
+    display: inline-flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .bottomnav-demo {
+    max-width: 480px; margin: 0 auto;
+    height: 64px; border-radius: 24px 24px 0 0;
+    background: var(--surface-glass);
+    border: 1px solid var(--glass-edge);
+    backdrop-filter: blur(var(--blur-glass));
+    box-shadow: var(--e-nav-shadow), var(--e-inset-highlight);
+    display: flex; justify-content: space-around; align-items: center;
+    position: relative;
+  }
+  .fab {
+    width: 56px; height: 56px; border-radius: 9999px;
+    background: var(--pearl-grad); color: var(--text-on-pearl);
+    box-shadow: var(--e-pearl-cta);
+    display: inline-flex; align-items: center; justify-content: center;
+    position: absolute; top: -24px; left: 50%; transform: translateX(-50%);
+  }
+
+  /* swatch */
+  .swatch {
+    border-radius: var(--r-card);
+    border: 1px solid var(--glass-edge);
+    box-shadow: var(--e-inset-highlight);
+    overflow: hidden;
+  }
+  .swatch .preview { height: 88px; }
+  .swatch .meta { padding: 10px 12px; background: rgba(15,10,11,0.55); backdrop-filter: blur(var(--blur-glass)); }
+  .swatch .name { font-size: 13px; font-weight: 600; color: #fff; }
+  .swatch .value { font-family: var(--font-mono); font-size: 11px; color: var(--text-on-surface-subtle); }
+
+  /* Section card */
+  .section-card { padding: 28px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; }
+  .grid-6 { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 12px; }
+
+  /* checkerboard for alpha colors */
+  .alpha-bg {
+    background-image:
+      linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(255,255,255,0.06) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.06) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.06) 75%);
+    background-size: 12px 12px;
+    background-position: 0 0, 0 6px, 6px -6px, -6px 0;
+  }
+
+  .spacing-bar { background: var(--pearl); height: 14px; border-radius: 6px; }
+
+  .cover-art {
+    background:
+      radial-gradient(120% 80% at 30% 20%, rgba(240, 234, 214, 0.35) 0%, transparent 55%),
+      radial-gradient(80% 60% at 80% 90%, rgba(255, 177, 200, 0.35) 0%, transparent 60%),
+      radial-gradient(60% 50% at 50% 60%, rgba(139, 168, 142, 0.30) 0%, transparent 60%),
+      linear-gradient(180deg, #2a1a1d 0%, #150b10 100%);
+    position: relative; overflow: hidden;
+  }
+  .cover-art::before {
+    content: ""; position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(115deg,
+      rgba(255,255,255,0.05) 0px, rgba(255,255,255,0.05) 1px, transparent 1px, transparent 7px);
+    mix-blend-mode: overlay;
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero / title bar -->
+<header class="max-w-[1200px] mx-auto px-8 pt-12 pb-10">
+  <div class="flex items-end justify-between gap-8 flex-wrap">
+    <div>
+      <p class="eyebrow mb-3">AudioFlow · design system v1.0</p>
+      <h1 class="h-display text-white glow-text" style="font-size:56px; line-height:60px;">Glass &amp; pearl, on burgundy.</h1>
+      <p class="subtle mt-4 max-w-[640px]" style="font-size:17px; line-height:26px;">
+        Każdy widok dzieli ten sam słownik wizualny: ciepłe burgundowe tło z radialnymi rozbłyskami, ciemne szklane panele
+        z perłowym akcentem. Ten katalog to twoje referencje przy refaktorze aplikacji mobilnej.
+      </p>
+    </div>
+    <div class="flex flex-col gap-2 items-end mono subtle">
+      <span>max-width: 480px · dark mode</span>
+      <span>Quicksand · Varela Round · Material Symbols</span>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-[1200px] mx-auto px-8 pb-24 flex flex-col gap-8">
+
+  <!-- ============================================================= -->
+  <!-- 1 · COLOR -->
+  <!-- ============================================================= -->
+  <section class="glass section-card">
+    <div class="flex items-baseline justify-between gap-4 flex-wrap mb-6">
+      <h2 class="h-section glow-text" style="font-size:28px;">01 · Color</h2>
+      <span class="mono subtle">tokens.color.*</span>
+    </div>
+
+    <p class="eyebrow mb-3">Background — hero</p>
+    <div class="grid grid-cols-4 gap-4 mb-8">
+      <div class="swatch">
+        <div class="preview" style="background: #6b4c4c;"></div>
+        <div class="meta"><div class="name">hero-base</div><div class="value">#6b4c4c</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview alpha-bg" style="background-image:
+          radial-gradient(circle at 50% 50%, rgba(204,153,153,0.5) 0%, transparent 70%),
+          linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%),
+          linear-gradient(-45deg, rgba(255,255,255,0.06) 25%, transparent 25%);
+          background-size: cover, 12px 12px, 12px 12px;"></div>
+        <div class="meta"><div class="name">hero-radial-1 (rose)</div><div class="value">rgba(204,153,153,0.5)</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview alpha-bg" style="background-image:
+          radial-gradient(circle at 50% 50%, rgba(179,128,128,0.4) 0%, transparent 70%),
+          linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%);
+          background-size: cover, 12px 12px;"></div>
+        <div class="meta"><div class="name">hero-radial-2 (mauve)</div><div class="value">rgba(179,128,128,0.4)</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview alpha-bg" style="background-image:
+          radial-gradient(circle at 50% 50%, rgba(153,102,102,0.5) 0%, transparent 70%),
+          linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%);
+          background-size: cover, 12px 12px;"></div>
+        <div class="meta"><div class="name">hero-radial-3 (deep-rose)</div><div class="value">rgba(153,102,102,0.5)</div></div>
+      </div>
+    </div>
+
+    <p class="eyebrow mb-3">Glass surfaces</p>
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="swatch">
+        <div class="preview alpha-bg"><div style="height:100%; background: rgba(45,30,30,0.45); backdrop-filter: blur(3px);"></div></div>
+        <div class="meta"><div class="name">surface-glass</div><div class="value">rgba(45,30,30,0.45)</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview alpha-bg"><div style="height:100%; background: rgba(45,30,30,0.35);"></div></div>
+        <div class="meta"><div class="name">surface-glass-muted</div><div class="value">rgba(45,30,30,0.35)</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview alpha-bg"><div style="height:100%; background: rgba(255,255,255,0.06);"></div></div>
+        <div class="meta"><div class="name">surface-glass-light</div><div class="value">rgba(255,255,255,0.06)</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview alpha-bg"><div style="height:100%; background: rgba(255,255,255,0.08);"></div></div>
+        <div class="meta"><div class="name">surface-glass-lighter</div><div class="value">rgba(255,255,255,0.08)</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview alpha-bg"><div style="height:100%; background: rgba(255,255,255,0.12);"></div></div>
+        <div class="meta"><div class="name">surface-glass-hover</div><div class="value">rgba(255,255,255,0.12)</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview alpha-bg"><div style="height:100%; background: rgba(15,10,11,0.6);"></div></div>
+        <div class="meta"><div class="name">glass-edge (border)</div><div class="value">rgba(15,10,11,0.6)</div></div>
+      </div>
+    </div>
+
+    <p class="eyebrow mb-3">Pearl accent (the one accent)</p>
+    <div class="grid grid-cols-4 gap-4 mb-8">
+      <div class="swatch">
+        <div class="preview" style="background: #F0EAD6;"></div>
+        <div class="meta"><div class="name">pearl</div><div class="value">#F0EAD6</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview" style="background: #FBFCF8;"></div>
+        <div class="meta"><div class="name">pearl-bright</div><div class="value">#FBFCF8</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview" style="background: linear-gradient(135deg, #F0EAD6 0%, #FBFCF8 50%, #F0EAD6 100%);"></div>
+        <div class="meta"><div class="name">pearl-grad (CTA fill)</div><div class="value">135° F0EAD6 → FBFCF8 → F0EAD6</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview alpha-bg"><div style="height:100%; background: rgba(240,234,214,0.10);"></div></div>
+        <div class="meta"><div class="name">pearl-tint (selected)</div><div class="value">rgba(240,234,214,0.10)</div></div>
+      </div>
+    </div>
+
+    <p class="eyebrow mb-3">Text</p>
+    <div class="grid grid-cols-4 gap-4">
+      <div class="swatch">
+        <div class="preview flex items-center justify-center" style="background: #150b10; color:#fff;"><span style="font-size:22px; font-weight:600;">Aa Aa</span></div>
+        <div class="meta"><div class="name">text-on-dark</div><div class="value">#FFFFFF</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview flex items-center justify-center" style="background: #F0EAD6; color:#131316;"><span style="font-size:22px; font-weight:600;">Aa Aa</span></div>
+        <div class="meta"><div class="name">text-on-pearl</div><div class="value">#131316</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview flex items-center justify-center" style="background: #2a1a1d; color:#d4c0d7;"><span style="font-size:22px; font-weight:600;">Aa Aa</span></div>
+        <div class="meta"><div class="name">on-surface-subtle</div><div class="value">#d4c0d7</div></div>
+      </div>
+      <div class="swatch">
+        <div class="preview flex items-center justify-center" style="background: #150b10; color: rgba(255,255,255,0.6);"><span style="font-size:22px; font-weight:600;">Aa Aa</span></div>
+        <div class="meta"><div class="name">on-surface-muted</div><div class="value">rgba(255,255,255,0.6)</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= -->
+  <!-- 2 · TYPOGRAPHY -->
+  <!-- ============================================================= -->
+  <section class="glass section-card">
+    <div class="flex items-baseline justify-between gap-4 flex-wrap mb-6">
+      <h2 class="h-section glow-text" style="font-size:28px;">02 · Typography</h2>
+      <span class="mono subtle">Quicksand · Varela Round</span>
+    </div>
+
+    <div class="grid grid-cols-2 gap-8">
+      <!-- Specimen column -->
+      <div class="flex flex-col gap-6">
+        <div>
+          <p class="eyebrow mb-2">eyebrow · 12 / 16 · 0.18em · uppercase</p>
+          <p style="font-family: var(--font-headline); font-size: 32px; line-height: 40px; font-weight: 700; letter-spacing:-0.02em;" class="glow-text">
+            Cisza między akapitami
+          </p>
+          <p class="mono subtle mt-2">headline-lg · Quicksand 700 · 32/40 · -0.02em</p>
+        </div>
+        <div>
+          <p style="font-family: var(--font-headline); font-size: 24px; line-height: 32px; font-weight: 600;" class="glow-text">Narzędzia projektu</p>
+          <p class="mono subtle mt-2">headline-md · Quicksand 600 · 24/32</p>
+        </div>
+        <div>
+          <p style="font-family: var(--font-body); font-size: 18px; line-height: 28px;">Wybierz lektora, ton i tempo nagrania, aby nadać książce odpowiedni nastrój.</p>
+          <p class="mono subtle mt-2">body-lg · Varela Round · 18/28</p>
+        </div>
+        <div>
+          <p style="font-family: var(--font-body); font-size: 16px; line-height: 24px;">Skanuj, kadruj i porządkuj strony książki przed rozpoczęciem nagrania.</p>
+          <p class="mono subtle mt-2">body-md · Varela Round · 16/24</p>
+        </div>
+        <div>
+          <p style="font-family: var(--font-body); font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing:0.01em;">Zdjęcia stron</p>
+          <p class="mono subtle mt-2">label-md · Varela Round 600 · 14/20 · 0.01em</p>
+        </div>
+        <div>
+          <p style="font-family: var(--font-body); font-size: 12px; line-height: 16px; font-weight: 500;" class="subtle">248 stron · 03:32:05 · MP3</p>
+          <p class="mono subtle mt-2">label-sm · Varela Round 500 · 12/16</p>
+        </div>
+      </div>
+
+      <!-- Rules column -->
+      <div class="glass-light p-6">
+        <p class="eyebrow mb-4">Rules</p>
+        <ul class="space-y-3" style="font-size:14px; line-height:22px; color: var(--text-on-surface-subtle);">
+          <li>· <b style="color:#fff;">Quicksand</b> dla nagłówków i tytułów; <b style="color:#fff;">Varela Round</b> dla wszystkiego innego.</li>
+          <li>· Nagłówki na hero mają zawsze <span class="mono">text-shadow: 0 0 12px rgba(255,255,255,.3)</span> — to nasza poświata.</li>
+          <li>· Etykiety statusowe (np. „W trakcie nagrywania”) — uppercase, 12/16, tracking 0.14em.</li>
+          <li>· Eyebrowy kategorii (np. „Audiobook”) — uppercase, 12/16, tracking 0.18em, kolor on-surface-subtle.</li>
+          <li>· Cyfry czasu/postępu używają monospace dla stabilności widoku.</li>
+          <li>· Maksymalna szerokość kolumny tekstu nigdy nie przekracza 480px — to nasz mobilny rytm.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= -->
+  <!-- 3 · SPACING + RADIUS + ELEVATION -->
+  <!-- ============================================================= -->
+  <section class="glass section-card">
+    <div class="flex items-baseline justify-between gap-4 flex-wrap mb-6">
+      <h2 class="h-section glow-text" style="font-size:28px;">03 · Spacing · Radius · Elevation</h2>
+      <span class="mono subtle">tokens.spacing / radius / elevation</span>
+    </div>
+
+    <div class="grid grid-cols-3 gap-8">
+      <!-- Spacing -->
+      <div>
+        <p class="eyebrow mb-4">Spacing scale</p>
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-3"><div class="spacing-bar" style="width: 8px;"></div><span class="mono">stack-sm · 8</span></div>
+          <div class="flex items-center gap-3"><div class="spacing-bar" style="width: 16px;"></div><span class="mono">stack-md · 16</span></div>
+          <div class="flex items-center gap-3"><div class="spacing-bar" style="width: 20px;"></div><span class="mono">margin-mobile · 20</span></div>
+          <div class="flex items-center gap-3"><div class="spacing-bar" style="width: 32px;"></div><span class="mono">stack-lg · 32</span></div>
+          <div class="flex items-center gap-3"><div class="spacing-bar" style="width: 48px;"></div><span class="mono">section-gap · 48</span></div>
+        </div>
+      </div>
+
+      <!-- Radius -->
+      <div>
+        <p class="eyebrow mb-4">Radius</p>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="flex flex-col items-center gap-2">
+            <div style="width:64px; height:64px; background: var(--surface-glass); border:1px solid var(--glass-edge); border-radius: 4px;"></div>
+            <span class="mono">sm · 4</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div style="width:64px; height:64px; background: var(--surface-glass); border:1px solid var(--glass-edge); border-radius: 8px;"></div>
+            <span class="mono">md · 8</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div style="width:64px; height:64px; background: var(--surface-glass); border:1px solid var(--glass-edge); border-radius: 12px;"></div>
+            <span class="mono">lg · 12</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div style="width:64px; height:64px; background: var(--surface-glass); border:1px solid var(--glass-edge); border-radius: 16px;"></div>
+            <span class="mono">card · 16</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div style="width:64px; height:64px; background: var(--surface-glass); border:1px solid var(--glass-edge); border-radius: 24px;"></div>
+            <span class="mono">panel · 24</span>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <div style="width:64px; height:64px; background: var(--surface-glass); border:1px solid var(--glass-edge); border-radius: 9999px;"></div>
+            <span class="mono">full</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Elevation -->
+      <div>
+        <p class="eyebrow mb-4">Elevation / glow</p>
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center gap-4">
+            <div style="width:80px; height:48px; border-radius:9999px; background: var(--pearl-grad); box-shadow: var(--e-pearl-cta);"></div>
+            <div>
+              <div style="font-size:13px; font-weight:600;">pearl-cta</div>
+              <div class="mono subtle">0 4px 20px rgba(240,234,214,0.4)</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <div style="width:48px; height:48px; border-radius:9999px; background: var(--pearl); box-shadow: var(--e-pearl-glow);"></div>
+            <div>
+              <div style="font-size:13px; font-weight:600;">pearl-glow</div>
+              <div class="mono subtle">0 0 12px rgba(240,234,214,0.9)</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <div style="width:80px; height:48px; border-radius:16px; background: var(--surface-glass); border:1px solid var(--pearl-border); box-shadow: var(--e-pearl-soft);"></div>
+            <div>
+              <div style="font-size:13px; font-weight:600;">pearl-soft (selected)</div>
+              <div class="mono subtle">0 0 22px rgba(240,234,214,0.18)</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-4">
+            <div style="width:80px; height:48px; border-radius:12px; background: var(--surface-glass); box-shadow: var(--e-inset-highlight); border:1px solid var(--glass-edge);"></div>
+            <div>
+              <div style="font-size:13px; font-weight:600;">inset-highlight</div>
+              <div class="mono subtle">inset 1px 1px 0 rgba(255,255,255,0.1)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= -->
+  <!-- 4 · COMPONENTS -->
+  <!-- ============================================================= -->
+  <section class="glass section-card">
+    <div class="flex items-baseline justify-between gap-4 flex-wrap mb-6">
+      <h2 class="h-section glow-text" style="font-size:28px;">04 · Components</h2>
+      <span class="mono subtle">tools-shared.css</span>
+    </div>
+
+    <!-- Buttons -->
+    <p class="eyebrow mb-3">Buttons</p>
+    <div class="glass-light p-6 mb-6 flex flex-wrap items-center gap-4">
+      <button class="pearl-btn">
+        <span class="material-symbols-outlined" style="font-size:20px;">play_arrow</span>
+        Rozpocznij nagrywanie
+      </button>
+      <button class="pearl-btn disabled" aria-disabled="true">
+        <span class="material-symbols-outlined" style="font-size:20px;">cloud_upload</span>
+        Eksportuj
+      </button>
+      <button class="ghost-btn">
+        <span class="material-symbols-outlined" style="font-size:20px;">add</span>
+        Dodaj rozdział
+      </button>
+      <button class="ghost-btn">Anuluj</button>
+    </div>
+
+    <!-- Picker cards + status -->
+    <div class="grid grid-cols-2 gap-6 mb-6">
+      <div>
+        <p class="eyebrow mb-3">Picker card (radio)</p>
+        <div class="flex flex-col gap-2">
+          <button class="picker-card" aria-checked="true">
+            <span class="radio-dot"></span>
+            <div class="flex-1">
+              <div style="font-weight:600; color:#fff;">Maja — spokojna</div>
+              <div class="subtle" style="font-size:13px;">Średnie tempo · ciepła barwa</div>
+            </div>
+            <span class="material-symbols-outlined" style="color: var(--pearl);">graphic_eq</span>
+          </button>
+          <button class="picker-card" aria-checked="false">
+            <span class="radio-dot"></span>
+            <div class="flex-1">
+              <div style="font-weight:600; color:#fff;">Kacper — narracyjny</div>
+              <div class="subtle" style="font-size:13px;">Wolne tempo · głęboka barwa</div>
+            </div>
+            <span class="material-symbols-outlined subtle">graphic_eq</span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <p class="eyebrow mb-3">Status pill + indicators</p>
+        <div class="flex flex-col gap-3">
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass-light w-fit">
+            <span class="status-dot"></span>
+            <span style="font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:#fff; font-weight:500;">W trakcie nagrywania</span>
+          </div>
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass-light w-fit">
+            <span class="material-symbols-outlined" style="font-size:16px; color: var(--pearl);">menu_book</span>
+            <span style="font-size:13px; font-weight:600; color:#fff;">248 stron</span>
+          </div>
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass-light w-fit">
+            <span class="material-symbols-outlined" style="font-size:16px; color: var(--pearl);">schedule</span>
+            <span style="font-size:13px; font-weight:600; color:#fff; font-family: var(--font-mono);">03:32:05</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slider -->
+    <p class="eyebrow mb-3">Slider / progress</p>
+    <div class="glass-light p-6 mb-6 flex flex-col gap-4">
+      <input id="s1" type="range" min="0" max="100" value="35" class="audio-slider" style="--p:35%;">
+      <div class="flex items-center justify-between">
+        <span class="mono" style="color:#fff;">01:14:22</span>
+        <span class="mono subtle">03:32:05</span>
+      </div>
+    </div>
+
+    <!-- Tool tiles -->
+    <p class="eyebrow mb-3">Tool tiles (2-up grid on mobile)</p>
+    <div class="grid-4 mb-6">
+      <a class="tool-tile">
+        <div class="flex items-center justify-between">
+          <span class="icon-chip"><span class="material-symbols-outlined">photo_library</span></span>
+          <span class="mono subtle">248</span>
+        </div>
+        <div>
+          <div style="font-weight:600; color:#fff; font-size:14px;">Zdjęcia stron</div>
+          <div class="subtle" style="font-size:12px; line-height:18px;">Skanuj, kadruj i porządkuj strony książki.</div>
+        </div>
+      </a>
+      <a class="tool-tile">
+        <div class="flex items-center justify-between">
+          <span class="icon-chip"><span class="material-symbols-outlined">graphic_eq</span></span>
+          <span class="mono subtle">AI</span>
+        </div>
+        <div>
+          <div style="font-weight:600; color:#fff; font-size:14px;">Głos i audio</div>
+          <div class="subtle" style="font-size:12px; line-height:18px;">Wybierz lektora, ton i tempo.</div>
+        </div>
+      </a>
+      <a class="tool-tile">
+        <div class="flex items-center justify-between">
+          <span class="icon-chip"><span class="material-symbols-outlined">ios_share</span></span>
+          <span class="mono subtle">3</span>
+        </div>
+        <div>
+          <div style="font-weight:600; color:#fff; font-size:14px;">Udostępnij</div>
+          <div class="subtle" style="font-size:12px; line-height:18px;">Wyślij link, zaproś współautorów.</div>
+        </div>
+      </a>
+      <a class="tool-tile">
+        <div class="flex items-center justify-between">
+          <span class="icon-chip"><span class="material-symbols-outlined">download</span></span>
+          <span class="mono subtle">MP3</span>
+        </div>
+        <div>
+          <div style="font-weight:600; color:#fff; font-size:14px;">Eksport</div>
+          <div class="subtle" style="font-size:12px; line-height:18px;">Pobierz audiobook lub PDF.</div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Cover art block -->
+    <p class="eyebrow mb-3">Cover art block (hero imagery)</p>
+    <div class="cover-art rounded-[24px] h-[200px] mb-2 relative">
+      <svg class="absolute inset-0 w-full h-full opacity-70" viewBox="0 0 480 200" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="ds-g1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#F0EAD6" stop-opacity="0.55"/>
+            <stop offset="100%" stop-color="#F0EAD6" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path d="M0,120 C120,80 200,160 320,120 C400,90 440,150 480,130 L480,200 L0,200 Z" fill="url(#ds-g1)"/>
+        <g stroke="rgba(255,255,255,0.18)" stroke-width="1" fill="none">
+          <circle cx="380" cy="40" r="40"/><circle cx="380" cy="40" r="60"/><circle cx="380" cy="40" r="80"/>
+        </g>
+      </svg>
+    </div>
+    <p class="mono subtle">3 × radial-gradient + repeating-linear-gradient(115°, 7px) + dekoracyjne SVG (fale + okręgi)</p>
+  </section>
+
+  <!-- ============================================================= -->
+  <!-- 5 · LAYOUT CHROME -->
+  <!-- ============================================================= -->
+  <section class="glass section-card">
+    <div class="flex items-baseline justify-between gap-4 flex-wrap mb-6">
+      <h2 class="h-section glow-text" style="font-size:28px;">05 · Layout chrome</h2>
+      <span class="mono subtle">max 480 · topbar 56 · bottomnav 64</span>
+    </div>
+
+    <p class="eyebrow mb-3">Top app bar</p>
+    <div class="mb-6 relative rounded-[24px] overflow-hidden" style="background: linear-gradient(180deg, #4d3535 0%, #2a1a1d 100%); height: 96px;">
+      <div class="topbar-demo absolute inset-x-0 top-0">
+        <button class="topbar-icon"><span class="material-symbols-outlined">arrow_back</span></button>
+        <div style="font-size:12px; letter-spacing:0.18em; text-transform:uppercase; color: var(--text-on-surface-subtle); font-weight:600;">Projekt</div>
+        <button class="topbar-icon"><span class="material-symbols-outlined">more_vert</span></button>
+      </div>
+    </div>
+
+    <p class="eyebrow mb-3">Bottom navigation + raised FAB</p>
+    <div class="relative rounded-[24px] overflow-hidden" style="background: linear-gradient(180deg, #2a1a1d 0%, #150b10 100%); height: 140px;">
+      <div class="bottomnav-demo absolute inset-x-0 bottom-0">
+        <a class="flex flex-col items-center" style="color: var(--text-on-surface-subtle); width: 80px;">
+          <span class="material-symbols-outlined">library_books</span>
+          <span style="font-size:12px;">Biblioteka</span>
+        </a>
+        <div class="fab"><span class="material-symbols-outlined" style="font-size:30px;">add</span></div>
+        <a class="flex flex-col items-center" style="color:#fff; width: 80px;">
+          <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+          <span style="font-size:12px;">Odtwarzacz</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= -->
+  <!-- 6 · ICONOGRAPHY -->
+  <!-- ============================================================= -->
+  <section class="glass section-card">
+    <div class="flex items-baseline justify-between gap-4 flex-wrap mb-6">
+      <h2 class="h-section glow-text" style="font-size:28px;">06 · Iconography</h2>
+      <span class="mono subtle">Material Symbols Outlined</span>
+    </div>
+    <p class="subtle mb-4" style="font-size:14px;">Wszystkie ikony pochodzą z Material Symbols Outlined (axes <span class="mono">wght 100..700</span>, <span class="mono">FILL 0..1</span>). Primary tint: <span class="mono">#F0EAD6</span>.</p>
+    <div class="grid-6">
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">photo_library</span><span class="mono subtle">photo_library</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">graphic_eq</span><span class="mono subtle">graphic_eq</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">ios_share</span><span class="mono subtle">ios_share</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">download</span><span class="mono subtle">download</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">menu_book</span><span class="mono subtle">menu_book</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">library_books</span><span class="mono subtle">library_books</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">play_arrow</span><span class="mono subtle">play_arrow</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">pause</span><span class="mono subtle">pause</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">replay_10</span><span class="mono subtle">replay_10</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">forward_10</span><span class="mono subtle">forward_10</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">skip_previous</span><span class="mono subtle">skip_previous</span></div>
+      <div class="flex flex-col items-center gap-2 p-3 glass-light rounded-[12px]"><span class="material-symbols-outlined" style="color: var(--pearl); font-size:28px;">arrow_back</span><span class="mono subtle">arrow_back</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================= -->
+  <!-- 7 · MOTION -->
+  <!-- ============================================================= -->
+  <section class="glass section-card">
+    <div class="flex items-baseline justify-between gap-4 flex-wrap mb-6">
+      <h2 class="h-section glow-text" style="font-size:28px;">07 · Motion</h2>
+      <span class="mono subtle">durations · keyframes</span>
+    </div>
+    <div class="grid grid-cols-2 gap-6">
+      <div class="glass-light p-6">
+        <p class="eyebrow mb-3">Durations</p>
+        <ul class="flex flex-col gap-2 mono subtle" style="font-size:13px;">
+          <li>fast · 120ms · press feedback (active:scale 0.97)</li>
+          <li>base · 200ms · hover bg/border</li>
+          <li>slow · 220ms · transform on tiles</li>
+          <li>pulse · 2400ms · live status + play button glow</li>
+        </ul>
+      </div>
+      <div class="glass-light p-6">
+        <p class="eyebrow mb-3">pulseGlow keyframe</p>
+        <div class="flex items-center justify-around mt-4">
+          <div style="width:56px; height:56px; border-radius:9999px; background: var(--pearl-grad); animation: pulseGlow 2.4s ease-in-out infinite;"></div>
+          <span class="status-dot" style="width:14px; height:14px;"></span>
+        </div>
+        <p class="mono subtle mt-4">0% → box-shadow: 0 4px 24px rgba(240,234,214,0.45)<br/>50% → 0 4px 36px rgba(240,234,214,0.85)</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= -->
+  <!-- 8 · USAGE -->
+  <!-- ============================================================= -->
+  <section class="glass section-card">
+    <div class="flex items-baseline justify-between gap-4 flex-wrap mb-6">
+      <h2 class="h-section glow-text" style="font-size:28px;">08 · Refactor playbook</h2>
+      <span class="mono subtle">use it on mobile</span>
+    </div>
+    <ol class="flex flex-col gap-3" style="font-size:15px; line-height:24px; color: var(--text-on-surface-subtle);">
+      <li><b style="color:#fff;">1.</b> Zamapuj <span class="mono">tokens.json</span> w swoim systemie tokenów (Style Dictionary, RN theme, Compose, SwiftUI ThemeProvider).</li>
+      <li><b style="color:#fff;">2.</b> Zachowaj burgundową hero z trzema radialnymi rozbłyskami — to wizualny podpis aplikacji. Nie wymieniaj jej na flat color.</li>
+      <li><b style="color:#fff;">3.</b> Perła jest jedynym akcentem. Hierarchię buduj różnicami tonalnymi (glass vs glass-light), nie nowymi kolorami.</li>
+      <li><b style="color:#fff;">4.</b> Każda interaktywna powierzchnia ma kombo: <span class="mono">background var(--surface-glass)</span> + <span class="mono">border var(--glass-edge)</span> + <span class="mono">inset highlight</span>. To czyni „szkło”.</li>
+      <li><b style="color:#fff;">5.</b> Press feedback uniwersalny: <span class="mono">transform: scale(0.97)</span> · 120ms. Hover: <span class="mono">surface-glass-hover</span> + <span class="mono">pearl-border</span>.</li>
+      <li><b style="color:#fff;">6.</b> Ikony — Material Symbols Outlined, axes wght/FILL. Primary tint zawsze perłowy.</li>
+      <li><b style="color:#fff;">7.</b> Layout — column max 480, topbar 56, bottomnav 64 z FAB-em uniesionym o -24px. Nie skalować w górę „w pustkę”.</li>
+    </ol>
+  </section>
+
+  <footer class="mono subtle text-center pt-8 pb-4">
+    AudioFlow Design System · v1.0 · extracted from project HTML — tokens.json · tokens.css · tailwind-preset.js
+  </footer>
+</main>
+
+</body>
+</html>

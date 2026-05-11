@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html class="dark" lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>AudioFlow — Eksport</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&amp;family=Varela+Round&amp;display=swap" rel="stylesheet" />
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: { extend: {
+      colors: { "on-surface-subtle": "#d4c0d7", "accent-glow": "#F0EAD6" },
+      spacing: { "stack-sm": "8px", "stack-md": "16px", "stack-lg": "32px", "margin-mobile": "20px" },
+      fontFamily: {
+        "headline-lg": ["Quicksand"], "headline-md": ["Quicksand"],
+        "body-lg": ["Varela Round"], "body-md": ["Varela Round"],
+        "label-md": ["Varela Round"], "label-sm": ["Varela Round"],
+      },
+      fontSize: {
+        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+        "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+        "label-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+      },
+    } },
+  };
+</script>
+<link href="tools-shared.css" rel="stylesheet" />
+<style>
+  /* Format tile (selectable card) */
+  .format-tile {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(45, 30, 30, 0.40);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    backdrop-filter: blur(3px);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.05);
+    color: #fff; text-align: left;
+    cursor: pointer; min-height: 130px;
+    transition: background 200ms ease, border-color 200ms ease, transform 160ms ease;
+    position: relative; overflow: hidden;
+  }
+  .format-tile:hover { transform: translateY(-1px); border-color: rgba(240, 234, 214, 0.45); }
+  .format-tile[aria-checked="true"] {
+    border-color: rgba(240, 234, 214, 0.7);
+    background: rgba(240, 234, 214, 0.12);
+    box-shadow: 0 0 24px rgba(240, 234, 214, 0.22), inset 1px 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .format-tile[aria-checked="true"] .check {
+    opacity: 1; transform: scale(1);
+  }
+  .format-tile .check {
+    position: absolute; top: 12px; right: 12px;
+    width: 22px; height: 22px; border-radius: 9999px;
+    background: #F0EAD6; color: #131316;
+    display: inline-flex; align-items: center; justify-content: center;
+    opacity: 0; transform: scale(0.6);
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+  .format-tile .check .material-symbols-outlined { font-size: 16px; font-variation-settings: 'wght' 700; }
+  .format-tile .icon-pill {
+    width: 36px; height: 36px; border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #F0EAD6;
+  }
+  .format-tile .ext {
+    font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px;
+    color: rgba(240, 234, 214, 0.7); letter-spacing: 0.1em;
+  }
+
+  /* Toggle row */
+  .toggle-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    background: rgba(20, 12, 14, 0.4);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+  }
+  .toggle {
+    --on: 0;
+    width: 42px; height: 24px; border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    position: relative; flex-shrink: 0;
+    cursor: pointer;
+    transition: background 220ms ease;
+  }
+  .toggle::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 18px; height: 18px; border-radius: 9999px;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    transition: transform 220ms ease;
+  }
+  .toggle[aria-checked="true"] {
+    background: linear-gradient(135deg, #F0EAD6 0%, #FBFCF8 100%);
+    box-shadow: 0 0 12px rgba(240, 234, 214, 0.5);
+  }
+  .toggle[aria-checked="true"]::after { transform: translateX(18px); }
+</style>
+</head>
+<body class="text-on-surface-subtle min-h-screen flex flex-col relative bg-login-hero overflow-x-hidden pb-28">
+
+  <div class="fixed inset-0 z-0 opacity-30 mix-blend-screen pointer-events-none"
+       style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3uaDkojqCjCJ3gq00umcI-SEzCjvKGI1qUQ-dzDzaZ2MSt-3uKUlnxjcqCMOXq1iDdmgXGDtQcebOxr2Rhhc_h4ACbrpdy26WELUuHGWd1cdArIoQPQAnH3wbh8WQD9pPQMasQ3L1PYCdtKYGg_R4GutGVQe-_k6CxP-6G8GMXOwXqCJ1zElnT0g0GEFbSK7cRQ1WZzd5WGUhnUxymq84zBlmSquM0FIu3KKwWX5yUlL36fbkdbB2Fn_vfvPxpTz_yU7p5f3Q1ev0'); background-size: cover; background-position: center;">
+  </div>
+
+  <header class="flex justify-between items-center w-full px-margin-mobile py-4 fixed top-0 z-50 bg-transparent max-w-[480px] left-1/2 -translate-x-1/2">
+    <a href="Project Details.html" aria-label="Wróć"
+       class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <div class="text-label-md font-label-md text-on-surface-subtle uppercase tracking-[0.18em]">Eksport</div>
+    <button aria-label="Historia eksportów"
+      class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+      <span class="material-symbols-outlined">history</span>
+    </button>
+  </header>
+
+  <main class="relative z-10 flex-1 w-full max-w-[480px] mx-auto flex flex-col pt-20 px-margin-mobile gap-stack-lg">
+
+    <!-- Title + project -->
+    <section class="flex flex-col gap-1">
+      <p class="text-label-sm font-label-sm uppercase tracking-[0.18em] text-on-surface-subtle">Cisza między akapitami</p>
+      <h1 class="text-headline-lg font-headline-lg text-white glow-text leading-tight">Pobierz audiobook</h1>
+      <p class="text-body-md text-on-surface-subtle leading-snug mt-1">3 godz. 32 min · 248 stron · 4 rozdziały</p>
+    </section>
+
+    <!-- Format -->
+    <section class="flex flex-col gap-stack-sm">
+      <div class="section-head">
+        <label class="text-label-md font-label-md text-white">Format pliku</label>
+        <span class="text-label-sm font-label-sm text-on-surface-subtle">Wybierz jeden</span>
+      </div>
+      <div class="grid grid-cols-2 gap-stack-sm" role="radiogroup" aria-label="Format">
+        <button class="format-tile" role="radio" aria-checked="true" data-fmt="mp3" data-size="184">
+          <span class="check"><span class="material-symbols-outlined">check</span></span>
+          <span class="icon-pill"><span class="material-symbols-outlined">graphic_eq</span></span>
+          <span class="text-label-md font-label-md text-white mt-1">MP3</span>
+          <span class="text-label-sm font-label-sm text-on-surface-subtle leading-snug">Pojedynczy plik. Najszerzej obsługiwany.</span>
+          <span class="ext mt-auto">.MP3 · ~184 MB</span>
+        </button>
+        <button class="format-tile" role="radio" aria-checked="false" data-fmt="m4b" data-size="156">
+          <span class="check"><span class="material-symbols-outlined">check</span></span>
+          <span class="icon-pill"><span class="material-symbols-outlined">menu_book</span></span>
+          <span class="text-label-md font-label-md text-white mt-1">M4B audiobook</span>
+          <span class="text-label-sm font-label-sm text-on-surface-subtle leading-snug">Z rozdziałami i&nbsp;zapamiętywaniem miejsca.</span>
+          <span class="ext mt-auto">.M4B · ~156 MB</span>
+        </button>
+        <button class="format-tile" role="radio" aria-checked="false" data-fmt="zip" data-size="201">
+          <span class="check"><span class="material-symbols-outlined">check</span></span>
+          <span class="icon-pill"><span class="material-symbols-outlined">folder_zip</span></span>
+          <span class="text-label-md font-label-md text-white mt-1">ZIP rozdziałów</span>
+          <span class="text-label-sm font-label-sm text-on-surface-subtle leading-snug">Każdy rozdział jako osobny MP3.</span>
+          <span class="ext mt-auto">.ZIP · ~201 MB</span>
+        </button>
+        <button class="format-tile" role="radio" aria-checked="false" data-fmt="pdf" data-size="42">
+          <span class="check"><span class="material-symbols-outlined">check</span></span>
+          <span class="icon-pill"><span class="material-symbols-outlined">picture_as_pdf</span></span>
+          <span class="text-label-md font-label-md text-white mt-1">PDF tekstu</span>
+          <span class="text-label-sm font-label-sm text-on-surface-subtle leading-snug">Transkrypcja po OCR, bez dźwięku.</span>
+          <span class="ext mt-auto">.PDF · ~42 MB</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Quality -->
+    <section class="glass-panel rounded-[20px] p-stack-md flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">equalizer</span>
+          <span class="text-label-md font-label-md text-white">Jakość audio</span>
+        </div>
+        <span id="q-val" class="text-label-md font-label-md font-mono text-white">192 kbps</span>
+      </div>
+      <input id="quality" type="range" class="audio-slider" min="0" max="3" value="2" step="1" style="--p:66%;" />
+      <div class="flex justify-between text-label-sm font-label-sm text-on-surface-subtle">
+        <span>96</span><span>128</span><span>192</span><span>320</span>
+      </div>
+      <p class="text-label-sm font-label-sm text-on-surface-subtle">Wyższa jakość = większy plik. 192 kbps wystarcza większości słuchaczy.</p>
+    </section>
+
+    <!-- Options -->
+    <section class="flex flex-col gap-stack-sm">
+      <div class="section-head">
+        <label class="text-label-md font-label-md text-white">Opcje</label>
+      </div>
+      <div class="flex flex-col gap-2">
+        <div class="toggle-row">
+          <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">bookmark</span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Znaczniki rozdziałów</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Skok do rozdziału w odtwarzaczu.</span>
+          </span>
+          <button class="toggle" role="switch" aria-checked="true" aria-label="Znaczniki rozdziałów"></button>
+        </div>
+        <div class="toggle-row">
+          <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">image</span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Okładka audiobooka</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Dodaj generowaną grafikę.</span>
+          </span>
+          <button class="toggle" role="switch" aria-checked="true" aria-label="Okładka"></button>
+        </div>
+        <div class="toggle-row">
+          <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">badge</span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Metadane ID3</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Autor, tytuł, rok, gatunek.</span>
+          </span>
+          <button class="toggle" role="switch" aria-checked="true" aria-label="Metadane"></button>
+        </div>
+        <div class="toggle-row">
+          <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">subject</span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Transkrypcja tekstu</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Dodatkowy plik .TXT obok audio.</span>
+          </span>
+          <button class="toggle" role="switch" aria-checked="false" aria-label="Transkrypcja"></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Estimate summary -->
+    <section class="glass-panel rounded-[24px] p-stack-md flex items-center gap-stack-md">
+      <span class="w-12 h-12 rounded-2xl flex items-center justify-center bg-[rgba(240,234,214,0.12)] border border-[rgba(240,234,214,0.4)] flex-shrink-0">
+        <span class="material-symbols-outlined text-[#F0EAD6]">download</span>
+      </span>
+      <div class="flex-1 min-w-0 flex flex-col gap-1">
+        <p class="text-label-sm font-label-sm uppercase tracking-[0.14em] text-on-surface-subtle">Szacowane</p>
+        <p class="text-headline-md font-headline-md text-white leading-tight">
+          <span id="sum-size">184</span> MB · <span id="sum-time">~2 min</span>
+        </p>
+        <p class="text-label-sm font-label-sm text-on-surface-subtle">Plik trafi do folderu Pobrane na tym urządzeniu.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Sticky CTA -->
+  <footer class="fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)]">
+    <div class="max-w-[480px] mx-auto px-margin-mobile py-3 bg-gradient-to-t from-[#3a2424] via-[#3a2424]/85 to-transparent flex items-center justify-between gap-3">
+      <a href="Project Details.html" class="ghost-btn flex-shrink-0">Anuluj</a>
+      <button id="cta-export" class="pearl-btn flex-1">
+        <span class="material-symbols-outlined">download</span> Pobierz <span id="cta-fmt">MP3</span>
+      </button>
+    </div>
+  </footer>
+
+<script>
+  // Format radio
+  const fmtBtns = document.querySelectorAll('[role="radiogroup"][aria-label="Format"] .format-tile');
+  const sumSize = document.getElementById("sum-size");
+  const ctaFmt  = document.getElementById("cta-fmt");
+  const labels  = { mp3: "MP3", m4b: "M4B", zip: "ZIP", pdf: "PDF" };
+  fmtBtns.forEach(b => b.addEventListener("click", () => {
+    fmtBtns.forEach(x => x.setAttribute("aria-checked", "false"));
+    b.setAttribute("aria-checked", "true");
+    sumSize.textContent = b.dataset.size;
+    ctaFmt.textContent = labels[b.dataset.fmt];
+  }));
+
+  // Quality
+  const qSlider = document.getElementById("quality");
+  const qVal    = document.getElementById("q-val");
+  const qLevels = [96, 128, 192, 320];
+  qSlider.addEventListener("input", () => {
+    const idx = Number(qSlider.value);
+    qVal.textContent = qLevels[idx] + " kbps";
+    qSlider.style.setProperty("--p", (idx / 3 * 100) + "%");
+  });
+
+  // Toggles
+  document.querySelectorAll(".toggle").forEach(t => {
+    t.addEventListener("click", () => {
+      t.setAttribute("aria-checked", t.getAttribute("aria-checked") === "true" ? "false" : "true");
+    });
+  });
+
+  // CTA flash
+  document.getElementById("cta-export").addEventListener("click", e => {
+    const btn = e.currentTarget;
+    const html = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined">hourglass_top</span> Generuję plik…';
+    btn.setAttribute("aria-disabled", "true");
+    setTimeout(() => {
+      btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Gotowe — sprawdź Pobrane';
+    }, 1400);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html class="dark" lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>AudioFlow — Udostępnij</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&amp;family=Varela+Round&amp;display=swap" rel="stylesheet" />
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: { extend: {
+      colors: { "on-surface-subtle": "#d4c0d7", "accent-glow": "#F0EAD6" },
+      spacing: { "stack-sm": "8px", "stack-md": "16px", "stack-lg": "32px", "margin-mobile": "20px" },
+      fontFamily: {
+        "headline-lg": ["Quicksand"], "headline-md": ["Quicksand"],
+        "body-lg": ["Varela Round"], "body-md": ["Varela Round"],
+        "label-md": ["Varela Round"], "label-sm": ["Varela Round"],
+      },
+      fontSize: {
+        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+        "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+        "label-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+      },
+    } },
+  };
+</script>
+<link href="tools-shared.css" rel="stylesheet" />
+<style>
+  .link-card {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px 10px 16px;
+    border-radius: 16px;
+    background: rgba(20, 12, 14, 0.55);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.05);
+  }
+  .link-card code {
+    flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: ui-monospace, SFMono-Regular, monospace; font-size: 13px;
+    color: #F0EAD6;
+  }
+  .icon-btn {
+    width: 38px; height: 38px; border-radius: 9999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(240, 234, 214, 0.10);
+    border: 1px solid rgba(240, 234, 214, 0.35);
+    color: #fff; flex-shrink: 0;
+    transition: background 180ms ease, transform 120ms ease;
+    cursor: pointer;
+  }
+  .icon-btn:hover { background: rgba(240, 234, 214, 0.22); }
+  .icon-btn:active { transform: scale(0.95); }
+
+  /* Avatar */
+  .avatar {
+    width: 40px; height: 40px; border-radius: 9999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #131316; font-family: "Quicksand"; font-weight: 700; font-size: 14px;
+    flex-shrink: 0;
+    border: 2px solid rgba(15, 10, 11, 0.6);
+  }
+  /* Social tile */
+  .social-tile {
+    flex: 1;
+    aspect-ratio: 1;
+    border-radius: 18px;
+    background: rgba(45, 30, 30, 0.45);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.06);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease, background 200ms ease;
+  }
+  .social-tile:hover { transform: translateY(-2px); border-color: rgba(240, 234, 214, 0.45); }
+  .social-tile .material-symbols-outlined { font-size: 24px; color: #F0EAD6; }
+  .social-tile span:last-child { font-family: "Varela Round"; font-size: 12px; font-weight: 500; }
+
+  /* QR placeholder */
+  .qr-frame {
+    width: 144px; height: 144px;
+    border-radius: 18px;
+    background:
+      conic-gradient(from 45deg at 50% 50%, #F0EAD6 0deg, #F0EAD6 90deg, transparent 90deg) top left/24px 24px no-repeat,
+      conic-gradient(from 135deg at 50% 50%, #F0EAD6 0deg, #F0EAD6 90deg, transparent 90deg) top right/24px 24px no-repeat,
+      conic-gradient(from 315deg at 50% 50%, #F0EAD6 0deg, #F0EAD6 90deg, transparent 90deg) bottom left/24px 24px no-repeat,
+      radial-gradient(rgba(240,234,214,0.95) 1px, transparent 1.4px) 0 0/8px 8px,
+      #131316;
+    background-position: 0 0, 100% 0, 0 100%, 4px 4px;
+    border: 4px solid #fff;
+    box-shadow: 0 0 30px rgba(240, 234, 214, 0.4);
+  }
+</style>
+</head>
+<body class="text-on-surface-subtle min-h-screen flex flex-col relative bg-login-hero overflow-x-hidden pb-28">
+
+  <div class="fixed inset-0 z-0 opacity-30 mix-blend-screen pointer-events-none"
+       style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3uaDkojqCjCJ3gq00umcI-SEzCjvKGI1qUQ-dzDzaZ2MSt-3uKUlnxjcqCMOXq1iDdmgXGDtQcebOxr2Rhhc_h4ACbrpdy26WELUuHGWd1cdArIoQPQAnH3wbh8WQD9pPQMasQ3L1PYCdtKYGg_R4GutGVQe-_k6CxP-6G8GMXOwXqCJ1zElnT0g0GEFbSK7cRQ1WZzd5WGUhnUxymq84zBlmSquM0FIu3KKwWX5yUlL36fbkdbB2Fn_vfvPxpTz_yU7p5f3Q1ev0'); background-size: cover; background-position: center;">
+  </div>
+
+  <header class="flex justify-between items-center w-full px-margin-mobile py-4 fixed top-0 z-50 bg-transparent max-w-[480px] left-1/2 -translate-x-1/2">
+    <a href="Project Details.html" aria-label="Wróć"
+       class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <div class="text-label-md font-label-md text-on-surface-subtle uppercase tracking-[0.18em]">Udostępnij</div>
+    <div class="w-10 h-10"></div>
+  </header>
+
+  <main class="relative z-10 flex-1 w-full max-w-[480px] mx-auto flex flex-col pt-20 px-margin-mobile gap-stack-lg">
+
+    <!-- Title -->
+    <section class="flex flex-col gap-1">
+      <p class="text-label-sm font-label-sm uppercase tracking-[0.18em] text-on-surface-subtle">Cisza między akapitami</p>
+      <h1 class="text-headline-lg font-headline-lg text-white glow-text leading-tight">Udostępnij projekt</h1>
+      <p class="text-body-md text-on-surface-subtle leading-snug mt-1">Wyślij link słuchaczom, zaproś współautorów do edycji lub wygeneruj kod QR.</p>
+    </section>
+
+    <!-- Share link -->
+    <section class="flex flex-col gap-stack-sm">
+      <div class="section-head">
+        <label class="text-label-md font-label-md text-white">Link do projektu</label>
+        <span id="copy-status" class="text-label-sm font-label-sm text-on-surface-subtle">Każdy z linkiem może odsłuchać</span>
+      </div>
+      <div class="link-card">
+        <span class="material-symbols-outlined text-[#F0EAD6] text-[20px] flex-shrink-0">link</span>
+        <code>audioflow.app/p/cisza-akapitami-9f2c</code>
+        <button id="copy-btn" class="icon-btn" aria-label="Skopiuj link">
+          <span class="material-symbols-outlined text-[20px]" id="copy-icon">content_copy</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Permissions -->
+    <section class="flex flex-col gap-stack-sm">
+      <div class="section-head">
+        <label class="text-label-md font-label-md text-white">Poziom dostępu</label>
+        <span class="text-label-sm font-label-sm text-on-surface-subtle">Dla osób z linkiem</span>
+      </div>
+      <div class="flex flex-col gap-2" role="radiogroup" aria-label="Dostęp">
+        <button class="picker-card" role="radio" aria-checked="true">
+          <span class="radio-dot"></span>
+          <span class="flex-1 min-w-0">
+            <span class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#F0EAD6] text-[18px]">headphones</span>
+              <span class="text-label-md font-label-md text-white">Tylko odsłuchanie</span>
+            </span>
+            <span class="block mt-1 text-label-sm font-label-sm text-on-surface-subtle">Słuchacz nie może edytować ani pobrać pliku.</span>
+          </span>
+        </button>
+        <button class="picker-card" role="radio" aria-checked="false">
+          <span class="radio-dot"></span>
+          <span class="flex-1 min-w-0">
+            <span class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#F0EAD6] text-[18px]">chat_bubble</span>
+              <span class="text-label-md font-label-md text-white">Komentarze</span>
+            </span>
+            <span class="block mt-1 text-label-sm font-label-sm text-on-surface-subtle">Można zostawiać uwagi przy znacznikach czasu.</span>
+          </span>
+        </button>
+        <button class="picker-card" role="radio" aria-checked="false">
+          <span class="radio-dot"></span>
+          <span class="flex-1 min-w-0">
+            <span class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#F0EAD6] text-[18px]">edit</span>
+              <span class="text-label-md font-label-md text-white">Pełna edycja</span>
+            </span>
+            <span class="block mt-1 text-label-sm font-label-sm text-on-surface-subtle">Współautor może dodawać strony i&nbsp;zmieniać lektora.</span>
+          </span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Współautorzy -->
+    <section class="flex flex-col gap-stack-sm">
+      <div class="section-head">
+        <label class="text-label-md font-label-md text-white">Współautorzy</label>
+        <span class="text-label-sm font-label-sm text-on-surface-subtle">3 osoby</span>
+      </div>
+
+      <div class="glass-panel rounded-[20px] p-stack-sm flex flex-col gap-1">
+        <div class="flex items-center gap-3 px-2 py-2">
+          <span class="avatar" style="background: linear-gradient(135deg, #F0EAD6, #ffb1c8);">AK</span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Anna Kowalska</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">anna.k@studio.pl · właściciel</span>
+          </span>
+          <span class="text-label-sm font-label-sm font-mono text-[#F0EAD6] flex-shrink-0">YOU</span>
+        </div>
+        <div class="h-px bg-white/5 mx-2"></div>
+        <div class="flex items-center gap-3 px-2 py-2">
+          <span class="avatar" style="background: linear-gradient(135deg, #8ba88e, #c8d8c6);">MN</span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Marek Nowak</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">redaktor · edycja</span>
+          </span>
+          <button class="icon-btn" aria-label="Opcje"><span class="material-symbols-outlined text-[18px]">more_horiz</span></button>
+        </div>
+        <div class="h-px bg-white/5 mx-2"></div>
+        <div class="flex items-center gap-3 px-2 py-2">
+          <span class="avatar" style="background: linear-gradient(135deg, #ffb1c8, #cc9999);">JZ</span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Julia Zielińska</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">korekta · komentarze</span>
+          </span>
+          <button class="icon-btn" aria-label="Opcje"><span class="material-symbols-outlined text-[18px]">more_horiz</span></button>
+        </div>
+      </div>
+
+      <button class="ghost-btn self-start" type="button">
+        <span class="material-symbols-outlined">person_add</span> Zaproś osobę
+      </button>
+    </section>
+
+    <!-- Quick share row -->
+    <section class="flex flex-col gap-stack-sm">
+      <div class="section-head">
+        <label class="text-label-md font-label-md text-white">Szybkie udostępnianie</label>
+      </div>
+      <div class="flex gap-stack-sm">
+        <button class="social-tile" type="button">
+          <span class="material-symbols-outlined">qr_code_2</span><span>QR kod</span>
+        </button>
+        <button class="social-tile" type="button">
+          <span class="material-symbols-outlined">mail</span><span>E-mail</span>
+        </button>
+        <button class="social-tile" type="button">
+          <span class="material-symbols-outlined">chat</span><span>Komunikator</span>
+        </button>
+        <button class="social-tile" type="button">
+          <span class="material-symbols-outlined">embed</span><span>Osadź</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- QR preview -->
+    <section class="glass-panel rounded-[24px] p-stack-md flex items-center gap-stack-md">
+      <div class="qr-frame" aria-hidden="true"></div>
+      <div class="flex-1 flex flex-col gap-1">
+        <p class="text-label-md font-label-md text-white">Skanuj, by odsłuchać</p>
+        <p class="text-label-sm font-label-sm text-on-surface-subtle leading-snug">Pokaż kod komuś obok lub zapisz jako obraz do wydrukowania w&nbsp;książce.</p>
+        <button class="ghost-btn !py-1.5 !px-3 !text-sm self-start mt-1" type="button">
+          <span class="material-symbols-outlined text-[16px]">download</span> Pobierz QR
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Sticky bottom CTA -->
+  <footer class="fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)]">
+    <div class="max-w-[480px] mx-auto px-margin-mobile py-3 bg-gradient-to-t from-[#3a2424] via-[#3a2424]/85 to-transparent flex items-center justify-between gap-3">
+      <a href="Project Details.html" class="ghost-btn flex-shrink-0">Gotowe</a>
+      <button id="cta-copy" class="pearl-btn flex-1">
+        <span class="material-symbols-outlined">link</span> Skopiuj link
+      </button>
+    </div>
+  </footer>
+
+<script>
+  // Radio group
+  function bindRadioGroup(selector) {
+    const btns = document.querySelectorAll(selector);
+    btns.forEach(b => b.addEventListener("click", () => {
+      btns.forEach(x => x.setAttribute("aria-checked", "false"));
+      b.setAttribute("aria-checked", "true");
+    }));
+  }
+  bindRadioGroup('[role="radiogroup"][aria-label="Dostęp"] .picker-card');
+
+  // Copy flash
+  function flashCopied() {
+    const status = document.getElementById("copy-status");
+    const icon = document.getElementById("copy-icon");
+    const prev = status.textContent;
+    status.textContent = "Skopiowano do schowka";
+    status.style.color = "#F0EAD6";
+    icon.textContent = "check";
+    setTimeout(() => {
+      status.textContent = prev;
+      status.style.color = "";
+      icon.textContent = "content_copy";
+    }, 1500);
+  }
+  document.getElementById("copy-btn").addEventListener("click", flashCopied);
+  document.getElementById("cta-copy").addEventListener("click", flashCopied);
+</script>
+</body>
+</html>

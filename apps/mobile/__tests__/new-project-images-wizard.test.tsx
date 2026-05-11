@@ -1,4 +1,5 @@
 import React from 'react';
+import { FlatList } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 const mockLaunchImageLibraryAsync = jest.fn();
@@ -110,11 +111,15 @@ describe('New audiobook wizard step 2', () => {
   it('uses automatic mode by default and finishes by opening the player', async () => {
     render(<NewProjectImagesScreen />);
 
+    expect(await screen.findByText('Dodaj zdjęcia stron książki')).toBeTruthy();
+    expect(screen.getByText('Źródło zdjęć')).toBeTruthy();
+    expect(screen.getByText('Wybierz z urządzenia')).toBeTruthy();
+
     fireEvent.press(await screen.findByText('Galeria'));
 
-    expect(await screen.findByText('Konfiguracja automatyczna')).toBeTruthy();
+    expect(await screen.findByText('Kreator automatyczny')).toBeTruthy();
     expect(screen.getByText('Dodano 1 zdjęcie')).toBeTruthy();
-    expect(await screen.findByText('Utwórz audiobooka')).toBeTruthy();
+    expect(await screen.findByText('Dalej')).toBeTruthy();
 
     fireEvent.press(screen.getByTestId('wizard-continue'));
 
@@ -133,7 +138,7 @@ describe('New audiobook wizard step 2', () => {
     render(<NewProjectImagesScreen />);
 
     fireEvent.press(await screen.findByText('Galeria'));
-    fireEvent.press(await screen.findByText('Konfiguracja zaawansowana'));
+    fireEvent.press(await screen.findByText('Kreator zaawansowany'));
 
     expect(await screen.findByText('page-1.jpg')).toBeTruthy();
     expect(screen.getByText('Edytuj obszary po wysłaniu')).toBeTruthy();
@@ -145,5 +150,25 @@ describe('New audiobook wizard step 2', () => {
     });
     expect(mockGenerateAudio).not.toHaveBeenCalled();
     expect(mockRouterPush).toHaveBeenCalledWith('/(app)/projects/new/review?projectId=proj-1');
+  });
+
+  it('keeps core actions accessible and avoids a nested virtualized photo list', async () => {
+    const rendered = render(<NewProjectImagesScreen />);
+
+    const continueButton = await screen.findByTestId('wizard-continue');
+    expect(continueButton.props.accessibilityState).toEqual({ disabled: true });
+    expect(screen.getByRole('button', { name: 'Galeria' })).toBeTruthy();
+
+    fireEvent.press(screen.getByText('Galeria'));
+    fireEvent.press(await screen.findByText('Kreator zaawansowany'));
+
+    expect(
+      (await screen.findByLabelText('Przenieś page-1.jpg wyżej')).props.accessibilityState,
+    ).toEqual({ disabled: true });
+    expect(screen.getByLabelText('Przenieś page-1.jpg niżej').props.accessibilityState).toEqual({
+      disabled: true,
+    });
+    expect(screen.getByLabelText('Usuń page-1.jpg')).toBeTruthy();
+    expect(rendered.UNSAFE_queryByType(FlatList)).toBeNull();
   });
 });

@@ -1,0 +1,124 @@
+/* Shared chrome for AudioFlow tool views — based on Project Details */
+
+body { min-height: max(884px, 100dvh); }
+
+.bg-login-hero {
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(204, 153, 153, 0.5) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(179, 128, 128, 0.4) 0%, transparent 50%),
+    radial-gradient(circle at 0% 100%, rgba(153, 102, 102, 0.5) 0%, transparent 50%);
+  background-color: #6b4c4c;
+}
+.glass-panel {
+  background: rgba(45, 30, 30, 0.45);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border: 1px solid rgba(15, 10, 11, 0.6);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+}
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border: 1px solid rgba(15, 10, 11, 0.6);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.08);
+}
+.glow-text { text-shadow: 0 0 12px rgba(255, 255, 255, 0.3); }
+
+/* Pearl primary button (CTA) */
+.pearl-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 18px;
+  border-radius: 9999px;
+  color: #131316;
+  background: linear-gradient(135deg, #F0EAD6 0%, #FBFCF8 50%, #F0EAD6 100%);
+  box-shadow: 0 4px 20px rgba(240, 234, 214, 0.4);
+  font-family: "Varela Round";
+  font-weight: 600;
+  transition: transform 120ms ease, filter 200ms ease;
+  cursor: pointer;
+  border: none;
+}
+.pearl-btn:hover { filter: brightness(1.05); }
+.pearl-btn:active { transform: scale(0.97); }
+.pearl-btn[aria-disabled="true"] {
+  opacity: 0.35; filter: grayscale(0.6); pointer-events: none; box-shadow: none;
+}
+
+/* Ghost button */
+.ghost-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 18px;
+  border-radius: 9999px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(15, 10, 11, 0.6);
+  font-family: "Varela Round";
+  font-weight: 500;
+  transition: background 200ms ease, border-color 200ms ease;
+  cursor: pointer;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+.ghost-btn:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(240, 234, 214, 0.5); }
+
+/* Picker / radio cards */
+.picker-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(45, 30, 30, 0.35);
+  border: 1px solid rgba(15, 10, 11, 0.6);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  transition: background 200ms ease, border-color 200ms ease;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.picker-card[aria-checked="true"] {
+  border-color: rgba(240, 234, 214, 0.55);
+  background: rgba(240, 234, 214, 0.10);
+  box-shadow: 0 0 22px rgba(240, 234, 214, 0.18);
+}
+.picker-card .radio-dot {
+  width: 20px; height: 20px; border-radius: 9999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.picker-card[aria-checked="true"] .radio-dot {
+  border-color: #F0EAD6;
+  background: radial-gradient(circle, #F0EAD6 0%, #F0EAD6 45%, transparent 50%);
+  box-shadow: 0 0 10px rgba(240, 234, 214, 0.7);
+}
+
+/* Section heading */
+.section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding-left: 4px;
+}
+
+/* Slider */
+.audio-slider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px;
+  background: linear-gradient(to right, #F0EAD6 var(--p, 50%), rgba(255,255,255,0.12) var(--p, 50%));
+  border-radius: 9999px;
+  outline: none;
+}
+.audio-slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 18px; height: 18px; border-radius: 9999px;
+  background: #F0EAD6;
+  box-shadow: 0 0 12px rgba(240, 234, 214, 0.9);
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+.audio-slider::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 9999px;
+  background: #F0EAD6;
+  box-shadow: 0 0 12px rgba(240, 234, 214, 0.9);
+  border: 2px solid #fff;
+  cursor: pointer;
+}

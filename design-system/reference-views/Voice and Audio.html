@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html class="dark" lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>AudioFlow — Głos i audio</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&amp;family=Varela+Round&amp;display=swap" rel="stylesheet" />
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: { extend: {
+      colors: { "on-surface-subtle": "#d4c0d7", "accent-glow": "#F0EAD6" },
+      spacing: { "stack-sm": "8px", "stack-md": "16px", "stack-lg": "32px", "margin-mobile": "20px" },
+      fontFamily: {
+        "headline-lg": ["Quicksand"], "headline-md": ["Quicksand"],
+        "body-lg": ["Varela Round"], "body-md": ["Varela Round"],
+        "label-md": ["Varela Round"], "label-sm": ["Varela Round"],
+      },
+      fontSize: {
+        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+        "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+        "label-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+      },
+    } },
+  };
+</script>
+<link href="tools-shared.css" rel="stylesheet" />
+<style>
+  /* Sample preview card */
+  .preview-card {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    border-radius: 20px;
+    background: rgba(45, 30, 30, 0.45);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    backdrop-filter: blur(3px);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .preview-play {
+    width: 44px; height: 44px; flex-shrink: 0;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #F0EAD6 0%, #FBFCF8 50%, #F0EAD6 100%);
+    color: #131316;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 14px rgba(240, 234, 214, 0.5);
+    cursor: pointer; border: none;
+    transition: transform 120ms ease;
+  }
+  .preview-play:active { transform: scale(0.95); }
+  .wave {
+    flex: 1; display: flex; align-items: center; gap: 2px; height: 36px;
+  }
+  .wave i {
+    display: block; width: 3px; border-radius: 3px;
+    background: linear-gradient(to top, rgba(240,234,214,0.4), rgba(240,234,214,1));
+    animation: bar 1.4s ease-in-out infinite;
+  }
+  @keyframes bar { 0%, 100% { height: 30%; } 50% { height: 90%; } }
+  /* Segmented */
+  .seg {
+    display: inline-flex;
+    padding: 4px; border-radius: 9999px;
+    background: rgba(20, 12, 14, 0.5);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+  }
+  .seg button {
+    padding: 6px 14px; border-radius: 9999px;
+    font-family: "Varela Round"; font-size: 13px; font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    transition: background 180ms ease, color 180ms ease;
+    cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] {
+    background: rgba(240, 234, 214, 0.18);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(240, 234, 214, 0.45);
+  }
+</style>
+</head>
+<body class="text-on-surface-subtle min-h-screen flex flex-col relative bg-login-hero overflow-x-hidden pb-28">
+
+  <div class="fixed inset-0 z-0 opacity-30 mix-blend-screen pointer-events-none"
+       style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3uaDkojqCjCJ3gq00umcI-SEzCjvKGI1qUQ-dzDzaZ2MSt-3uKUlnxjcqCMOXq1iDdmgXGDtQcebOxr2Rhhc_h4ACbrpdy26WELUuHGWd1cdArIoQPQAnH3wbh8WQD9pPQMasQ3L1PYCdtKYGg_R4GutGVQe-_k6CxP-6G8GMXOwXqCJ1zElnT0g0GEFbSK7cRQ1WZzd5WGUhnUxymq84zBlmSquM0FIu3KKwWX5yUlL36fbkdbB2Fn_vfvPxpTz_yU7p5f3Q1ev0'); background-size: cover; background-position: center;">
+  </div>
+
+  <header class="flex justify-between items-center w-full px-margin-mobile py-4 fixed top-0 z-50 bg-transparent max-w-[480px] left-1/2 -translate-x-1/2">
+    <a href="Project Details.html" aria-label="Wróć"
+       class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <div class="text-label-md font-label-md text-on-surface-subtle uppercase tracking-[0.18em]">Głos i audio</div>
+    <button aria-label="Resetuj"
+      class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+      <span class="material-symbols-outlined">restart_alt</span>
+    </button>
+  </header>
+
+  <main class="relative z-10 flex-1 w-full max-w-[480px] mx-auto flex flex-col pt-20 px-margin-mobile gap-stack-lg">
+
+    <!-- Title + preview -->
+    <section class="flex flex-col gap-stack-md">
+      <div class="flex flex-col gap-1">
+        <p class="text-label-sm font-label-sm uppercase tracking-[0.18em] text-on-surface-subtle">Cisza między akapitami</p>
+        <h1 class="text-headline-lg font-headline-lg text-white glow-text leading-tight">Głos i&nbsp;audio</h1>
+      </div>
+
+      <!-- Live preview bar -->
+      <div class="preview-card">
+        <button class="preview-play" id="prev-play" aria-label="Posłuchaj próbki">
+          <span class="material-symbols-outlined" id="prev-icon" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+        </button>
+        <div class="flex flex-col gap-1 flex-1 min-w-0">
+          <p class="text-label-md font-label-md text-white">Posłuchaj próbki</p>
+          <p class="text-label-sm font-label-sm text-on-surface-subtle">12 sekund · pierwszy akapit Rozdziału 1</p>
+        </div>
+        <div class="wave" id="wave"></div>
+      </div>
+    </section>
+
+    <!-- Lektor -->
+    <section class="flex flex-col gap-stack-sm">
+      <div class="section-head">
+        <label class="text-label-md font-label-md text-white">Lektor</label>
+        <span class="text-label-sm font-label-sm text-on-surface-subtle">4 dostępne</span>
+      </div>
+      <div class="flex flex-col gap-2" role="radiogroup" aria-label="Lektor">
+        <button class="picker-card" role="radio" aria-checked="true" data-voice="maja">
+          <span class="radio-dot"></span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Maja — spokojna</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Kobiecy, ciepły, refleksyjny</span>
+          </span>
+          <span class="material-symbols-outlined text-on-surface-subtle">graphic_eq</span>
+        </button>
+        <button class="picker-card" role="radio" aria-checked="false" data-voice="adam">
+          <span class="radio-dot"></span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Adam — narracyjny</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Męski, neutralny, klasyczny</span>
+          </span>
+          <span class="material-symbols-outlined text-on-surface-subtle">graphic_eq</span>
+        </button>
+        <button class="picker-card" role="radio" aria-checked="false" data-voice="iga">
+          <span class="radio-dot"></span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Iga — żywiołowa</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Kobiecy, dynamiczny, ekspresyjny</span>
+          </span>
+          <span class="material-symbols-outlined text-on-surface-subtle">graphic_eq</span>
+        </button>
+        <button class="picker-card" role="radio" aria-checked="false" data-voice="tomek">
+          <span class="radio-dot"></span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Tomek — głęboki</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Męski, basowy, dramatyczny</span>
+          </span>
+          <span class="material-symbols-outlined text-on-surface-subtle">graphic_eq</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Sliders -->
+    <section class="flex flex-col gap-stack-md">
+
+      <!-- Tempo -->
+      <div class="glass-panel rounded-[20px] p-stack-md flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">speed</span>
+            <span class="text-label-md font-label-md text-white">Tempo</span>
+          </div>
+          <span id="tempo-val" class="text-label-md font-label-md font-mono text-white">1.0×</span>
+        </div>
+        <input id="tempo" type="range" class="audio-slider" min="60" max="140" value="100" step="5" style="--p:50%;" />
+        <div class="flex justify-between text-label-sm font-label-sm text-on-surface-subtle">
+          <span>0.6×</span><span>1.0×</span><span>1.4×</span>
+        </div>
+      </div>
+
+      <!-- Tonalność -->
+      <div class="glass-panel rounded-[20px] p-stack-md flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">tune</span>
+            <span class="text-label-md font-label-md text-white">Tonalność głosu</span>
+          </div>
+          <span id="pitch-val" class="text-label-md font-label-md font-mono text-white">0</span>
+        </div>
+        <input id="pitch" type="range" class="audio-slider" min="-6" max="6" value="0" step="1" style="--p:50%;" />
+        <div class="flex justify-between text-label-sm font-label-sm text-on-surface-subtle">
+          <span>niżej</span><span>natywnie</span><span>wyżej</span>
+        </div>
+      </div>
+
+      <!-- Pause -->
+      <div class="glass-panel rounded-[20px] p-stack-md flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">space_bar</span>
+            <span class="text-label-md font-label-md text-white">Pauza między rozdziałami</span>
+          </div>
+          <span id="pause-val" class="text-label-md font-label-md font-mono text-white">2.0 s</span>
+        </div>
+        <input id="pause" type="range" class="audio-slider" min="0" max="50" value="20" step="5" style="--p:40%;" />
+        <div class="flex justify-between text-label-sm font-label-sm text-on-surface-subtle">
+          <span>0 s</span><span>2.5 s</span><span>5 s</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Wstawka muzyczna -->
+    <section class="flex flex-col gap-stack-sm">
+      <div class="section-head">
+        <label class="text-label-md font-label-md text-white">Wstawka muzyczna</label>
+        <span class="text-label-sm font-label-sm text-on-surface-subtle">Tło pod narracją</span>
+      </div>
+      <div class="flex flex-col gap-2" role="radiogroup" aria-label="Wstawka muzyczna">
+        <button class="picker-card" role="radio" aria-checked="true">
+          <span class="radio-dot"></span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Pianino nocą</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Spokojne, refleksyjne</span>
+          </span>
+        </button>
+        <button class="picker-card" role="radio" aria-checked="false">
+          <span class="radio-dot"></span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Ambient mgła</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Atmosferyczne, minimalne</span>
+          </span>
+        </button>
+        <button class="picker-card" role="radio" aria-checked="false">
+          <span class="radio-dot"></span>
+          <span class="flex-1 min-w-0">
+            <span class="block text-label-md font-label-md text-white">Bez muzyki</span>
+            <span class="block text-label-sm font-label-sm text-on-surface-subtle">Tylko głos lektora</span>
+          </span>
+        </button>
+      </div>
+
+      <!-- Music volume -->
+      <div class="glass-panel rounded-[20px] p-stack-md flex flex-col gap-3 mt-stack-sm">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">volume_down</span>
+            <span class="text-label-md font-label-md text-white">Głośność muzyki</span>
+          </div>
+          <span id="vol-val" class="text-label-md font-label-md font-mono text-white">25%</span>
+        </div>
+        <input id="vol" type="range" class="audio-slider" min="0" max="100" value="25" step="5" style="--p:25%;" />
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Sticky bottom CTA -->
+  <footer class="fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)]">
+    <div class="max-w-[480px] mx-auto px-margin-mobile py-3 bg-gradient-to-t from-[#3a2424] via-[#3a2424]/85 to-transparent flex items-center justify-between gap-3">
+      <a href="Project Details.html" class="ghost-btn flex-shrink-0">Anuluj</a>
+      <a href="Project Details.html" class="pearl-btn flex-1">
+        <span class="material-symbols-outlined">check</span> Zastosuj zmiany
+      </a>
+    </div>
+  </footer>
+
+<script>
+  // Wave bars
+  const wave = document.getElementById("wave");
+  for (let i = 0; i < 22; i++) {
+    const b = document.createElement("i");
+    b.style.animationDelay = `${(i * 60) % 1400}ms`;
+    wave.appendChild(b);
+  }
+
+  // Radio group helpers
+  function bindRadioGroup(selector) {
+    const btns = document.querySelectorAll(selector);
+    btns.forEach(b => b.addEventListener("click", () => {
+      btns.forEach(x => x.setAttribute("aria-checked", "false"));
+      b.setAttribute("aria-checked", "true");
+    }));
+  }
+  bindRadioGroup('[role="radiogroup"][aria-label="Lektor"] .picker-card');
+  bindRadioGroup('[role="radiogroup"][aria-label="Wstawka muzyczna"] .picker-card');
+
+  // Slider live values
+  function bindSlider(id, fn) {
+    const s = document.getElementById(id);
+    const v = document.getElementById(id + "-val");
+    const upd = () => {
+      const pct = ((s.value - s.min) / (s.max - s.min)) * 100;
+      s.style.setProperty("--p", pct + "%");
+      v.textContent = fn(s.value);
+    };
+    s.addEventListener("input", upd);
+    upd();
+  }
+  bindSlider("tempo", v => (v / 100).toFixed(1) + "×");
+  bindSlider("pitch", v => (v > 0 ? "+" + v : v));
+  bindSlider("pause", v => (v / 10).toFixed(1) + " s");
+  bindSlider("vol",   v => v + "%");
+
+  // Preview play toggle
+  const pbtn = document.getElementById("prev-play");
+  const picon = document.getElementById("prev-icon");
+  pbtn.addEventListener("click", () => {
+    const playing = picon.textContent === "pause";
+    picon.textContent = playing ? "play_arrow" : "pause";
+  });
+</script>
+</body>
+</html>

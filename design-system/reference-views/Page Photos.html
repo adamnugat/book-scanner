@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html class="dark" lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>AudioFlow — Zdjęcia stron</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&amp;family=Varela+Round&amp;display=swap" rel="stylesheet" />
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: { extend: {
+      colors: {
+        "glass-surface": "rgba(45, 30, 30, 0.45)",
+        "on-surface-subtle": "#d4c0d7",
+        "accent-glow": "#F0EAD6",
+        "glass-edge": "rgba(15, 10, 11, 0.6)",
+      },
+      spacing: {
+        "gutter-mobile": "16px", "stack-sm": "8px", "stack-md": "16px",
+        "stack-lg": "32px", "section-gap": "48px", "margin-mobile": "20px",
+      },
+      fontFamily: {
+        "headline-lg": ["Quicksand"], "headline-md": ["Quicksand"],
+        "body-lg": ["Varela Round"], "body-md": ["Varela Round"],
+        "label-md": ["Varela Round"], "label-sm": ["Varela Round"],
+      },
+      fontSize: {
+        "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+        "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+        "label-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+      },
+    } },
+  };
+</script>
+<link href="tools-shared.css" rel="stylesheet" />
+<style>
+  .page-thumb {
+    aspect-ratio: 3 / 4;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(20, 12, 14, 0.55);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.06);
+    position: relative;
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease;
+  }
+  .page-thumb:hover { border-color: rgba(240, 234, 214, 0.45); transform: translateY(-1px); }
+  .page-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .page-thumb .num {
+    position: absolute; left: 4px; bottom: 4px;
+    padding: 1px 6px; border-radius: 9999px;
+    background: rgba(0,0,0,0.55); color: #fff;
+    font-family: "Varela Round"; font-size: 10px; line-height: 14px;
+    backdrop-filter: blur(2px);
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: 9999px;
+    background: rgba(45, 30, 30, 0.35);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    color: #fff;
+    font-family: "Varela Round"; font-size: 13px; font-weight: 500;
+    cursor: pointer;
+    transition: background 180ms ease, border-color 180ms ease;
+    white-space: nowrap;
+  }
+  .chip:hover { background: rgba(240, 234, 214, 0.10); border-color: rgba(240, 234, 214, 0.45); }
+  .chip .material-symbols-outlined { font-size: 16px; }
+</style>
+</head>
+<body class="text-on-surface-subtle min-h-screen flex flex-col relative bg-login-hero overflow-x-hidden pb-28">
+
+  <!-- Ambient backdrop -->
+  <div class="fixed inset-0 z-0 opacity-30 mix-blend-screen pointer-events-none"
+       style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3uaDkojqCjCJ3gq00umcI-SEzCjvKGI1qUQ-dzDzaZ2MSt-3uKUlnxjcqCMOXq1iDdmgXGDtQcebOxr2Rhhc_h4ACbrpdy26WELUuHGWd1cdArIoQPQAnH3wbh8WQD9pPQMasQ3L1PYCdtKYGg_R4GutGVQe-_k6CxP-6G8GMXOwXqCJ1zElnT0g0GEFbSK7cRQ1WZzd5WGUhnUxymq84zBlmSquM0FIu3KKwWX5yUlL36fbkdbB2Fn_vfvPxpTz_yU7p5f3Q1ev0'); background-size: cover; background-position: center;">
+  </div>
+
+  <!-- Top app bar -->
+  <header class="flex justify-between items-center w-full px-margin-mobile py-4 fixed top-0 z-50 bg-transparent max-w-[480px] left-1/2 -translate-x-1/2">
+    <a href="Project Details.html" aria-label="Wróć"
+       class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+      <span class="material-symbols-outlined">arrow_back</span>
+    </a>
+    <div class="text-label-md font-label-md text-on-surface-subtle uppercase tracking-[0.18em]">Zdjęcia stron</div>
+    <button aria-label="Pomoc"
+      class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+      <span class="material-symbols-outlined">help</span>
+    </button>
+  </header>
+
+  <!-- Main -->
+  <main class="relative z-10 flex-1 w-full max-w-[480px] mx-auto flex flex-col pt-20 px-margin-mobile gap-stack-lg">
+
+    <!-- Hero stats -->
+    <section class="flex flex-col gap-stack-sm">
+      <p class="text-label-sm font-label-sm uppercase tracking-[0.18em] text-on-surface-subtle">Cisza między akapitami</p>
+      <h1 class="text-headline-lg font-headline-lg text-white glow-text leading-tight">Strony książki</h1>
+      <div class="flex items-center gap-4 flex-wrap mt-1">
+        <span class="flex items-center gap-1.5 text-white">
+          <span class="material-symbols-outlined text-[18px] text-[#F0EAD6]">menu_book</span>
+          <span class="text-label-md font-label-md">248 stron</span>
+        </span>
+        <span class="w-1 h-1 rounded-full bg-on-surface-subtle"></span>
+        <span class="flex items-center gap-1.5 text-on-surface-subtle">
+          <span class="material-symbols-outlined text-[18px]">bookmark</span>
+          <span class="text-label-md font-label-md">4 rozdziały</span>
+        </span>
+        <span class="w-1 h-1 rounded-full bg-on-surface-subtle"></span>
+        <span class="flex items-center gap-1.5 text-on-surface-subtle">
+          <span class="material-symbols-outlined text-[18px]">check_circle</span>
+          <span class="text-label-md font-label-md">OCR zakończony</span>
+        </span>
+      </div>
+    </section>
+
+    <!-- Action chips -->
+    <section class="flex flex-wrap gap-2">
+      <a href="Add Photos.html" class="chip" style="background: rgba(240, 234, 214, 0.12); border-color: rgba(240, 234, 214, 0.45);">
+        <span class="material-symbols-outlined">add_a_photo</span> Dodaj zdjęcia
+      </a>
+      <button class="chip"><span class="material-symbols-outlined">swap_vert</span> Zmień kolejność</button>
+      <button class="chip"><span class="material-symbols-outlined">flag</span> Oznacz rozdziały</button>
+      <button class="chip"><span class="material-symbols-outlined">select_check_box</span> Zaznacz wiele</button>
+    </section>
+
+    <!-- Chapter sections -->
+    <section class="flex flex-col gap-stack-md">
+
+      <!-- Chapter 1 -->
+      <div class="flex flex-col gap-stack-sm">
+        <div class="flex items-baseline justify-between pl-1">
+          <h2 class="text-headline-md font-headline-md text-white">Rozdział 1 · Otwarcie</h2>
+          <span class="text-label-sm font-label-sm text-on-surface-subtle">str. 1–62</span>
+        </div>
+        <div id="grid-1" class="grid grid-cols-4 gap-2"></div>
+      </div>
+
+      <!-- Chapter 2 -->
+      <div class="flex flex-col gap-stack-sm">
+        <div class="flex items-baseline justify-between pl-1">
+          <h2 class="text-headline-md font-headline-md text-white">Rozdział 2 · Pauza</h2>
+          <span class="text-label-sm font-label-sm text-on-surface-subtle">str. 63–124</span>
+        </div>
+        <div id="grid-2" class="grid grid-cols-4 gap-2"></div>
+      </div>
+
+      <!-- Chapter 3 collapsed hint -->
+      <div class="glass-panel rounded-[20px] p-stack-md flex items-center justify-between">
+        <div class="flex flex-col gap-0.5">
+          <p class="text-label-md font-label-md text-white">Rozdział 3 · Wybrzmienie</p>
+          <p class="text-label-sm font-label-sm text-on-surface-subtle">62 strony · zwinięte</p>
+        </div>
+        <button class="ghost-btn !py-2 !px-3 !text-sm" type="button">Rozwiń</button>
+      </div>
+
+      <!-- Chapter 4 collapsed hint -->
+      <div class="glass-panel rounded-[20px] p-stack-md flex items-center justify-between">
+        <div class="flex flex-col gap-0.5">
+          <p class="text-label-md font-label-md text-white">Rozdział 4 · Zamknięcie</p>
+          <p class="text-label-sm font-label-sm text-on-surface-subtle">62 strony · zwinięte</p>
+        </div>
+        <button class="ghost-btn !py-2 !px-3 !text-sm" type="button">Rozwiń</button>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Sticky bottom CTA -->
+  <footer class="fixed bottom-0 inset-x-0 z-40 pb-[env(safe-area-inset-bottom)]">
+    <div class="max-w-[480px] mx-auto px-margin-mobile py-3 bg-gradient-to-t from-[#3a2424] via-[#3a2424]/85 to-transparent flex items-center justify-between gap-3">
+      <a href="Project Details.html" class="ghost-btn flex-shrink-0">
+        <span class="material-symbols-outlined">arrow_back</span> Wróć
+      </a>
+      <a href="Add Photos.html" class="pearl-btn flex-1">
+        <span class="material-symbols-outlined">add_a_photo</span> Dodaj nowe strony
+      </a>
+    </div>
+  </footer>
+
+<script>
+  // Render placeholder thumbs for each chapter (8 each for layout density)
+  const placeholders = [
+    "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=200",
+    "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=200",
+    "https://images.unsplash.com/photo-1519682337058-a94d519337bc?w=200",
+    "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=200",
+    "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=200",
+    "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=200",
+    "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=200",
+    "https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=200",
+  ];
+  function fillGrid(id, startPage) {
+    const grid = document.getElementById(id);
+    for (let i = 0; i < 8; i++) {
+      const div = document.createElement("div");
+      div.className = "page-thumb";
+      div.innerHTML = `<img src="${placeholders[i]}" alt="Strona ${startPage + i}" loading="lazy" /><span class="num">${startPage + i}</span>`;
+      grid.appendChild(div);
+    }
+  }
+  fillGrid("grid-1", 1);
+  fillGrid("grid-2", 63);
+</script>
+</body>
+</html>

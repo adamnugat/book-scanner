@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html class="dark" lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>AudioFlow — Zdjęcia stron</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700&amp;family=Varela+Round&amp;display=swap" rel="stylesheet" />
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "glass-surface": "rgba(45, 30, 30, 0.45)",
+          "surface-muted": "#1b1b1e",
+          "on-surface-subtle": "#d4c0d7",
+          "accent-glow": "#F0EAD6",
+          "glass-edge": "rgba(15, 10, 11, 0.6)"
+        },
+        borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+        spacing: {
+          "gutter-mobile": "16px",
+          "stack-sm": "8px",
+          "stack-md": "16px",
+          "stack-lg": "32px",
+          "section-gap": "48px",
+          "margin-mobile": "20px"
+        },
+        fontFamily: {
+          "headline-lg": ["Quicksand"], "headline-md": ["Quicksand"],
+          "body-lg": ["Varela Round"], "body-md": ["Varela Round"],
+          "label-md": ["Varela Round"], "label-sm": ["Varela Round"]
+        },
+        fontSize: {
+          "headline-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+          "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+          "body-lg":     ["18px", { lineHeight: "28px", fontWeight: "400" }],
+          "body-md":     ["16px", { lineHeight: "24px", fontWeight: "400" }],
+          "label-md":    ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "600" }],
+          "label-sm":    ["12px", { lineHeight: "16px", fontWeight: "500" }]
+        }
+      }
+    }
+  };
+</script>
+<style>
+  body { min-height: max(884px, 100dvh); }
+
+  .bg-login-hero {
+    background-image:
+      radial-gradient(circle at 50% 0%, rgba(204, 153, 153, 0.5) 0%, transparent 60%),
+      radial-gradient(circle at 100% 100%, rgba(179, 128, 128, 0.4) 0%, transparent 50%),
+      radial-gradient(circle at 0% 100%, rgba(153, 102, 102, 0.5) 0%, transparent 50%);
+    background-color: #6b4c4c;
+  }
+  .glass-panel {
+    background: rgba(45, 30, 30, 0.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  .glow-text { text-shadow: 0 0 12px rgba(255, 255, 255, 0.3); }
+
+  /* Source action buttons (gallery / camera) */
+  .source-btn {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px;
+    padding: 22px 16px;
+    border-radius: 20px;
+    background: rgba(20, 12, 14, 0.55);
+    border: 1px dashed rgba(240, 234, 214, 0.35);
+    color: #fff;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    transition: border-color 200ms ease, background 200ms ease, transform 120ms ease;
+    cursor: pointer;
+  }
+  .source-btn:hover { border-color: rgba(240, 234, 214, 0.7); background: rgba(20, 12, 14, 0.7); }
+  .source-btn:active { transform: scale(0.98); }
+  .source-btn .icon-wrap {
+    width: 44px; height: 44px; border-radius: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(240, 234, 214, 0.10);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    color: #F0EAD6;
+  }
+
+  /* Wizard option cards */
+  .wizard-card {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 14px 14px;
+    border-radius: 16px;
+    background: rgba(45, 30, 30, 0.35);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    transition: background 200ms ease, border-color 200ms ease;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+  }
+  .wizard-card[aria-checked="true"] {
+    border-color: rgba(240, 234, 214, 0.55);
+    background: rgba(240, 234, 214, 0.10);
+    box-shadow: 0 0 22px rgba(240, 234, 214, 0.18);
+  }
+  .wizard-card .radio-dot {
+    width: 20px; height: 20px; border-radius: 9999px;
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .wizard-card[aria-checked="true"] .radio-dot {
+    border-color: #F0EAD6;
+    background: radial-gradient(circle, #F0EAD6 0%, #F0EAD6 45%, transparent 50%);
+    box-shadow: 0 0 10px rgba(240, 234, 214, 0.7);
+  }
+
+  /* Vertical photo row card (advanced mode) */
+  .photo-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(45, 30, 30, 0.45);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.06);
+    user-select: none;
+    transition: opacity 160ms ease, transform 160ms ease, border-color 160ms ease;
+  }
+  .photo-row.dragging { opacity: 0.35; transform: scale(0.98); }
+  .photo-row.drop-target {
+    border-color: #F0EAD6;
+    box-shadow: 0 0 0 1px #F0EAD6, 0 0 22px rgba(240, 234, 214, 0.25);
+  }
+  .photo-row .grip {
+    width: 28px; height: 56px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.5);
+    cursor: grab;
+  }
+  .photo-row .grip:active { cursor: grabbing; color: #fff; }
+  .photo-row .thumb {
+    width: 56px; height: 72px; border-radius: 10px; overflow: hidden;
+    background: rgba(20, 12, 14, 0.55);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    flex-shrink: 0;
+  }
+  .photo-row .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-row .meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+  .photo-row .meta .title { color: #fff; }
+  .photo-row .areas-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    align-self: flex-start;
+    padding: 6px 10px;
+    border-radius: 9999px;
+    background: rgba(240, 234, 214, 0.12);
+    border: 1px solid rgba(240, 234, 214, 0.4);
+    color: #fff;
+    transition: background 180ms ease, border-color 180ms ease;
+    cursor: pointer;
+  }
+  .photo-row .areas-btn:hover { background: rgba(240, 234, 214, 0.22); border-color: rgba(240, 234, 214, 0.7); }
+  .photo-row .delete-btn {
+    width: 36px; height: 36px; flex-shrink: 0;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(15, 10, 11, 0.6);
+    color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .photo-row .delete-btn:hover { background: rgba(220, 53, 53, 0.75); border-color: rgba(220, 53, 53, 0.9); }
+
+  /* Bottom nav "Dalej" button */
+  .next-btn {
+    width: 56px; height: 56px; border-radius: 9999px;
+    display: flex; align-items: center; justify-content: center;
+    color: #131316;
+    background: linear-gradient(135deg, #F0EAD6 0%, #FBFCF8 50%, #F0EAD6 100%);
+    box-shadow: 0 4px 20px rgba(240, 234, 214, 0.4);
+    transition: opacity 200ms ease, transform 120ms ease, filter 200ms ease;
+  }
+  .next-btn:active { transform: scale(0.95); }
+  .next-btn[aria-disabled="true"] {
+    opacity: 0.35; filter: grayscale(0.6); cursor: not-allowed;
+    box-shadow: none; pointer-events: none;
+  }
+</style>
+</head>
+<body class="text-on-surface-subtle min-h-screen flex flex-col relative bg-login-hero overflow-x-hidden pb-24">
+
+<!-- Ambient Abstract Background Image -->
+<div class="fixed inset-0 z-0 opacity-40 mix-blend-screen pointer-events-none"
+     style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3uaDkojqCjCJ3gq00umcI-SEzCjvKGI1qUQ-dzDzaZ2MSt-3uKUlnxjcqCMOXq1iDdmgXGDtQcebOxr2Rhhc_h4ACbrpdy26WELUuHGWd1cdArIoQPQAnH3wbh8WQD9pPQMasQ3L1PYCdtKYGg_R4GutGVQe-_k6CxP-6G8GMXOwXqCJ1zElnT0g0GEFbSK7cRQ1WZzd5WGUhnUxymq84zBlmSquM0FIu3KKwWX5yUlL36fbkdbB2Fn_vfvPxpTz_yU7p5f3Q1ev0'); background-size: cover; background-position: center;">
+</div>
+
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-margin-mobile py-4 fixed top-0 z-50 bg-transparent max-w-[480px] left-1/2 -translate-x-1/2">
+  <a href="New Project.html"
+    class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+    <span class="material-symbols-outlined">arrow_back</span>
+  </a>
+  <div class="text-label-md font-label-md text-on-surface-subtle uppercase tracking-[0.18em]">Zdjęcia stron</div>
+  <button class="flex items-center justify-center w-10 h-10 rounded-full bg-white/10 border border-[rgba(15,10,11,0.6)] backdrop-blur-md text-white hover:bg-white/20 active:scale-95 transition">
+    <span class="material-symbols-outlined">more_vert</span>
+  </button>
+</header>
+
+<!-- Main column -->
+<main class="relative z-10 flex-1 w-full max-w-[480px] mx-auto px-margin-mobile pt-24 pb-section-gap flex flex-col gap-stack-lg">
+
+  <!-- Title block -->
+  <section class="flex flex-col gap-stack-sm mt-2">
+    <p class="text-label-sm font-label-sm uppercase tracking-[0.18em] text-on-surface-subtle">Krok 2 z 3</p>
+    <h1 class="text-headline-lg font-headline-lg text-white glow-text leading-tight">Dodaj zdjęcia <br/>stron książki</h1>
+    <p class="text-body-md font-body-md text-on-surface-subtle">Wybierz strony z galerii albo zeskanuj je aparatem. Kolejność zdjęć odpowiada kolejności rozdziałów.</p>
+  </section>
+
+  <!-- Source buttons -->
+  <section class="flex flex-col gap-stack-sm">
+    <label class="text-label-md font-label-md text-white pl-1">Źródło zdjęć</label>
+    <div class="flex gap-stack-sm">
+      <button type="button" id="src-gallery" class="source-btn">
+        <span class="icon-wrap"><span class="material-symbols-outlined">photo_library</span></span>
+        <span class="text-label-md font-label-md text-white">Galeria</span>
+        <span class="text-label-sm font-label-sm text-on-surface-subtle">Wybierz z urządzenia</span>
+      </button>
+      <button type="button" id="src-camera" class="source-btn">
+        <span class="icon-wrap"><span class="material-symbols-outlined">photo_camera</span></span>
+        <span class="text-label-md font-label-md text-white">Aparat</span>
+        <span class="text-label-sm font-label-sm text-on-surface-subtle">Zrób zdjęcie strony</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Empty hint (visible when no photos) -->
+  <section id="empty-hint" class="glass-panel rounded-[20px] p-stack-md flex items-center gap-3">
+    <span class="material-symbols-outlined text-[#F0EAD6]">info</span>
+    <p class="text-label-sm font-label-sm text-on-surface-subtle flex-1">
+      Dodaj co najmniej <span class="text-white font-semibold">1 zdjęcie</span>, aby przejść dalej.
+    </p>
+  </section>
+
+  <!-- Wizard mode + photo list (hidden until first photo) -->
+  <section id="after-photos" class="flex flex-col gap-stack-sm hidden">
+
+    <div class="flex items-baseline justify-between pl-1">
+      <label class="text-label-md font-label-md text-white">Tryb kreatora</label>
+      <span class="text-label-sm font-label-sm text-on-surface-subtle">Dotyczy całego projektu</span>
+    </div>
+
+    <div role="radiogroup" aria-label="Tryb kreatora" class="flex flex-col gap-stack-sm">
+
+      <!-- Auto card -->
+      <button type="button" class="wizard-card" role="radio" aria-checked="true" data-mode="auto">
+        <span class="radio-dot"></span>
+        <span class="flex-1 min-w-0">
+          <span class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">auto_awesome</span>
+            <span class="text-label-md font-label-md text-white">Kreator automatyczny</span>
+            <span class="ml-auto text-label-sm font-label-sm text-on-surface-subtle">Domyślne</span>
+          </span>
+          <span class="block mt-1 text-label-sm font-label-sm text-on-surface-subtle leading-snug">AudioFlow sam wykryje strony, ustawi marginesy i przygotuje narrację. Najszybsza droga.</span>
+        </span>
+      </button>
+
+      <!-- Auto-mode info (no frame, two lines) -->
+      <div id="auto-info" class="flex flex-col gap-2 px-1 my-stack-md">
+        <p class="text-headline-md font-headline-md text-white leading-tight">
+          <span id="count" class="text-[40px] leading-[1] font-bold align-[-2px] mr-1">0</span><span id="count-word">zdjęć</span> zostanie przeprocesowanych automatycznie
+        </p>
+        <p class="text-body-md font-body-md text-on-surface-subtle leading-snug">
+          Wykryjemy krawędzie stron, wyrównamy perspektywę i odczytamy tekst.
+        </p>
+      </div>
+
+      <!-- Advanced card -->
+      <button type="button" class="wizard-card" role="radio" aria-checked="false" data-mode="advanced">
+        <span class="radio-dot"></span>
+        <span class="flex-1 min-w-0">
+          <span class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-[#F0EAD6] text-[20px]">tune</span>
+            <span class="text-label-md font-label-md text-white">Kreator zaawansowany</span>
+          </span>
+          <span class="block mt-1 text-label-sm font-label-sm text-on-surface-subtle leading-snug">Ręcznie zaznaczysz obszary tekstu, oznaczysz nagłówki rozdziałów i ustawisz pauzy między stronami.</span>
+        </span>
+      </button>
+
+      <!-- Advanced-mode photo list (visible only when advanced selected) -->
+      <div id="photo-list-section" class="hidden flex-col gap-stack-sm mt-stack-sm">
+        <div class="flex items-baseline justify-between pl-1">
+          <label class="text-label-md font-label-md text-white">Strony</label>
+          <span class="text-label-sm font-label-sm text-on-surface-subtle">Przeciągnij, by zmienić kolejność</span>
+        </div>
+        <div id="photo-list" class="flex flex-col gap-stack-sm"></div>
+      </div>
+
+    </div>
+
+  </section>
+</main>
+
+<!-- BottomNavBar -->
+<nav class="glass-panel fixed bottom-0 w-full z-50 rounded-t-[24px] border-t-0 border-b-0 border-x-0 shadow-[0_-4px_20px_rgba(0,0,0,0.2)] flex justify-around items-center h-16 max-w-[480px] left-1/2 -translate-x-1/2">
+  <a href="Dashboard.html" class="flex flex-col items-center justify-center text-on-surface-subtle hover:text-white transition-colors group w-20">
+    <span class="material-symbols-outlined mb-1 transition-transform group-active:scale-90">library_books</span>
+    <span class="text-label-sm font-label-sm">Biblioteka</span>
+  </a>
+  <div class="relative -top-6">
+    <button id="next-btn" class="next-btn" aria-disabled="true" aria-label="Dalej">
+      <span class="material-symbols-outlined text-3xl">arrow_forward</span>
+    </button>
+  </div>
+  <a href="Project Details.html" class="flex flex-col items-center justify-center text-on-surface-subtle hover:text-white transition-colors group w-20">
+    <span class="material-symbols-outlined mb-1 transition-transform group-active:scale-90">play_circle</span>
+    <span class="text-label-sm font-label-sm">Odtwarzacz</span>
+  </a>
+</nav>
+
+<script>
+  // ---------- State ----------
+  const photos = []; // [{ id, src }]
+  let mode = "auto";
+  let nextId = 1;
+
+  // ---------- Refs ----------
+  const $list     = document.getElementById("photo-list");
+  const $listSec  = document.getElementById("photo-list-section");
+  const $count    = document.getElementById("count");
+  const $countW   = document.getElementById("count-word");
+  const $autoInfo = document.getElementById("auto-info");
+  const $afterPh  = document.getElementById("after-photos");
+  const $emptyH   = document.getElementById("empty-hint");
+  const $next     = document.getElementById("next-btn");
+
+  function pluralZdjec(n) {
+    if (n === 1) return "zdjęcie";
+    const lastTwo = n % 100;
+    const last = n % 10;
+    if (lastTwo >= 12 && lastTwo <= 14) return "zdjęć";
+    if (last >= 2 && last <= 4) return "zdjęcia";
+    return "zdjęć";
+  }
+
+  // ---------- Pool of placeholder images (simulates picking from gallery/camera) ----------
+  const POOL = [
+    "https://picsum.photos/seed/page-a01/300/400",
+    "https://picsum.photos/seed/page-b02/300/400",
+    "https://picsum.photos/seed/page-c03/300/400",
+    "https://picsum.photos/seed/page-d04/300/400",
+    "https://picsum.photos/seed/page-e05/300/400",
+    "https://picsum.photos/seed/page-f06/300/400",
+    "https://picsum.photos/seed/page-g07/300/400",
+    "https://picsum.photos/seed/page-h08/300/400",
+    "https://picsum.photos/seed/page-i09/300/400",
+    "https://picsum.photos/seed/page-j10/300/400",
+    "https://picsum.photos/seed/page-k11/300/400",
+    "https://picsum.photos/seed/page-l12/300/400"
+  ];
+
+  function pickFromPool() {
+    return POOL[(nextId - 1) % POOL.length];
+  }
+
+  function addPhoto() {
+    photos.push({ id: nextId++, src: pickFromPool() });
+    renderAll();
+  }
+
+  function removePhoto(id) {
+    const i = photos.findIndex(p => p.id === id);
+    if (i >= 0) photos.splice(i, 1);
+    renderAll();
+  }
+
+  function reorder(fromId, toId) {
+    if (fromId === toId) return;
+    const from = photos.findIndex(p => p.id === fromId);
+    const to   = photos.findIndex(p => p.id === toId);
+    if (from < 0 || to < 0) return;
+    const [moved] = photos.splice(from, 1);
+    photos.splice(to, 0, moved);
+    renderAll();
+  }
+
+  // ---------- Rendering ----------
+  function renderList() {
+    $list.innerHTML = "";
+    photos.forEach((p, idx) => {
+      const row = document.createElement("div");
+      row.className = "photo-row";
+      row.draggable = true;
+      row.dataset.id = String(p.id);
+      row.innerHTML = `
+        <span class="grip" aria-hidden="true">
+          <span class="material-symbols-outlined">drag_indicator</span>
+        </span>
+        <span class="thumb"><img src="${p.src}" alt="Strona ${idx + 1}" /></span>
+        <span class="meta">
+          <span class="title text-label-md font-label-md">Strona ${idx + 1}</span>
+          <button type="button" class="areas-btn" aria-label="Zaznacz obszary na stronie ${idx + 1}">
+            <span class="material-symbols-outlined text-[16px]">crop_free</span>
+            <span class="text-label-sm font-label-sm">Zaznacz obszary</span>
+          </button>
+        </span>
+        <button type="button" class="delete-btn" aria-label="Usuń stronę ${idx + 1}">
+          <span class="material-symbols-outlined text-[18px]">delete</span>
+        </button>
+      `;
+
+      row.querySelector(".delete-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        removePhoto(p.id);
+      });
+      row.querySelector(".areas-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        // Placeholder: would open the area-marking preview overlay
+        row.querySelector(".areas-btn").animate(
+          [{ transform: "scale(1)" }, { transform: "scale(0.96)" }, { transform: "scale(1)" }],
+          { duration: 220, easing: "ease-out" }
+        );
+      });
+
+      // Drag handlers (HTML5 DnD)
+      row.addEventListener("dragstart", (e) => {
+        row.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", String(p.id));
+      });
+      row.addEventListener("dragend", () => {
+        row.classList.remove("dragging");
+        $list.querySelectorAll(".drop-target").forEach(el => el.classList.remove("drop-target"));
+      });
+      row.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        $list.querySelectorAll(".drop-target").forEach(el => {
+          if (el !== row) el.classList.remove("drop-target");
+        });
+        if (!row.classList.contains("dragging")) row.classList.add("drop-target");
+      });
+      row.addEventListener("dragleave", () => row.classList.remove("drop-target"));
+      row.addEventListener("drop", (e) => {
+        e.preventDefault();
+        const fromId = Number(e.dataTransfer.getData("text/plain"));
+        reorder(fromId, p.id);
+      });
+
+      $list.appendChild(row);
+    });
+  }
+
+  function renderAll() {
+    const n = photos.length;
+    const has = n > 0;
+    $emptyH.classList.toggle("hidden", has);
+    $afterPh.classList.toggle("hidden", !has);
+    $afterPh.classList.toggle("flex", has);
+    $count.textContent = String(n);
+    $countW.textContent = pluralZdjec(n);
+    $next.setAttribute("aria-disabled", has ? "false" : "true");
+
+    // Auto info visible only in auto mode
+    $autoInfo.classList.toggle("hidden", mode !== "auto");
+    $autoInfo.classList.toggle("flex", mode === "auto");
+
+    // Photo list visible only in advanced mode
+    $listSec.classList.toggle("hidden", mode !== "advanced");
+    $listSec.classList.toggle("flex", mode === "advanced");
+
+    if (mode === "advanced") renderList();
+  }
+
+  // ---------- Source buttons ----------
+  document.getElementById("src-gallery").addEventListener("click", () => {
+    // In a real app this would open the file picker; here we add 3 placeholder pages at once.
+    for (let i = 0; i < 3; i++) addPhoto();
+  });
+  document.getElementById("src-camera").addEventListener("click", () => {
+    addPhoto();
+  });
+
+  // ---------- Wizard radio cards ----------
+  document.querySelectorAll(".wizard-card").forEach(card => {
+    card.addEventListener("click", () => {
+      document.querySelectorAll(".wizard-card").forEach(c =>
+        c.setAttribute("aria-checked", c === card ? "true" : "false"));
+      mode = card.dataset.mode;
+      renderAll();
+    });
+  });
+
+  // ---------- Next button ----------
+  $next.addEventListener("click", () => {
+    if ($next.getAttribute("aria-disabled") === "true") return;
+    window.location.href = "Project Details.html";
+  });
+
+  renderAll();
+</script>
+</body>
+</html>
