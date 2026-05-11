@@ -118,7 +118,10 @@ export default function NewProjectReviewScreen() {
 
       <View style={styles.bottomBar}>
         <Pressable
-          style={[styles.submitButton, (submitting || scenes.length === 0) && styles.submitButtonDisabled]}
+          style={[
+            styles.submitButton,
+            (submitting || scenes.length === 0) && styles.submitButtonDisabled,
+          ]}
           onPress={handleSubmit}
           disabled={submitting || scenes.length === 0}
         >
@@ -134,8 +137,8 @@ export default function NewProjectReviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#101320' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#101320' },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: 20, paddingBottom: 110 },
   hero: {
     backgroundColor: '#18213d',

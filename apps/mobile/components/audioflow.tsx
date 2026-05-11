@@ -96,11 +96,16 @@ const t = audioFlowTokens;
 interface AudioFlowScreenProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }
 
-export function AudioFlowScreen({ children, style }: AudioFlowScreenProps) {
+export function AudioFlowScreen({
+  children,
+  style,
+  testID = 'audioflow-screen',
+}: AudioFlowScreenProps) {
   return (
-    <View style={[styles.screen, style]}>
+    <View style={[styles.screen, style]} testID={testID}>
       <View pointerEvents="none" style={[styles.ambientOrb, styles.ambientOrbTop]} />
       <View pointerEvents="none" style={[styles.ambientOrb, styles.ambientOrbRight]} />
       <View pointerEvents="none" style={[styles.ambientOrb, styles.ambientOrbLeft]} />
@@ -404,7 +409,9 @@ export function AudioFlowFooterMenu({
           onPress={onLibraryPress}
           style={({ pressed }) => [styles.footerItem, pressed && styles.pressed]}
         >
-          <Text style={[styles.footerIcon, active === 'library' && styles.footerItemActive]}>▦</Text>
+          <Text style={[styles.footerIcon, active === 'library' && styles.footerItemActive]}>
+            ▦
+          </Text>
           <Text style={[styles.footerLabel, active === 'library' && styles.footerItemActive]}>
             Biblioteka
           </Text>
@@ -472,7 +479,13 @@ export function FormLink({
   return <Text style={[styles.formLink, style]}>{children}</Text>;
 }
 
-export function StatusPill({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'done' }) {
+export function StatusPill({
+  label,
+  tone = 'neutral',
+}: {
+  label: string;
+  tone?: 'neutral' | 'done';
+}) {
   return (
     <View style={[styles.statusPill, tone === 'done' && styles.statusPillDone]}>
       <Text style={[styles.statusPillText, tone === 'done' && styles.statusPillTextDone]}>
@@ -502,7 +515,9 @@ export function FilterChip({
         pressed && styles.pressed,
       ]}
     >
-      <Text style={[styles.filterChipLabel, selected && styles.filterChipLabelSelected]}>{label}</Text>
+      <Text style={[styles.filterChipLabel, selected && styles.filterChipLabelSelected]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -542,6 +557,107 @@ export function ProjectCard({
           <Text style={styles.projectMeta}>{meta}</Text>
           {actions ? <View style={styles.projectActions}>{actions}</View> : null}
         </View>
+      </View>
+    </Pressable>
+  );
+}
+
+export function AudioFlowProgressBar({
+  progress,
+  accessibilityLabel = 'Postęp odtwarzania',
+}: {
+  progress: number;
+  accessibilityLabel?: string;
+}) {
+  const boundedProgress = Math.max(0, Math.min(progress, 1));
+
+  return (
+    <View
+      accessible
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="progressbar"
+      style={styles.progressTrack}
+    >
+      <View style={[styles.progressFill, { width: `${boundedProgress * 100}%` }]} />
+    </View>
+  );
+}
+
+export function AudioFlowPlayerPanel({
+  progress,
+  currentTime,
+  totalTime,
+  onPlayPress,
+  onPreviousPress,
+  onNextPress,
+}: {
+  progress: number;
+  currentTime: string;
+  totalTime: string;
+  onPlayPress: (event: GestureResponderEvent) => void;
+  onPreviousPress?: (event: GestureResponderEvent) => void;
+  onNextPress?: (event: GestureResponderEvent) => void;
+}) {
+  return (
+    <GlassPanel style={styles.playerPanel}>
+      <AudioFlowProgressBar progress={progress} />
+      <View style={styles.playerTimeRow}>
+        <Text style={styles.playerTimeCurrent}>{currentTime}</Text>
+        <Text style={styles.playerTimeTotal}>{totalTime}</Text>
+      </View>
+      <View style={styles.playerControls}>
+        <RoundIconButton
+          label="Poprzedni rozdział"
+          icon="‹‹"
+          onPress={onPreviousPress ?? onPlayPress}
+        />
+        <Pressable
+          accessibilityLabel="Odtwarzaj lub pauza"
+          accessibilityRole="button"
+          onPress={onPlayPress}
+          style={({ pressed }) => [styles.playerPlayButton, pressed && styles.pressed]}
+        >
+          <Text style={styles.playerPlayIcon}>▶</Text>
+        </Pressable>
+        <RoundIconButton label="Następny rozdział" icon="››" onPress={onNextPress ?? onPlayPress} />
+      </View>
+    </GlassPanel>
+  );
+}
+
+export function ProjectToolTile({
+  title,
+  body,
+  icon,
+  meta,
+  accessibilityLabel,
+  onPress,
+  style,
+}: {
+  title: string;
+  body: string;
+  icon: string;
+  meta?: string;
+  accessibilityLabel: string;
+  onPress: (event: GestureResponderEvent) => void;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.toolTile, pressed && styles.pressed, style]}
+    >
+      <View style={styles.toolTileHeader}>
+        <View style={styles.toolTileIconWrap}>
+          <Text style={styles.toolTileIcon}>{icon}</Text>
+        </View>
+        {meta ? <Text style={styles.toolTileMeta}>{meta}</Text> : null}
+      </View>
+      <View>
+        <Text style={styles.toolTileTitle}>{title}</Text>
+        <Text style={styles.toolTileBody}>{body}</Text>
       </View>
     </Pressable>
   );
@@ -1035,5 +1151,119 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 10,
     marginTop: 10,
+  },
+  progressTrack: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: t.radius.full,
+    height: 6,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    backgroundColor: t.color.accent.pearl,
+    borderRadius: t.radius.full,
+    height: '100%',
+    shadowColor: t.color.accent.pearl,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+  },
+  playerPanel: {
+    gap: t.spacing.stackSm,
+    padding: t.spacing.stackMd,
+  },
+  playerTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: -2,
+  },
+  playerTimeCurrent: {
+    color: t.color.text.onDark,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '700',
+  },
+  playerTimeTotal: {
+    color: t.color.text.onSurfaceSubtle,
+    fontSize: 12,
+    fontVariant: ['tabular-nums'],
+    fontWeight: '600',
+  },
+  playerControls: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  playerPlayButton: {
+    alignItems: 'center',
+    backgroundColor: t.color.accent.pearl,
+    borderRadius: t.radius.full,
+    boxShadow: `0 4px 24px ${t.color.accent.pearlGlow}`,
+    height: 64,
+    justifyContent: 'center',
+    shadowColor: t.color.accent.pearl,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.45,
+    shadowRadius: 24,
+    width: 64,
+  },
+  playerPlayIcon: {
+    color: t.color.text.onPearl,
+    fontSize: 28,
+    fontWeight: '800',
+    lineHeight: 32,
+    marginLeft: 3,
+  },
+  toolTile: {
+    backgroundColor: t.color.surface.glass,
+    borderColor: t.color.surface.glassEdge,
+    borderRadius: t.radius.panel,
+    borderWidth: 1,
+    gap: t.spacing.stackMd,
+    justifyContent: 'space-between',
+    minHeight: 160,
+    padding: t.spacing.stackMd,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 20,
+    width: '48%',
+  },
+  toolTileHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  toolTileIconWrap: {
+    alignItems: 'center',
+    backgroundColor: t.color.surface.glassLighter,
+    borderColor: t.color.surface.glassEdge,
+    borderRadius: t.radius.lg,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  toolTileIcon: {
+    color: t.color.accent.pearl,
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  toolTileMeta: {
+    color: t.color.text.onSurfaceSubtle,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  toolTileTitle: {
+    color: t.color.text.onDark,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+  toolTileBody: {
+    color: t.color.text.onSurfaceSubtle,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 4,
   },
 });

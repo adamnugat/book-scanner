@@ -1,7 +1,16 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { Link, router } from 'expo-router';
 import { useAuth } from '../../lib/auth-context';
+import { AudioFlowScreen } from '../../components/audioflow';
 
 export default function RegisterScreen() {
   const { register } = useAuth();
@@ -36,50 +45,52 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Utwórz konto</Text>
+    <AudioFlowScreen>
+      <View style={styles.container}>
+        <Text style={styles.title}>Utwórz konto</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#666"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#666"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Hasło (min. 8 znaków)"
-        placeholderTextColor="#666"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Hasło (min. 8 znaków)"
+          placeholderTextColor="#666"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Potwierdź hasło"
-        placeholderTextColor="#666"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Potwierdź hasło"
+          placeholderTextColor="#666"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+        />
 
-      <Pressable style={styles.button} onPress={handleRegister} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Zarejestruj</Text>
-        )}
-      </Pressable>
+        <Pressable style={styles.button} onPress={handleRegister} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Zarejestruj</Text>
+          )}
+        </Pressable>
 
-      <Link href="/(auth)/login" style={styles.link}>
-        Masz już konto? Zaloguj się
-      </Link>
-    </View>
+        <Link href="/(auth)/login" style={styles.link}>
+          Masz już konto? Zaloguj się
+        </Link>
+      </View>
+    </AudioFlowScreen>
   );
 }
 
@@ -88,7 +99,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: 'center',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 28,

@@ -87,7 +87,11 @@ export default function ScenesScreen() {
       <Pressable
         style={styles.card}
         onPress={() => {
-          if (item.status === 'ocr_done' || item.status === 'needs_review' || item.status === 'ready_for_audio') {
+          if (
+            item.status === 'ocr_done' ||
+            item.status === 'needs_review' ||
+            item.status === 'ready_for_audio'
+          ) {
             router.push(`/(app)/projects/${id}/scenes/${item.id}`);
           }
         }}
@@ -97,7 +101,8 @@ export default function ScenesScreen() {
           <Text style={styles.pageNum}>{item.orderIndex + 1}</Text>
           <View style={styles.cardContent}>
             <Text style={styles.ocrPreview} numberOfLines={2}>
-              {item.ocrText || (item.status === 'ocr_processing' ? 'Przetwarzanie...' : 'Oczekuje...')}
+              {item.ocrText ||
+                (item.status === 'ocr_processing' ? 'Przetwarzanie...' : 'Oczekuje...')}
             </Text>
           </View>
           <View style={[styles.statusDot, { backgroundColor: cfg.color }]}>
@@ -134,7 +139,9 @@ export default function ScenesScreen() {
 
       {scenes.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Brak scen. Uruchom OCR, aby rozpoznać tekst ze zdjęć.</Text>
+          <Text style={styles.emptyText}>
+            Brak scen. Uruchom OCR, aby rozpoznać tekst ze zdjęć.
+          </Text>
           <Pressable style={styles.ocrBtn} onPress={handleProcessOcr} disabled={processing}>
             {processing ? (
               <ActivityIndicator color="#fff" />
@@ -167,29 +174,57 @@ export default function ScenesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1a2e' },
-  header: { padding: 20, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  header: {
+    padding: 20,
+    paddingBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   title: { fontSize: 22, fontWeight: 'bold', color: '#e0e0e0' },
   processingBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   processingText: { color: '#f0a500', fontSize: 13 },
   list: { padding: 16, paddingBottom: 100 },
   card: {
-    backgroundColor: '#16213e', borderRadius: 10, padding: 12, marginBottom: 8,
-    borderWidth: 1, borderColor: '#0f3460',
+    backgroundColor: '#16213e',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#0f3460',
   },
   cardRow: { flexDirection: 'row', alignItems: 'center' },
   pageNum: { color: '#888', fontSize: 16, fontWeight: 'bold', width: 28, textAlign: 'center' },
   cardContent: { flex: 1, marginHorizontal: 10 },
   ocrPreview: { color: '#e0e0e0', fontSize: 13, lineHeight: 18 },
-  statusDot: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, minWidth: 70, alignItems: 'center' },
+  statusDot: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    minWidth: 70,
+    alignItems: 'center',
+  },
   statusLabel: { color: '#fff', fontSize: 11, fontWeight: '600' },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   emptyText: { color: '#888', fontSize: 16, textAlign: 'center', marginBottom: 24 },
-  ocrBtn: { backgroundColor: '#e94560', borderRadius: 8, padding: 16, alignItems: 'center', minWidth: 200 },
+  ocrBtn: {
+    backgroundColor: '#e94560',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    minWidth: 200,
+  },
   ocrBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
   bottomBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16,
-    backgroundColor: '#1a1a2e', borderTopWidth: 1, borderTopColor: '#0f3460',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    backgroundColor: '#1a1a2e',
+    borderTopWidth: 1,
+    borderTopColor: '#0f3460',
   },
 });

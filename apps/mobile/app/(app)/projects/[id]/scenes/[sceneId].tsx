@@ -251,8 +251,8 @@ export default function SceneEditorScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1a2e' },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   mobileContent: { padding: 16, paddingBottom: 80 },
 
   desktopLayout: { flex: 1, flexDirection: 'row' },

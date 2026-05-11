@@ -375,8 +375,8 @@ export default function ProjectImagesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1a2e' },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   header: { padding: 20, paddingBottom: 8 },
   title: { fontSize: 22, fontWeight: 'bold', color: '#e0e0e0' },
   list: { padding: 16, paddingBottom: 100 },

@@ -131,7 +131,11 @@ export default function SharingScreen() {
           autoCapitalize="none"
         />
         <Pressable style={styles.shareBtn} onPress={handleShare} disabled={sharing}>
-          {sharing ? <ActivityIndicator color="#fff" size="small" /> : <Text style={styles.shareBtnText}>Udostępnij</Text>}
+          {sharing ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.shareBtnText}>Udostępnij</Text>
+          )}
         </Pressable>
       </View>
 
@@ -161,7 +165,9 @@ export default function SharingScreen() {
       {qr ? (
         <View style={styles.qrSection}>
           <Image source={{ uri: qr.qrImageUrl }} style={styles.qrImage} resizeMode="contain" />
-          <Text style={styles.deepLink} numberOfLines={2}>{qr.deepLinkUrl}</Text>
+          <Text style={styles.deepLink} numberOfLines={2}>
+            {qr.deepLinkUrl}
+          </Text>
           <Pressable style={styles.shareLinkBtn} onPress={handleShareLink}>
             <Text style={styles.shareLinkBtnText}>Udostępnij link</Text>
           </Pressable>
@@ -183,21 +189,43 @@ export default function SharingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e', padding: 20 },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1a2e' },
-  sectionTitle: { color: '#e0e0e0', fontSize: 18, fontWeight: 'bold', marginTop: 20, marginBottom: 12 },
+  container: { flex: 1, backgroundColor: 'transparent', padding: 20 },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  sectionTitle: {
+    color: '#e0e0e0',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 12,
+  },
   shareRow: { flexDirection: 'row', gap: 8 },
   emailInput: {
-    flex: 1, backgroundColor: '#16213e', color: '#e0e0e0', borderRadius: 8, padding: 14,
-    fontSize: 15, borderWidth: 1, borderColor: '#0f3460',
+    flex: 1,
+    backgroundColor: '#16213e',
+    color: '#e0e0e0',
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: '#0f3460',
   },
-  shareBtn: { backgroundColor: '#e94560', borderRadius: 8, paddingHorizontal: 20, justifyContent: 'center' },
+  shareBtn: {
+    backgroundColor: '#e94560',
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+  },
   shareBtnText: { color: '#fff', fontWeight: '600' },
   emptyText: { color: '#666', fontSize: 14 },
   shareList: { maxHeight: 200 },
   shareItem: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    padding: 12, backgroundColor: '#16213e', borderRadius: 8, marginBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    backgroundColor: '#16213e',
+    borderRadius: 8,
+    marginBottom: 6,
   },
   shareInfo: { flex: 1 },
   shareEmail: { color: '#e0e0e0', fontSize: 14 },
@@ -206,7 +234,13 @@ const styles = StyleSheet.create({
   qrSection: { alignItems: 'center' },
   qrImage: { width: 200, height: 200, backgroundColor: '#fff', borderRadius: 8 },
   deepLink: { color: '#888', fontSize: 12, marginTop: 8, textAlign: 'center' },
-  shareLinkBtn: { backgroundColor: '#0f3460', borderRadius: 8, padding: 12, marginTop: 12, paddingHorizontal: 24 },
+  shareLinkBtn: {
+    backgroundColor: '#0f3460',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+    paddingHorizontal: 24,
+  },
   shareLinkBtnText: { color: '#e0e0e0', fontWeight: '600' },
   regenerateBtn: { marginTop: 8, padding: 8 },
   regenerateBtnText: { color: '#888', fontSize: 13 },

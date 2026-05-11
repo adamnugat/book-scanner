@@ -12,8 +12,21 @@ import {
   ActionSheetIOS,
 } from 'react-native';
 import { Stack, useLocalSearchParams, router, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../../../lib/api';
-import type { ProjectResponse } from '@book-scanner/shared';
+import {
+  AudioFlowFooterMenu,
+  AudioFlowPlayerPanel,
+  AudioFlowScreen,
+  GlassPanel,
+  ProjectToolTile,
+  RoundIconButton,
+  StatusPill,
+  TopAppBar,
+  audioFlowStyles,
+  audioFlowTokens,
+} from '../../../../components/audioflow';
+import type { AudioTrackResponse, ProjectResponse } from '@book-scanner/shared';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Szkic',
@@ -22,12 +35,28 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Gotowe',
 };
 
-const COVER_HEIGHT = Dimensions.get('window').height * 0.5;
+const HERO_HEIGHT = Math.max(Dimensions.get('window').height * 0.52, 442);
+const t = audioFlowTokens;
+
+const formatDuration = (durationMs: number) => {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (value: number) => String(value).padStart(2, '0');
+
+  if (hours > 0) {
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  }
+
+  return `${pad(minutes)}:${pad(seconds)}`;
+};
 
 export default function ProjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const [project, setProject] = useState<ProjectResponse | null>(null);
-  const [hasAudio, setHasAudio] = useState(false);
+  const [audioTracks, setAudioTracks] = useState<AudioTrackResponse[]>([]);
 
   useFocusEffect(
     useCallback(() => {
@@ -43,7 +72,7 @@ export default function ProjectDetailScreen() {
           if (!isActive) return;
 
           setProject(projectData);
-          setHasAudio(audioTracks.length > 0);
+          setAudioTracks(audioTracks);
         } catch {
           Alert.alert('Błąd', 'Nie udało się pobrać projektu');
           router.back();
@@ -102,294 +131,350 @@ export default function ProjectDetailScreen() {
     ]);
   };
 
+  const handleOpenPlayer = () => {
+    router.push(`/(app)/projects/${id}/player`);
+  };
+
   if (!project) {
     return (
-      <>
+      <AudioFlowScreen>
         <Stack.Screen
           options={{
             headerTitle: '',
             headerTransparent: true,
+            headerShown: false,
             headerTintColor: '#fff',
           }}
         />
-        <View style={styles.emptyState} />
-      </>
+        <View style={styles.loadingState} />
+      </AudioFlowScreen>
     );
   }
 
+  const hasAudio = audioTracks.length > 0;
+  const statusLabel = STATUS_LABELS[project.status] || project.status;
+  const totalDurationMs = audioTracks.reduce((sum, track) => sum + track.durationMs, 0);
+  const totalDuration = formatDuration(totalDurationMs);
+  const audioMeta =
+    audioTracks.length === 1 ? '1 ścieżka audio' : `${audioTracks.length} ścieżek audio`;
+  const languageMeta = project.language.toUpperCase();
+  const voiceMeta = project.voiceId ? `Lektor: ${project.voiceId}` : 'Lektor do wyboru';
+  const interstitialMeta = project.interstitialPreset
+    ? `Wstawka: ${project.interstitialPreset}`
+    : 'Bez wstawki';
+
   return (
-    <>
+    <AudioFlowScreen>
       <Stack.Screen
         options={{
           headerTitle: '',
-          headerTransparent: hasAudio,
+          headerTransparent: true,
+          headerShown: false,
           headerTintColor: '#fff',
-          headerRight: () => (
-            <Pressable
-              accessibilityLabel="Opcje projektu"
-              style={styles.headerAction}
-              onPress={handleProjectOptions}
-            >
-              <Text style={styles.headerActionText}>...</Text>
-            </Pressable>
-          ),
         }}
       />
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 120 }]}
+      >
         {hasAudio ? (
-          <View style={[styles.coverHero, { height: COVER_HEIGHT }]}>
+          <View
+            style={[styles.hero, { minHeight: HERO_HEIGHT, paddingTop: insets.top + 8 }]}
+            testID="audioflow-project-hero"
+          >
             {project.coverUrl ? (
               <Image source={{ uri: project.coverUrl }} style={styles.coverImage} />
             ) : (
-              <View style={styles.mockCover}>
-                <View style={styles.coverOrbPrimary} />
-                <View style={styles.coverOrbSecondary} />
-                <Text style={styles.coverKicker}>Audiobook</Text>
-                <Text style={styles.coverTitle}>{project.title}</Text>
-                <Text style={styles.coverSubtitle}>
-                  {STATUS_LABELS[project.status] || project.status}
-                </Text>
+              <View style={styles.coverArt}>
+                <View style={styles.coverBandPrimary} />
+                <View style={styles.coverBandSecondary} />
+                <View style={styles.coverOrbitLarge} />
+                <View style={styles.coverOrbitSmall} />
               </View>
             )}
 
-            <View style={styles.coverScrim} />
-            <View style={styles.coverControls}>
-              <Text style={styles.coverControlsTitle}>{project.title}</Text>
-              <Pressable
-                style={styles.playButton}
-                onPress={() => router.push(`/(app)/projects/${id}/player`)}
-              >
-                <Text style={styles.playButtonText}>Odtwarzaj audiobooka</Text>
-              </Pressable>
+            <View pointerEvents="none" style={styles.coverOverlay} />
+            <TopAppBar
+              title="Projekt"
+              left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
+              right={
+                <RoundIconButton label="Opcje projektu" icon="⋯" onPress={handleProjectOptions} />
+              }
+              style={styles.topBar}
+            />
+
+            <View style={styles.heroContent}>
+              <View style={styles.heroMetaRow}>
+                <StatusPill
+                  label={statusLabel}
+                  tone={project.status === 'completed' ? 'done' : 'neutral'}
+                />
+                <Text style={styles.heroMetaText}>
+                  {languageMeta} • {audioMeta}
+                </Text>
+              </View>
+
+              <View>
+                <Text style={audioFlowStyles.eyebrow}>Audiobook</Text>
+                <Text style={[audioFlowStyles.headlineLg, styles.heroTitle]}>{project.title}</Text>
+                <Text style={styles.heroSubtitle}>
+                  {voiceMeta} • {interstitialMeta}
+                </Text>
+              </View>
+
+              <AudioFlowPlayerPanel
+                currentTime="00:00"
+                totalTime={totalDuration}
+                progress={0}
+                onNextPress={handleOpenPlayer}
+                onPlayPress={handleOpenPlayer}
+                onPreviousPress={handleOpenPlayer}
+              />
             </View>
           </View>
         ) : (
-          <View style={styles.creationHeader}>
-            <Text style={styles.title}>{project.title}</Text>
-            <Text style={styles.statusPill}>{STATUS_LABELS[project.status] || project.status}</Text>
-            <View
-              style={[
-                styles.nextStepCard,
-                project.status === 'ready_for_tts' && styles.nextStepCardReady,
-              ]}
-            >
-              <Text style={styles.nextStepKicker}>Etap audiobooka</Text>
-              <Text style={styles.nextStepTitle}>
+          <View style={[styles.creationHeader, { paddingTop: insets.top + 8 }]}>
+            <TopAppBar
+              title="Projekt"
+              left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
+              right={
+                <RoundIconButton label="Opcje projektu" icon="⋯" onPress={handleProjectOptions} />
+              }
+              style={styles.topBar}
+            />
+            <GlassPanel style={styles.nextStepPanel}>
+              <View style={styles.heroMetaRow}>
+                <StatusPill
+                  label={statusLabel}
+                  tone={project.status === 'completed' ? 'done' : 'neutral'}
+                />
+                <Text style={styles.heroMetaText}>{languageMeta}</Text>
+              </View>
+              <Text style={audioFlowStyles.eyebrow}>Etap audiobooka</Text>
+              <Text style={[audioFlowStyles.headlineMd, styles.nextStepTitle]}>
                 {project.status === 'ready_for_tts'
                   ? 'Następny krok: Text to Speech'
                   : 'Przygotuj tekst przed nagraniem'}
               </Text>
-              <Text style={styles.nextStepBody}>
+              <Text style={audioFlowStyles.body}>
                 {project.status === 'ready_for_tts'
                   ? 'OCR jest gotowy. Wybierz głos lektora, a potem uruchom generowanie audio dla zatwierdzonych scen.'
                   : 'Najpierw zakończ OCR i zatwierdź tekst scen.'}
               </Text>
               {project.status === 'ready_for_tts' && (
                 <Pressable
-                  style={styles.nextStepBtn}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.nextStepButton, pressed && styles.pressed]}
                   onPress={() => router.push(`/(app)/projects/${id}/voice`)}
                 >
-                  <Text style={styles.nextStepBtnText}>Wybierz głos i generuj audio</Text>
+                  <Text style={styles.nextStepButtonText}>Wybierz głos i generuj audio</Text>
                 </Pressable>
               )}
-            </View>
+            </GlassPanel>
           </View>
         )}
 
         <View style={styles.toolsSection}>
-          <Text style={styles.sectionTitle}>Narzędzia projektu</Text>
+          <View style={styles.toolsHeading}>
+            <Text style={audioFlowStyles.headlineMd}>Narzędzia projektu</Text>
+            <Text style={styles.toolsCount}>3 dostępne</Text>
+          </View>
           <View style={styles.toolsGrid}>
-            <Pressable
-              style={styles.toolCard}
+            <ProjectToolTile
+              accessibilityLabel="Otwórz zdjęcia stron"
+              body="Skanuj, kadruj i porządkuj strony książki."
+              icon="▧"
+              meta="OCR"
               onPress={() => router.push(`/(app)/projects/${id}/images`)}
-            >
-              <Text style={styles.toolKicker}>Treść</Text>
-              <Text style={styles.toolTitle}>Zdjęcia stron</Text>
-              <Text style={styles.toolBody}>Dodaj lub popraw materiał źródłowy.</Text>
-            </Pressable>
+              title="Zdjęcia stron"
+            />
 
-            <Pressable
-              style={styles.toolCard}
+            <ProjectToolTile
+              accessibilityLabel="Otwórz głos i audio"
+              body={
+                project.voiceId
+                  ? `Lektor: ${project.voiceId}`
+                  : 'Wybierz lektora, ton i tempo nagrania.'
+              }
+              icon="≋"
+              meta="AI"
               onPress={() => router.push(`/(app)/projects/${id}/voice`)}
-            >
-              <Text style={styles.toolKicker}>Audio</Text>
-              <Text style={styles.toolTitle}>Głos i audio</Text>
-              <Text style={styles.toolBody}>
-                {project.voiceId ? project.voiceId : 'Wybierz lektora i przebuduj ścieżki.'}
-              </Text>
-            </Pressable>
+              title="Głos i audio"
+            />
 
-            <Pressable
-              style={styles.toolCard}
+            <ProjectToolTile
+              accessibilityLabel="Otwórz udostępnianie"
+              body="Link i kod QR dla odbiorców."
+              icon="↗"
+              meta="Link"
               onPress={() => router.push(`/(app)/projects/${id}/sharing`)}
-            >
-              <Text style={styles.toolKicker}>Dostęp</Text>
-              <Text style={styles.toolTitle}>Udostępnij</Text>
-              <Text style={styles.toolBody}>Link i kod QR dla odbiorców.</Text>
-            </Pressable>
+              title="Udostępnij"
+            />
           </View>
         </View>
       </ScrollView>
-    </>
+
+      <AudioFlowFooterMenu
+        active="player"
+        bottomInset={insets.bottom}
+        onCreatePress={() => router.push('/(app)/projects/new')}
+        onLibraryPress={() => router.replace('/(app)')}
+        onPlayerPress={handleOpenPlayer}
+        playerDisabled={!hasAudio}
+      />
+    </AudioFlowScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#101320' },
-  content: { paddingBottom: 32 },
-  emptyState: { flex: 1, backgroundColor: '#101320' },
-  headerAction: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(16, 19, 32, 0.45)',
-    marginRight: 4,
+  scroll: {
+    flex: 1,
   },
-  headerActionText: { color: '#fff', fontSize: 24, fontWeight: '700', marginTop: -8 },
-  coverHero: {
-    width: '100%',
+  content: {
+    flexGrow: 1,
+  },
+  loadingState: {
+    flex: 1,
+  },
+  hero: {
+    borderBottomLeftRadius: t.radius.panel,
+    borderBottomRightRadius: t.radius.panel,
     overflow: 'hidden',
-    backgroundColor: '#14182a',
+    width: '100%',
   },
   coverImage: {
     ...StyleSheet.absoluteFillObject,
-    width: '100%',
     height: '100%',
+    width: '100%',
   },
-  mockCover: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 28,
-    backgroundColor: '#20233d',
-  },
-  coverOrbPrimary: {
-    position: 'absolute',
-    top: -80,
-    right: -70,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(233, 69, 96, 0.38)',
-  },
-  coverOrbSecondary: {
-    position: 'absolute',
-    bottom: 42,
-    left: -60,
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    backgroundColor: 'rgba(6, 214, 160, 0.2)',
-  },
-  coverKicker: {
-    color: '#f0a500',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 2,
-    marginBottom: 12,
-    textTransform: 'uppercase',
-  },
-  coverTitle: {
-    color: '#fff',
-    fontSize: 34,
-    fontWeight: '800',
-    lineHeight: 40,
-    maxWidth: '78%',
-  },
-  coverSubtitle: {
-    color: '#d7e4ef',
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 14,
-  },
-  coverScrim: {
+  coverArt: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.18)',
+    backgroundColor: t.color.background.deep1,
+    overflow: 'hidden',
   },
-  coverControls: {
+  coverBandPrimary: {
     position: 'absolute',
-    left: 24,
-    right: 24,
-    bottom: 24,
+    bottom: 118,
+    height: 128,
+    left: -48,
+    right: -32,
+    transform: [{ rotate: '-12deg' }],
+    backgroundColor: 'rgba(240, 234, 214, 0.16)',
   },
-  coverControlsTitle: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 12 },
-  playButton: {
-    backgroundColor: '#06d6a0',
-    borderRadius: 18,
-    paddingVertical: 17,
-    paddingHorizontal: 18,
-    alignItems: 'center',
+  coverBandSecondary: {
+    position: 'absolute',
+    bottom: 72,
+    height: 108,
+    left: -64,
+    right: -48,
+    transform: [{ rotate: '-9deg' }],
+    backgroundColor: 'rgba(255, 177, 200, 0.18)',
   },
-  playButtonText: { color: '#101320', fontSize: 16, fontWeight: '800' },
-  creationHeader: { padding: 24, paddingBottom: 4 },
-  title: { fontSize: 30, fontWeight: '800', color: '#fff', marginBottom: 10 },
-  statusPill: {
-    alignSelf: 'flex-start',
-    color: '#d7e4ef',
-    fontSize: 13,
-    fontWeight: '700',
-    backgroundColor: '#20233d',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginBottom: 18,
-  },
-  nextStepCard: {
-    backgroundColor: '#18213d',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 20,
+  coverOrbitLarge: {
+    borderColor: 'rgba(255, 255, 255, 0.14)',
+    borderRadius: 120,
     borderWidth: 1,
-    borderColor: '#29355c',
+    height: 240,
+    position: 'absolute',
+    right: -30,
+    top: 70,
+    width: 240,
   },
-  nextStepCardReady: {
-    borderColor: '#06d6a0',
-    backgroundColor: '#073b3a',
+  coverOrbitSmall: {
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 76,
+    borderWidth: 1,
+    height: 152,
+    position: 'absolute',
+    right: 14,
+    top: 114,
+    width: 152,
   },
-  nextStepKicker: {
-    color: '#f0a500',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-    textTransform: 'uppercase',
+  coverOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(20, 10, 10, 0.36)',
   },
-  nextStepTitle: { color: '#fff', fontSize: 20, fontWeight: '800', marginBottom: 8 },
-  nextStepBody: { color: '#c9d6df', fontSize: 14, lineHeight: 20 },
-  nextStepBtn: {
-    backgroundColor: '#06d6a0',
-    borderRadius: 14,
-    padding: 15,
+  topBar: {
+    position: 'relative',
+    zIndex: 2,
+  },
+  heroContent: {
+    position: 'absolute',
+    bottom: t.spacing.stackLg,
+    gap: t.spacing.stackMd,
+    left: t.spacing.marginMobile,
+    right: t.spacing.marginMobile,
+  },
+  heroMetaRow: {
     alignItems: 'center',
-    marginTop: 16,
+    flexDirection: 'row',
+    gap: t.spacing.stackSm,
+    justifyContent: 'space-between',
   },
-  nextStepBtnText: { color: '#102027', fontSize: 15, fontWeight: '800' },
-  toolsSection: { paddingHorizontal: 24, paddingTop: 24 },
-  sectionTitle: { color: '#fff', fontSize: 19, fontWeight: '800', marginBottom: 14 },
+  heroMetaText: {
+    color: t.color.text.onSurfaceSubtle,
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'right',
+  },
+  heroTitle: {
+    marginTop: 4,
+  },
+  heroSubtitle: {
+    ...t.typography.bodyMd,
+    color: t.color.text.onSurfaceSubtle,
+    marginTop: 4,
+  },
+  creationHeader: {
+    gap: t.spacing.stackMd,
+    paddingHorizontal: t.spacing.marginMobile,
+  },
+  nextStepPanel: {
+    gap: t.spacing.stackMd,
+    padding: t.spacing.stackLg,
+  },
+  nextStepTitle: {
+    marginTop: -4,
+  },
+  nextStepButton: {
+    alignItems: 'center',
+    backgroundColor: t.color.accent.pearl,
+    borderRadius: t.radius.full,
+    marginTop: 4,
+    minHeight: 52,
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+  },
+  nextStepButtonText: {
+    color: t.color.text.onPearl,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  pressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.97 }],
+  },
+  toolsSection: {
+    gap: t.spacing.stackMd,
+    paddingHorizontal: t.spacing.marginMobile,
+    paddingTop: t.spacing.stackLg,
+  },
+  toolsHeading: {
+    alignItems: 'baseline',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  toolsCount: {
+    color: t.color.text.onSurfaceSubtle,
+    fontSize: 12,
+    fontWeight: '600',
+  },
   toolsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: t.spacing.stackMd,
   },
-  toolCard: {
-    width: '48%',
-    minHeight: 148,
-    backgroundColor: '#18213d',
-    borderRadius: 22,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#29355c',
-  },
-  toolKicker: {
-    color: '#f0a500',
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.7,
-    textTransform: 'uppercase',
-    marginBottom: 18,
-  },
-  toolTitle: { color: '#fff', fontSize: 17, fontWeight: '800', marginBottom: 8 },
-  toolBody: { color: '#aebbd3', fontSize: 13, lineHeight: 18 },
 });

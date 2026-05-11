@@ -1,7 +1,16 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import { Link } from 'expo-router';
 import { api } from '../../lib/api';
+import { AudioFlowScreen } from '../../components/audioflow';
 
 export default function ResetPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -27,46 +36,50 @@ export default function ResetPasswordScreen() {
 
   if (sent) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Sprawdź email</Text>
-        <Text style={styles.subtitle}>
-          Jeśli konto z tym adresem istnieje, wysłaliśmy link do zresetowania hasła.
-        </Text>
-        <Link href="/(auth)/login" style={styles.link}>
-          Wróć do logowania
-        </Link>
-      </View>
+      <AudioFlowScreen>
+        <View style={styles.container}>
+          <Text style={styles.title}>Sprawdź email</Text>
+          <Text style={styles.subtitle}>
+            Jeśli konto z tym adresem istnieje, wysłaliśmy link do zresetowania hasła.
+          </Text>
+          <Link href="/(auth)/login" style={styles.link}>
+            Wróć do logowania
+          </Link>
+        </View>
+      </AudioFlowScreen>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Resetuj hasło</Text>
-      <Text style={styles.subtitle}>Podaj email powiązany z kontem</Text>
+    <AudioFlowScreen>
+      <View style={styles.container}>
+        <Text style={styles.title}>Resetuj hasło</Text>
+        <Text style={styles.subtitle}>Podaj email powiązany z kontem</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#666"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#666"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
 
-      <Pressable style={styles.button} onPress={handleReset} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Wyślij link resetujący</Text>
-        )}
-      </Pressable>
+        <Pressable style={styles.button} onPress={handleReset} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Wyślij link resetujący</Text>
+          )}
+        </Pressable>
 
-      <Link href="/(auth)/login" style={styles.link}>
-        Wróć do logowania
-      </Link>
-    </View>
+        <Link href="/(auth)/login" style={styles.link}>
+          Wróć do logowania
+        </Link>
+      </View>
+    </AudioFlowScreen>
   );
 }
 
@@ -75,7 +88,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 24,
     justifyContent: 'center',
-    backgroundColor: '#1a1a2e',
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 28,

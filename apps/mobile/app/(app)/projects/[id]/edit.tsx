@@ -98,8 +98,8 @@ export default function EditProjectScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, backgroundColor: '#1a1a2e' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1a2e' },
+  container: { flex: 1, padding: 24, backgroundColor: 'transparent' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   heading: { fontSize: 24, fontWeight: 'bold', color: '#e0e0e0', marginBottom: 32 },
   label: { fontSize: 14, color: '#888', marginBottom: 8, marginTop: 16 },
   input: {

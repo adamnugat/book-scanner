@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { ActivityIndicator } from 'react-native';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 const mockBack = jest.fn();
 const mockGetProject = jest.fn();
 const mockGetAudioTracks = jest.fn();
@@ -10,7 +11,11 @@ const mockDeleteProject = jest.fn();
 const screenOptions: Array<{ headerTransparent?: boolean }> = [];
 
 jest.mock('expo-router', () => ({
-  router: { push: (...args: unknown[]) => mockPush(...args), replace: jest.fn(), back: mockBack },
+  router: {
+    push: (...args: unknown[]) => mockPush(...args),
+    replace: (...args: unknown[]) => mockReplace(...args),
+    back: mockBack,
+  },
   Stack: {
     Screen: ({
       options,
@@ -36,6 +41,10 @@ jest.mock('../lib/api', () => ({
     getAudioTracks: (...args: unknown[]) => mockGetAudioTracks(...args),
     deleteProject: (...args: unknown[]) => mockDeleteProject(...args),
   },
+}));
+
+jest.mock('react-native-safe-area-context', () => ({
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
 }));
 
 import ProjectDetailScreen from '../app/(app)/projects/[id]/index';
@@ -93,11 +102,62 @@ describe('ProjectDetailScreen TTS next step', () => {
 
     render(<ProjectDetailScreen />);
 
-    expect(await screen.findByText('Odtwarzaj audiobooka')).toBeTruthy();
+    expect(await screen.findByTestId('audioflow-project-hero')).toBeTruthy();
+    expect(screen.getByText('Pan Tadeusz')).toBeTruthy();
+    expect(screen.getByLabelText('Postęp odtwarzania')).toBeTruthy();
+    expect(screen.getByText('00:00')).toBeTruthy();
+    expect(screen.getByText('00:12')).toBeTruthy();
+    expect(screen.getByLabelText('Poprzedni rozdział')).toBeTruthy();
+    expect(screen.getByLabelText('Odtwarzaj lub pauza')).toBeTruthy();
+    expect(screen.getByLabelText('Następny rozdział')).toBeTruthy();
     expect(screen.queryByText('Następny krok: Text to Speech')).toBeNull();
 
-    fireEvent.press(screen.getByText('Odtwarzaj audiobooka'));
+    fireEvent.press(screen.getByLabelText('Odtwarzaj lub pauza'));
 
+    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/player');
+  });
+
+  it('renders accessible AudioFlow project tool tiles with existing routes', async () => {
+    render(<ProjectDetailScreen />);
+
+    expect(await screen.findByLabelText('Otwórz zdjęcia stron')).toBeTruthy();
+    expect(screen.getByLabelText('Otwórz głos i audio')).toBeTruthy();
+    expect(screen.getByLabelText('Otwórz udostępnianie')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Otwórz zdjęcia stron'));
+    fireEvent.press(screen.getByLabelText('Otwórz głos i audio'));
+    fireEvent.press(screen.getByLabelText('Otwórz udostępnianie'));
+
+    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/images');
+    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/voice');
+    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/sharing');
+  });
+
+  it('renders the AudioFlow footer menu with existing route actions', async () => {
+    mockGetAudioTracks.mockResolvedValue([
+      {
+        id: 'track-1',
+        sceneId: 'scene-1',
+        storagePath: 'audio/1.mp3',
+        audioUrl: 'https://example.com/audio/1.mp3',
+        durationMs: 12000,
+        fileSize: 1024,
+        createdAt: '2026-05-05T00:00:00.000Z',
+      },
+    ]);
+
+    render(<ProjectDetailScreen />);
+
+    expect(await screen.findByLabelText('Biblioteka')).toBeTruthy();
+    expect(screen.getByLabelText('Nowy audiobook')).toBeTruthy();
+    expect(screen.getByLabelText('Odtwarzacz')).toBeTruthy();
+
+    fireEvent.press(screen.getByLabelText('Biblioteka'));
+    fireEvent.press(screen.getByLabelText('Nowy audiobook'));
+    fireEvent.press(screen.getByLabelText('Odtwarzacz'));
+
+    expect(mockReplace).toHaveBeenCalledWith('/(app)');
+    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/new');
     expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/player');
   });
 

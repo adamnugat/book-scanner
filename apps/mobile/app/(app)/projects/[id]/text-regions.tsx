@@ -340,8 +340,8 @@ export default function TextRegionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a2e' },
-  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#1a1a2e' },
+  container: { flex: 1, backgroundColor: 'transparent' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   title: { fontSize: 22, fontWeight: 'bold', color: '#e0e0e0', padding: 20, paddingBottom: 4 },
   subtitle: { fontSize: 13, color: '#888', paddingHorizontal: 20, paddingBottom: 12 },
   list: { padding: 16, paddingBottom: 100 },
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   editRegionText: { color: '#e0e0e0', fontSize: 12, fontWeight: '600' },
   editorContainer: {
     flex: 1,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: 'transparent',
     padding: 16,
     paddingTop: 36,
   },
