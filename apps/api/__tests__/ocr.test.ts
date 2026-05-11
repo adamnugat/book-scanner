@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { recognizeText } from '../src/lib/ocr';
+import { recognizeText, recognizeTextBatch } from '../src/lib/ocr';
 import { downloadFile } from '../src/lib/storage';
 
 const visionMocks = vi.hoisted(() => ({
@@ -71,6 +71,87 @@ describe('OCR provider', () => {
         },
       ],
     });
+  });
+
+  it('batches Google Vision requests in groups of five while preserving result order', async () => {
+    process.env.OCR_PROVIDER = 'google';
+    setGoogleCredentials();
+    storageDownloadFile.mockImplementation(async (storagePath: string) => Buffer.from(storagePath));
+    visionMocks.batchAnnotateImages
+      .mockResolvedValueOnce([
+        {
+          responses: Array.from({ length: 5 }, (_, index) => ({
+            fullTextAnnotation: { text: `Page ${index + 1}\n` },
+          })),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          responses: [
+            {
+              fullTextAnnotation: { text: 'Page 6\n' },
+            },
+          ],
+        },
+      ]);
+
+    const results = await recognizeTextBatch(
+      Array.from({ length: 6 }, (_, index) => ({
+        storagePath: `pages/page-${index + 1}.jpg`,
+      })),
+      'pl',
+    );
+
+    expect(results.map((result) => result.text)).toEqual([
+      'Page 1',
+      'Page 2',
+      'Page 3',
+      'Page 4',
+      'Page 5',
+      'Page 6',
+    ]);
+    expect(visionMocks.batchAnnotateImages).toHaveBeenCalledTimes(2);
+    expect(visionMocks.batchAnnotateImages.mock.calls[0][0].requests).toHaveLength(5);
+    expect(visionMocks.batchAnnotateImages.mock.calls[1][0].requests).toHaveLength(1);
+  });
+
+  it('starts a new Google Vision batch before the safe payload size is exceeded', async () => {
+    process.env.OCR_PROVIDER = 'google';
+    setGoogleCredentials();
+    storageDownloadFile.mockImplementation(async (storagePath: string) => {
+      if (storagePath.endsWith('large-1.jpg') || storagePath.endsWith('large-2.jpg')) {
+        return Buffer.alloc(4 * 1024 * 1024);
+      }
+      return Buffer.alloc(512 * 1024);
+    });
+    visionMocks.batchAnnotateImages
+      .mockResolvedValueOnce([
+        {
+          responses: [{ fullTextAnnotation: { text: 'Large 1' } }],
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          responses: [
+            { fullTextAnnotation: { text: 'Large 2' } },
+            { fullTextAnnotation: { text: 'Small' } },
+          ],
+        },
+      ]);
+
+    const results = await recognizeTextBatch(
+      [
+        { storagePath: 'pages/large-1.jpg' },
+        { storagePath: 'pages/large-2.jpg' },
+        { storagePath: 'pages/small.jpg' },
+      ],
+      'pl',
+    );
+
+    expect(results.map((result) => result.text)).toEqual(['Large 1', 'Large 2', 'Small']);
+    expect(visionMocks.batchAnnotateImages).toHaveBeenCalledTimes(2);
+    expect(visionMocks.batchAnnotateImages.mock.calls[0][0].requests).toHaveLength(1);
+    expect(visionMocks.batchAnnotateImages.mock.calls[1][0].requests).toHaveLength(2);
   });
 
   it('fails clearly when Google OCR is selected without credentials', async () => {

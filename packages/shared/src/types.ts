@@ -147,6 +147,13 @@ export interface VoiceResponse {
   previewUrl: string | null;
 }
 
+export interface InterstitialPresetResponse {
+  id: string;
+  name: string;
+  audioUrl: string;
+  durationMs: number;
+}
+
 export interface AudioTrackResponse {
   id: string;
   sceneId: string;

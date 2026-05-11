@@ -108,7 +108,7 @@ describe('ProjectImagesScreen page photos', () => {
     mockRequestCameraPermissionsAsync.mockResolvedValue({ granted: true });
     mockLaunchCameraAsync.mockResolvedValue({ canceled: false, assets: [selectedAsset] });
     mockManipulateAsync.mockResolvedValue({
-      uri: 'file:///cache/IMG_0007.jpg',
+      uri: 'file:///cache/page-2-optimized.jpg',
       width: 1200,
       height: 1600,
     });
@@ -132,8 +132,12 @@ describe('ProjectImagesScreen page photos', () => {
 
     await waitFor(() => {
       expect(mockUploadImages).toHaveBeenCalledWith('proj-1', [
-        { uri: selectedAsset.uri, name: 'page-2.jpg', type: 'image/jpeg' },
+        { uri: 'file:///cache/page-2-optimized.jpg', name: 'page-2.jpg', type: 'image/jpeg' },
       ]);
+    });
+    expect(mockManipulateAsync).toHaveBeenCalledWith(selectedAsset.uri, [{ resize: { width: 1600 } }], {
+      compress: 0.95,
+      format: 'jpeg',
     });
     expect(await screen.findByText('page-2.jpg')).toBeTruthy();
   });
@@ -142,6 +146,11 @@ describe('ProjectImagesScreen page photos', () => {
     mockLaunchImageLibraryAsync.mockResolvedValue({
       canceled: false,
       assets: [heicAssetWithoutMimeType],
+    });
+    mockManipulateAsync.mockResolvedValue({
+      uri: 'file:///cache/IMG_0007.jpg',
+      width: 1200,
+      height: 1600,
     });
     mockUploadImages.mockResolvedValue([
       {
@@ -165,8 +174,8 @@ describe('ProjectImagesScreen page photos', () => {
         { uri: 'file:///cache/IMG_0007.jpg', name: 'IMG_0007.jpg', type: 'image/jpeg' },
       ]);
     });
-    expect(mockManipulateAsync).toHaveBeenCalledWith(heicAssetWithoutMimeType.uri, [], {
-      compress: 0.9,
+    expect(mockManipulateAsync).toHaveBeenCalledWith(heicAssetWithoutMimeType.uri, [{ resize: { width: 1600 } }], {
+      compress: 0.95,
       format: 'jpeg',
     });
     expect(await screen.findByText('IMG_0007.HEIC')).toBeTruthy();

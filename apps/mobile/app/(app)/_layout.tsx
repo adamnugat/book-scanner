@@ -14,7 +14,9 @@ export default function AppLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: 'Moje projekty', headerShown: false }} />
-      <Stack.Screen name="projects/new" options={{ title: 'Nowy projekt' }} />
+      <Stack.Screen name="projects/new/index" options={{ title: 'Nowy audiobook' }} />
+      <Stack.Screen name="projects/new/images" options={{ title: 'Dodaj zdjęcia' }} />
+      <Stack.Screen name="projects/new/review" options={{ title: 'Sprawdź tekst' }} />
       <Stack.Screen name="projects/[id]/index" options={{ title: 'Projekt' }} />
       <Stack.Screen name="projects/[id]/edit" options={{ title: 'Edycja projektu' }} />
       <Stack.Screen name="projects/[id]/images" options={{ title: 'Zdjęcia stron' }} />

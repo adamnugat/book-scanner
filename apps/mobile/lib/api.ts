@@ -10,6 +10,7 @@ import type {
   TextRegionInput,
   TextRegionResponse,
   VoiceResponse,
+  InterstitialPresetResponse,
   AudioTrackResponse,
   PlaylistItemResponse,
 } from '@book-scanner/shared';
@@ -196,6 +197,13 @@ export const api = {
     });
   },
 
+  processOcrBatch(projectId: string, options?: { markReadyForAudio?: boolean }) {
+    return apiFetch<SceneResponse[]>(`/projects/${projectId}/process-ocr-batch`, {
+      method: 'POST',
+      body: JSON.stringify(options || {}),
+    });
+  },
+
   getScenes(projectId: string) {
     return apiFetch<SceneResponse[]>(`/projects/${projectId}/scenes`);
   },
@@ -236,6 +244,10 @@ export const api = {
   getVoices(language?: string) {
     const qs = language ? `?language=${language}` : '';
     return apiFetch<VoiceResponse[]>(`/voices${qs}`);
+  },
+
+  getInterstitialPresets() {
+    return apiFetch<InterstitialPresetResponse[]>('/interstitial-presets');
   },
 
   generateAudio(projectId: string) {

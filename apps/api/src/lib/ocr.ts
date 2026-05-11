@@ -7,32 +7,72 @@ export interface OcrResult {
 }
 
 type TextRegion = { x: number; y: number; width: number; height: number };
+export interface OcrBatchInput {
+  storagePath: string;
+  regions?: TextRegion[];
+}
+
 type GoogleVisionClientOptions = NonNullable<ConstructorParameters<typeof ImageAnnotatorClient>[0]>;
 type GoogleVisionResponse = protos.google.cloud.vision.v1.IAnnotateImageResponse;
 type GoogleTextAnnotation = protos.google.cloud.vision.v1.ITextAnnotation;
+const GOOGLE_VISION_BATCH_SIZE = 5;
+const GOOGLE_VISION_SAFE_PAYLOAD_BYTES = 7 * 1024 * 1024;
 
 export async function recognizeText(
   storagePath: string,
   language: string,
   regions?: TextRegion[],
 ): Promise<OcrResult> {
-  if (process.env.OCR_PROVIDER === 'google') {
-    return recognizeWithGoogle(storagePath, language, regions);
-  }
-  return recognizeWithMock(storagePath, language, regions);
+  const [result] = await recognizeTextBatch([{ storagePath, regions }], language);
+  return result || { text: '' };
 }
 
-async function recognizeWithGoogle(
-  storagePath: string,
+export async function recognizeTextBatch(
+  inputs: OcrBatchInput[],
   language: string,
-  regions?: TextRegion[],
-): Promise<OcrResult> {
+): Promise<OcrResult[]> {
+  if (inputs.length === 0) {
+    return [];
+  }
+
+  if (process.env.OCR_PROVIDER === 'google') {
+    return recognizeBatchWithGoogle(inputs, language);
+  }
+
+  const results: OcrResult[] = [];
+  for (const input of inputs) {
+    results.push(await recognizeWithMock(input.storagePath, language, input.regions));
+  }
+  return results;
+}
+
+async function recognizeBatchWithGoogle(
+  inputs: OcrBatchInput[],
+  language: string,
+): Promise<OcrResult[]> {
   const client = new ImageAnnotatorClient(getGoogleVisionClientOptions());
-  const imageBuffer = await downloadFile(storagePath);
   const languageHints = language === 'pl' ? ['pl', 'en'] : ['en', 'pl'];
+  const results: OcrResult[] = [];
+  const googleInputs = await Promise.all(
+    inputs.map(async (input) => ({
+      input,
+      imageBuffer: await downloadFile(input.storagePath),
+    })),
+  );
 
-  const annotations = await annotateImageWithGoogle(client, imageBuffer, languageHints);
+  for (const chunk of chunkGoogleInputs(googleInputs)) {
+    const imageBuffers = chunk.map((item) => item.imageBuffer);
+    const annotations = await annotateImagesWithGoogle(client, imageBuffers, languageHints);
 
+    for (let index = 0; index < chunk.length; index++) {
+      results.push(toOcrResult(annotations[index] || {}, chunk[index].input.regions));
+    }
+  }
+
+  return results;
+}
+
+function toOcrResult(annotations: GoogleVisionResponse, regions?: TextRegion[]): OcrResult {
   if (annotations.error?.message) {
     throw new Error(`Google Cloud Vision OCR failed: ${sanitizeErrorMessage(annotations.error.message)}`);
   }
@@ -44,32 +84,60 @@ async function recognizeWithGoogle(
 
   if (regions && regions.length > 0 && annotations.fullTextAnnotation) {
     const croppedText = extractRegionText(annotations.fullTextAnnotation, regions);
-    return { text: croppedText || fullText };
+    return { text: (croppedText || fullText).trim() };
   }
 
   return { text: fullText.trim() };
 }
 
-async function annotateImageWithGoogle(
+async function annotateImagesWithGoogle(
   client: ImageAnnotatorClient,
-  imageBuffer: Buffer,
+  imageBuffers: Buffer[],
   languageHints: string[],
-): Promise<GoogleVisionResponse> {
+): Promise<GoogleVisionResponse[]> {
   try {
     const [response] = await client.batchAnnotateImages({
-      requests: [
-        {
-          image: { content: imageBuffer },
-          features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
-          imageContext: { languageHints },
-        },
-      ],
+      requests: imageBuffers.map((imageBuffer) => ({
+        image: { content: imageBuffer },
+        features: [{ type: 'DOCUMENT_TEXT_DETECTION' }],
+        imageContext: { languageHints },
+      })),
     });
 
-    return response.responses?.[0] || {};
+    return response.responses || [];
   } catch (error) {
     throw new Error(`Google Cloud Vision OCR failed: ${sanitizeErrorMessage(error)}`);
   }
+}
+
+function chunkGoogleInputs(
+  items: { input: OcrBatchInput; imageBuffer: Buffer }[],
+): { input: OcrBatchInput; imageBuffer: Buffer }[][] {
+  const chunks: { input: OcrBatchInput; imageBuffer: Buffer }[][] = [];
+  let currentChunk: { input: OcrBatchInput; imageBuffer: Buffer }[] = [];
+  let currentBytes = 0;
+
+  for (const item of items) {
+    const itemBytes = item.imageBuffer.byteLength;
+    const wouldExceedCount = currentChunk.length >= GOOGLE_VISION_BATCH_SIZE;
+    const wouldExceedPayload =
+      currentChunk.length > 0 && currentBytes + itemBytes > GOOGLE_VISION_SAFE_PAYLOAD_BYTES;
+
+    if (wouldExceedCount || wouldExceedPayload) {
+      chunks.push(currentChunk);
+      currentChunk = [];
+      currentBytes = 0;
+    }
+
+    currentChunk.push(item);
+    currentBytes += itemBytes;
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
 }
 
 function getGoogleVisionClientOptions(): GoogleVisionClientOptions {

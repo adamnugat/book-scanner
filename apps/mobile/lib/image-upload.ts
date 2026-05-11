@@ -22,15 +22,14 @@ const EXTENSION_BY_MIME_TYPE: Record<string, string> = {
   'image/heif': 'heif',
 };
 
+const OCR_IMAGE_MAX_WIDTH = 1600;
+const OCR_JPEG_QUALITY = 0.95;
+
 function extensionFromPath(path: string | null | undefined): string | null {
   if (!path) return null;
   const cleanPath = path.split(/[?#]/)[0];
   const match = /\.([a-z0-9]+)$/i.exec(cleanPath);
   return match?.[1]?.toLowerCase() ?? null;
-}
-
-function isHeicMimeType(mimeType: string): boolean {
-  return mimeType === 'image/heic' || mimeType === 'image/heif';
 }
 
 function replaceExtension(fileName: string, extension: string): string {
@@ -65,20 +64,12 @@ export function uploadFileFromImagePickerAsset(
   const fallbackExtension = EXTENSION_BY_MIME_TYPE[type] ?? 'jpg';
   const name = asset.fileName || `page-${Date.now()}-${index}.${fallbackExtension}`;
 
-  if (isHeicMimeType(type)) {
-    return manipulateAsync(asset.uri, [], {
-      compress: 0.9,
-      format: SaveFormat.JPEG,
-    }).then((converted) => ({
-      uri: converted.uri,
-      name: replaceExtension(name, 'jpg'),
-      type: 'image/jpeg',
-    }));
-  }
-
-  return Promise.resolve({
-    uri: asset.uri,
-    name,
-    type,
-  });
+  return manipulateAsync(asset.uri, [{ resize: { width: OCR_IMAGE_MAX_WIDTH } }], {
+    compress: OCR_JPEG_QUALITY,
+    format: SaveFormat.JPEG,
+  }).then((converted) => ({
+    uri: converted.uri,
+    name: replaceExtension(name, 'jpg'),
+    type: 'image/jpeg',
+  }));
 }
