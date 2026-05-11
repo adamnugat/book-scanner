@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ProjectResponse, ProjectStatus } from '@book-scanner/shared';
 
 import {
-  AudioFlowAppHeader,
   AudioFlowFooterMenu,
   AudioFlowScreen,
   FilterChip,
@@ -13,13 +12,11 @@ import {
   GlassPanel,
   PearlButton,
   ProjectCard,
-  RoundIconButton,
   audioFlowStyles,
   audioFlowTokens,
 } from '../../components/audioflow';
 import { useToast } from '../../components/Toast';
 import { api } from '../../lib/api';
-import { useAuth } from '../../lib/auth-context';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Szkic',
@@ -45,7 +42,6 @@ const SORT_OPTIONS: { label: string; value: SortKey }[] = [
 ];
 
 export default function ProjectsScreen() {
-  const { user, logout } = useAuth();
   const { showToast } = useToast();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -131,23 +127,8 @@ export default function ProjectsScreen() {
     />
   );
 
-  const header = (
-    <AudioFlowAppHeader
-      right={
-        <View style={styles.headerActions}>
-          <RoundIconButton icon="₿" label="Cennik" onPress={() => router.push('/(app)/pricing')} />
-          <RoundIconButton icon="↩" label="Wyloguj" onPress={logout} />
-        </View>
-      }
-      subtitle={user?.email}
-      topInset={insets.top}
-    />
-  );
-
   return (
     <AudioFlowScreen>
-      {header}
-
       <View style={styles.content}>
         <View style={styles.welcome}>
           <Text style={styles.eyebrow}>Biblioteka audiobooków</Text>
@@ -201,7 +182,11 @@ export default function ProjectsScreen() {
           >
             <Text style={styles.emptyTitle}>Brak projektów z tym filtrem</Text>
             <Text style={styles.emptyHint}>Zmień filtr, aby wrócić do pełnej biblioteki.</Text>
-            <PearlButton label="Pokaż wszystkie" onPress={() => setFilter('all')} style={styles.emptyCta} />
+            <PearlButton
+              label="Pokaż wszystkie"
+              onPress={() => setFilter('all')}
+              style={styles.emptyCta}
+            />
           </GlassPanel>
         ) : projects.length === 0 ? (
           <GlassPanel
@@ -247,9 +232,8 @@ const styles = StyleSheet.create({
     gap: audioFlowTokens.spacing.stackMd,
     paddingHorizontal: audioFlowTokens.spacing.marginMobile,
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
+  list: {
+    paddingTop: 4,
   },
   welcome: {
     alignItems: 'center',
@@ -278,9 +262,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-  },
-  list: {
-    paddingTop: 4,
   },
   cardTablet: {
     flex: 1,

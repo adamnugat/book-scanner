@@ -46,6 +46,7 @@ describe('AudioFlow mobile design system', () => {
     expect(AudioFlow.AudioFlowFooterMenu).toBeDefined();
     expect(AudioFlow.RoundIconButton).toBeDefined();
     expect(AudioFlow.AudioFlowLogo).toBeDefined();
+    expect(AudioFlow.audioFlowFooterMenuHeight(24)).toBe(88);
   });
 
   it('exposes reusable form and project-list primitives', () => {

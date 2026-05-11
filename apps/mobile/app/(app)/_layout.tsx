@@ -1,4 +1,5 @@
 import { Stack } from 'expo-router';
+import { AudioFlowStackHeader } from '../../components/audioflow-global-navigation';
 
 const SCREEN_BG = '#131316';
 
@@ -6,14 +7,17 @@ export default function AppLayout() {
   return (
     <Stack
       screenOptions={{
+        contentStyle: { flex: 1, backgroundColor: SCREEN_BG },
+        freezeOnBlur: false,
+        header: (props) => <AudioFlowStackHeader {...props} />,
+        headerShadowVisible: false,
+        headerShown: true,
         headerStyle: { backgroundColor: SCREEN_BG },
         headerTintColor: '#F0EAD6',
         headerTitleStyle: { fontWeight: 'bold' },
-        contentStyle: { flex: 1, backgroundColor: SCREEN_BG },
-        freezeOnBlur: false,
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Moje projekty', headerShown: false }} />
+      <Stack.Screen name="index" options={{ headerBackVisible: false, title: '' }} />
       <Stack.Screen name="projects/new/index" options={{ title: 'Nowy audiobook' }} />
       <Stack.Screen name="projects/new/images" options={{ title: 'Dodaj zdjęcia' }} />
       <Stack.Screen name="projects/new/review" options={{ title: 'Sprawdź tekst' }} />

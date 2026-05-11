@@ -10,11 +10,22 @@ import {
   View,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../../../lib/api';
-import { AudioFlowScreen } from '../../../../components/audioflow';
+import {
+  AudioFlowFooterMenu,
+  AudioFlowScreen,
+  audioFlowFooterMenuHeight,
+} from '../../../../components/audioflow';
 import type { SceneResponse } from '@book-scanner/shared';
 
+const STACK_GAP_ABOVE_FOOTER = 10;
+
 export default function NewProjectReviewScreen() {
+  const insets = useSafeAreaInsets();
+  const footerLift = audioFlowFooterMenuHeight(insets.bottom) + STACK_GAP_ABOVE_FOOTER;
+  const scrollBottomPad = 110 + footerLift;
+
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
   const [scenes, setScenes] = useState<SceneResponse[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -84,6 +95,14 @@ export default function NewProjectReviewScreen() {
         <View style={styles.centered}>
           <ActivityIndicator color="#06d6a0" size="large" />
         </View>
+
+        <AudioFlowFooterMenu
+          active="library"
+          bottomInset={insets.bottom}
+          onCreatePress={() => router.push('/(app)/projects/new')}
+          onLibraryPress={() => router.replace('/(app)')}
+          playerDisabled
+        />
       </AudioFlowScreen>
     );
   }
@@ -91,7 +110,7 @@ export default function NewProjectReviewScreen() {
   return (
     <AudioFlowScreen>
       <View style={styles.container}>
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}>
           <View style={styles.hero}>
             <Text style={styles.stepLabel}>Krok 3 z 3</Text>
             <Text style={styles.title}>Sprawdź tekst przed audio</Text>
@@ -120,7 +139,7 @@ export default function NewProjectReviewScreen() {
           )}
         </ScrollView>
 
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { bottom: footerLift }]}>
           <Pressable
             style={[
               styles.submitButton,
@@ -137,6 +156,14 @@ export default function NewProjectReviewScreen() {
           </Pressable>
         </View>
       </View>
+
+      <AudioFlowFooterMenu
+        active="library"
+        bottomInset={insets.bottom}
+        onCreatePress={() => router.push('/(app)/projects/new')}
+        onLibraryPress={() => router.replace('/(app)')}
+        playerDisabled
+      />
     </AudioFlowScreen>
   );
 }
@@ -144,7 +171,7 @@ export default function NewProjectReviewScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  content: { padding: 20, paddingBottom: 110 },
+  content: { padding: 20 },
   hero: {
     backgroundColor: '#18213d',
     borderRadius: 28,
@@ -193,7 +220,6 @@ const styles = StyleSheet.create({
   emptyText: { color: '#aebbd3', fontSize: 15, lineHeight: 21 },
   bottomBar: {
     position: 'absolute',
-    bottom: 0,
     left: 0,
     right: 0,
     padding: 16,

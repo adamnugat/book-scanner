@@ -10,8 +10,10 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../../../lib/api';
 import {
+  AudioFlowFooterMenu,
   AudioFlowScreen,
   GlassPanel,
   PearlButton,
@@ -32,6 +34,9 @@ const LANGUAGES: { id: SupportedLanguage; label: string }[] = [
 ];
 
 export default function NewProjectScreen() {
+  const insets = useSafeAreaInsets();
+  const footerPadding = 104 + Math.max(insets.bottom, 8);
+
   const [title, setTitle] = useState('');
   const [language, setLanguage] = useState<SupportedLanguage>('pl');
   const [voices, setVoices] = useState<VoiceResponse[]>([]);
@@ -119,7 +124,10 @@ export default function NewProjectScreen() {
 
   return (
     <AudioFlowScreen>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingBottom: 24 + footerPadding }]}
+      >
         <View style={styles.hero}>
           <Text style={styles.stepLabel}>Krok 1 z 3</Text>
           <Text style={styles.heading}>Zacznijmy od podstaw</Text>
@@ -226,6 +234,14 @@ export default function NewProjectScreen() {
           style={styles.submitButton}
         />
       </ScrollView>
+
+      <AudioFlowFooterMenu
+        active="library"
+        bottomInset={insets.bottom}
+        onCreatePress={() => router.push('/(app)/projects/new')}
+        onLibraryPress={() => router.replace('/(app)')}
+        playerDisabled
+      />
     </AudioFlowScreen>
   );
 }
@@ -237,7 +253,7 @@ function formatDuration(durationMs: number): string {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 20, paddingBottom: 36 },
+  content: { padding: 20 },
   hero: {
     marginBottom: 24,
     marginTop: 10,

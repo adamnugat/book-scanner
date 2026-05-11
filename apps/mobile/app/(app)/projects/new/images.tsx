@@ -10,22 +10,27 @@ import {
   View,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../../../../lib/api';
 import { uploadFileFromImagePickerAsset } from '../../../../lib/image-upload';
 import { PageImagePreview } from '../../../../components/PageImagePreview';
 import {
+  AudioFlowFooterMenu,
   AudioFlowScreen,
   GlassPanel,
   PearlButton,
   PickerCard,
-  TopAppBar,
+  audioFlowFooterMenuHeight,
   audioFlowStyles,
   audioFlowTokens,
 } from '../../../../components/audioflow';
 import type { AudioTrackResponse, PageImageResponse, SceneResponse } from '@book-scanner/shared';
 
 type WizardMode = 'auto' | 'advanced';
+
+const STACK_GAP_ABOVE_FOOTER = 10;
+
 const AUDIO_READY_POLL_INTERVAL_MS = 1500;
 const AUDIO_READY_MAX_ATTEMPTS = 40;
 
@@ -63,6 +68,10 @@ function countExpectedAudioTracks(scenes: SceneResponse[]): number {
 }
 
 export default function NewProjectImagesScreen() {
+  const insets = useSafeAreaInsets();
+  const footerLift = audioFlowFooterMenuHeight(insets.bottom) + STACK_GAP_ABOVE_FOOTER;
+  const scrollBottomPad = 116 + footerLift;
+
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
   const [mode, setMode] = useState<WizardMode>('auto');
   const [pendingAssets, setPendingAssets] = useState<ImagePicker.ImagePickerAsset[]>([]);
@@ -278,28 +287,24 @@ export default function NewProjectImagesScreen() {
     return (
       <AudioFlowScreen style={styles.centered}>
         <ActivityIndicator color={audioFlowTokens.color.accent.pearl} size="large" />
+
+        <AudioFlowFooterMenu
+          active="library"
+          bottomInset={insets.bottom}
+          onCreatePress={() => router.push('/(app)/projects/new')}
+          onLibraryPress={() => router.replace('/(app)')}
+          playerDisabled
+        />
       </AudioFlowScreen>
     );
   }
 
   return (
     <AudioFlowScreen>
-      <TopAppBar
-        title="Zdjęcia stron"
-        left={
-          <Pressable
-            style={styles.iconButton}
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Wróć"
-          >
-            <Text style={styles.iconButtonText}>‹</Text>
-          </Pressable>
-        }
-        right={<View style={styles.iconButtonPlaceholder} />}
-      />
-
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
+      >
         <View style={styles.header}>
           <Text style={styles.stepLabel}>Krok 2 z 3</Text>
           <Text style={styles.title}>Dodaj zdjęcia stron książki</Text>
@@ -394,7 +399,7 @@ export default function NewProjectImagesScreen() {
         )}
       </ScrollView>
 
-      <GlassPanel style={styles.bottomBar}>
+      <GlassPanel style={[styles.bottomBar, { bottom: footerLift }]}>
         <PearlButton
           label={processing ? 'Przetwarzanie...' : 'Dalej'}
           testID="wizard-continue"
@@ -402,26 +407,22 @@ export default function NewProjectImagesScreen() {
           disabled={!canContinue}
         />
       </GlassPanel>
+
+      <AudioFlowFooterMenu
+        active="library"
+        bottomInset={insets.bottom}
+        onCreatePress={() => router.push('/(app)/projects/new')}
+        onLibraryPress={() => router.replace('/(app)')}
+        playerDisabled
+      />
     </AudioFlowScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingBottom: 116 },
+  content: { paddingHorizontal: 20 },
   centered: { alignItems: 'center', justifyContent: 'center' },
-  iconButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.10)',
-    borderColor: audioFlowTokens.color.surface.glassEdge,
-    borderRadius: audioFlowTokens.radius.full,
-    borderWidth: 1,
-    height: 40,
-    justifyContent: 'center',
-    width: 40,
-  },
-  iconButtonPlaceholder: { width: 40 },
-  iconButtonText: { color: audioFlowTokens.color.text.onDark, fontSize: 30, lineHeight: 32 },
   header: { paddingBottom: 24, paddingTop: 8 },
   stepLabel: {
     ...audioFlowStyles.eyebrow,

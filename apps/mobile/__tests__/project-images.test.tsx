@@ -135,10 +135,14 @@ describe('ProjectImagesScreen page photos', () => {
         { uri: 'file:///cache/page-2-optimized.jpg', name: 'page-2.jpg', type: 'image/jpeg' },
       ]);
     });
-    expect(mockManipulateAsync).toHaveBeenCalledWith(selectedAsset.uri, [{ resize: { width: 1600 } }], {
-      compress: 0.95,
-      format: 'jpeg',
-    });
+    expect(mockManipulateAsync).toHaveBeenCalledWith(
+      selectedAsset.uri,
+      [{ resize: { width: 1600 } }],
+      {
+        compress: 0.95,
+        format: 'jpeg',
+      },
+    );
     expect(await screen.findByText('page-2.jpg')).toBeTruthy();
   });
 
@@ -174,10 +178,14 @@ describe('ProjectImagesScreen page photos', () => {
         { uri: 'file:///cache/IMG_0007.jpg', name: 'IMG_0007.jpg', type: 'image/jpeg' },
       ]);
     });
-    expect(mockManipulateAsync).toHaveBeenCalledWith(heicAssetWithoutMimeType.uri, [{ resize: { width: 1600 } }], {
-      compress: 0.95,
-      format: 'jpeg',
-    });
+    expect(mockManipulateAsync).toHaveBeenCalledWith(
+      heicAssetWithoutMimeType.uri,
+      [{ resize: { width: 1600 } }],
+      {
+        compress: 0.95,
+        format: 'jpeg',
+      },
+    );
     expect(await screen.findByText('IMG_0007.HEIC')).toBeTruthy();
   });
 
@@ -221,8 +229,15 @@ describe('ProjectImagesScreen page photos', () => {
     render(<ProjectImagesScreen />);
 
     await screen.findByText('page1.jpg');
-    const image = screen.UNSAFE_getAllByType(Image)[0];
-    fireEvent(image, 'error');
+    const thumbs = screen
+      .UNSAFE_getAllByType(Image)
+      .filter(
+        (node) =>
+          node.props.source?.uri ===
+          'http://api.test/projects/proj-1/images/img-1/thumbnail?token=thumb-token',
+      );
+    expect(thumbs.length).toBeGreaterThan(0);
+    fireEvent(thumbs[0], 'error');
 
     expect(await screen.findByText('Nie można wyświetlić zdjęcia')).toBeTruthy();
   });

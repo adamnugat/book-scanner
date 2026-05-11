@@ -1,0 +1,199 @@
+import { useState } from 'react';
+import type { NativeStackHeaderProps } from '@react-navigation/native-stack';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { useAuth } from '../lib/auth-context';
+import {
+  AudioFlowLogo,
+  GhostButton,
+  GlassPanel,
+  PearlButton,
+  RoundIconButton,
+  TopAppBar,
+  audioFlowTokens,
+} from './audioflow';
+
+const t = audioFlowTokens;
+const SCREEN_BG = '#131316';
+
+function DashboardBrand() {
+  return (
+    <View style={styles.brandCenter}>
+      <AudioFlowLogo />
+      <Text style={styles.brandTitle}>AudioFlow</Text>
+    </View>
+  );
+}
+
+function NavigationMenuSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const router = useRouter();
+  const { logout } = useAuth();
+
+  const goPricing = () => {
+    onClose();
+    router.push('/(app)/pricing');
+  };
+
+  const doLogout = async () => {
+    onClose();
+    await logout();
+    router.replace('/(auth)/login');
+  };
+
+  return (
+    <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
+      <View style={styles.menuOuter}>
+        <Pressable
+          accessibilityHint="Zamknij menu bez wyboru"
+          accessibilityLabel="Zamknij menu"
+          accessibilityRole="button"
+          onPress={onClose}
+          style={styles.menuBackdrop}
+          testID="audioflow-global-menu-backdrop"
+        />
+        <View pointerEvents="box-none" style={StyleSheet.absoluteFillObject}>
+          <View style={styles.menuForeground}>
+            <View onStartShouldSetResponder={() => true}>
+              <GlassPanel accessibilityRole="none" style={styles.menuSheet}>
+                <Text style={[t.typography.labelMd, styles.menuHeading]}>Menu</Text>
+                <PearlButton label="Cennik" onPress={goPricing} style={styles.menuButton} />
+                <GhostButton
+                  label="Wyloguj"
+                  onPress={() => void doLogout()}
+                  style={styles.menuButton}
+                  textStyle={styles.logoutText}
+                  testID="audioflow-global-menu-logout"
+                />
+              </GlassPanel>
+            </View>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export function AudioFlowGlobalMenuButton() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <RoundIconButton icon="☰" label="Menu" onPress={() => setOpen(true)} />
+      <NavigationMenuSheet onClose={() => setOpen(false)} visible={open} />
+    </>
+  );
+}
+
+function stackHeaderBg(options: NativeStackHeaderProps['options']): string {
+  if (
+    typeof options.headerStyle === 'object' &&
+    options.headerStyle != null &&
+    'backgroundColor' in options.headerStyle &&
+    typeof (options.headerStyle as { backgroundColor?: string }).backgroundColor === 'string'
+  ) {
+    return (options.headerStyle as { backgroundColor: string }).backgroundColor;
+  }
+  return SCREEN_BG;
+}
+
+/** Safe-area + stałe tło jak w nagłówku Stack – używane też dla ekranów bez natywnego nagłówka (np. szczegóły projektu). */
+export function AudioFlowTopChrome({
+  backgroundColor = SCREEN_BG,
+  children,
+}: {
+  backgroundColor?: string;
+  children: React.ReactNode;
+}) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View accessibilityRole="toolbar" style={[styles.chrome, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.chromeBleed, { backgroundColor }]}>{children}</View>
+    </View>
+  );
+}
+
+export function AudioFlowStackHeader({ navigation, route, options, back }: NativeStackHeaderProps) {
+  const isDashboardHome = route.name === 'index';
+
+  const headerTitle =
+    typeof options.headerTitle === 'string'
+      ? options.headerTitle
+      : typeof options.title === 'string'
+        ? options.title
+        : '';
+
+  const showBack = !isDashboardHome && options.headerBackVisible !== false && back != null;
+
+  return (
+    <AudioFlowTopChrome backgroundColor={stackHeaderBg(options)}>
+      <TopAppBar
+        center={isDashboardHome ? <DashboardBrand /> : undefined}
+        left={
+          showBack ? (
+            <RoundIconButton
+              accessibilityLabel="Wstecz"
+              icon="‹"
+              label="Wstecz"
+              onPress={() => navigation.goBack()}
+            />
+          ) : undefined
+        }
+        right={<AudioFlowGlobalMenuButton />}
+        title={headerTitle}
+      />
+    </AudioFlowTopChrome>
+  );
+}
+
+const styles = StyleSheet.create({
+  chrome: {
+    width: '100%',
+  },
+  chromeBleed: {
+    overflow: 'hidden',
+    width: '100%',
+  },
+  brandCenter: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  brandTitle: {
+    color: t.color.text.onDark,
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  menuOuter: {
+    flex: 1,
+  },
+  menuBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+  },
+  menuForeground: {
+    alignItems: 'center',
+    paddingHorizontal: t.spacing.marginMobile,
+    paddingTop: 120,
+  },
+  menuSheet: {
+    gap: t.spacing.stackMd,
+    maxWidth: 360,
+    padding: t.spacing.stackLg,
+    width: '100%',
+  },
+  menuHeading: {
+    color: t.color.text.onDark,
+    textAlign: 'center',
+  },
+  menuButton: {
+    width: '100%',
+  },
+  logoutText: {
+    color: t.color.accent.danger,
+  },
+});

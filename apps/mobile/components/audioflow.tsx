@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -283,12 +284,15 @@ export function Chip({ label, selected = false }: { label: string; selected?: bo
 }
 
 export function TopAppBar({
-  title,
+  title = '',
+  center,
   left,
   right,
   style,
 }: {
-  title: string;
+  title?: string;
+  /** When set, replaces the default title `<Text>` (e.g. dashboard brand row). */
+  center?: React.ReactNode;
   left?: React.ReactNode;
   right?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -296,7 +300,15 @@ export function TopAppBar({
   return (
     <View style={[styles.topAppBar, style]}>
       <View style={styles.topAppBarSide}>{left}</View>
-      <Text style={styles.topAppBarTitle}>{title}</Text>
+      {center != null ? (
+        <View style={styles.topAppBarCenter}>{center}</View>
+      ) : (
+        <View style={styles.topAppBarCenter}>
+          <Text accessibilityRole="header" numberOfLines={1} style={styles.topAppBarTitle}>
+            {title}
+          </Text>
+        </View>
+      )}
       <View style={styles.topAppBarSide}>{right}</View>
     </View>
   );
@@ -391,6 +403,11 @@ export function AudioFlowAppHeader({
       <View style={styles.appHeaderSide}>{right}</View>
     </View>
   );
+}
+
+/** Vertical space occupied by `AudioFlowFooterMenu` pinned to the screen bottom */
+export function audioFlowFooterMenuHeight(bottomInset = 0) {
+  return 64 + Math.max(bottomInset, 8);
 }
 
 export function AudioFlowFooterMenu({
@@ -866,12 +883,21 @@ const styles = StyleSheet.create({
   },
   topAppBarSide: {
     alignItems: 'center',
+    height: 40,
     justifyContent: 'center',
     minWidth: 40,
+  },
+  topAppBarCenter: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 40,
+    paddingHorizontal: t.spacing.stackSm,
   },
   topAppBarTitle: {
     ...t.typography.labelMd,
     ...t.typography.eyebrow,
+    ...(Platform.OS === 'android' ? { includeFontPadding: false as const } : {}),
     color: t.color.text.onSurfaceSubtle,
     textAlign: 'center',
   },

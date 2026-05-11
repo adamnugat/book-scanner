@@ -1,7 +1,13 @@
 import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import {
+  AudioFlowFooterMenu,
+  AudioFlowScreen,
+} from '../../../components/audioflow';
 import { api } from '../../../lib/api';
-import { AudioFlowScreen } from '../../../components/audioflow';
 
 interface Plan {
   type: string;
@@ -27,6 +33,9 @@ const PLAN_COLORS: Record<string, string> = {
 };
 
 export default function PricingScreen() {
+  const insets = useSafeAreaInsets();
+  const footerPadding = 104 + Math.max(insets.bottom, 8);
+
   const [plans, setPlans] = useState<Plan[]>([]);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,13 +60,24 @@ export default function PricingScreen() {
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#e94560" />
         </View>
+
+        <AudioFlowFooterMenu
+          active="library"
+          bottomInset={insets.bottom}
+          onCreatePress={() => router.push('/(app)/projects/new')}
+          onLibraryPress={() => router.replace('/(app)')}
+          playerDisabled
+        />
       </AudioFlowScreen>
     );
   }
 
   return (
     <AudioFlowScreen>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingBottom: footerPadding }]}
+      >
         {usage && (
           <View style={styles.usageCard}>
             <Text style={styles.usageTitle}>Twoje wykorzystanie</Text>
@@ -109,6 +129,14 @@ export default function PricingScreen() {
           );
         })}
       </ScrollView>
+
+      <AudioFlowFooterMenu
+        active="library"
+        bottomInset={insets.bottom}
+        onCreatePress={() => router.push('/(app)/projects/new')}
+        onLibraryPress={() => router.replace('/(app)')}
+        playerDisabled
+      />
     </AudioFlowScreen>
   );
 }

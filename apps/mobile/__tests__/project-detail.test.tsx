@@ -16,6 +16,11 @@ jest.mock('expo-router', () => ({
     replace: (...args: unknown[]) => mockReplace(...args),
     back: mockBack,
   },
+  useRouter: () => ({
+    push: (...args: unknown[]) => mockPush(...args),
+    replace: (...args: unknown[]) => mockReplace(...args),
+    back: mockBack,
+  }),
   Stack: {
     Screen: ({
       options,
@@ -45,6 +50,17 @@ jest.mock('../lib/api', () => ({
 
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
+
+jest.mock('../lib/auth-context', () => ({
+  useAuth: () => ({
+    user: { id: 'user-1', email: 'test@test.com' },
+    isAuthenticated: true,
+    isLoading: false,
+    login: jest.fn(),
+    register: jest.fn(),
+    logout: jest.fn(),
+  }),
 }));
 
 import ProjectDetailScreen from '../app/(app)/projects/[id]/index';

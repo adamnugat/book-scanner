@@ -18,6 +18,7 @@ import {
   AudioFlowFooterMenu,
   AudioFlowPlayerPanel,
   AudioFlowScreen,
+  GhostButton,
   GlassPanel,
   ProjectToolTile,
   RoundIconButton,
@@ -26,6 +27,10 @@ import {
   audioFlowStyles,
   audioFlowTokens,
 } from '../../../../components/audioflow';
+import {
+  AudioFlowGlobalMenuButton,
+  AudioFlowTopChrome,
+} from '../../../../components/audioflow-global-navigation';
 import type { AudioTrackResponse, ProjectResponse } from '@book-scanner/shared';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -146,7 +151,16 @@ export default function ProjectDetailScreen() {
             headerTintColor: '#fff',
           }}
         />
-        <View style={styles.loadingState} />
+        <View style={styles.shell}>
+          <AudioFlowTopChrome>
+            <TopAppBar
+              left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
+              right={<AudioFlowGlobalMenuButton />}
+              title="Projekt"
+            />
+          </AudioFlowTopChrome>
+          <View style={styles.loadingState} />
+        </View>
       </AudioFlowScreen>
     );
   }
@@ -174,146 +188,146 @@ export default function ProjectDetailScreen() {
         }}
       />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 120 }]}
-      >
-        {hasAudio ? (
-          <View
-            style={[styles.hero, { minHeight: HERO_HEIGHT, paddingTop: insets.top + 8 }]}
-            testID="audioflow-project-hero"
-          >
-            {project.coverUrl ? (
-              <Image source={{ uri: project.coverUrl }} style={styles.coverImage} />
-            ) : (
-              <View style={styles.coverArt}>
-                <View style={styles.coverBandPrimary} />
-                <View style={styles.coverBandSecondary} />
-                <View style={styles.coverOrbitLarge} />
-                <View style={styles.coverOrbitSmall} />
-              </View>
-            )}
+      <View style={styles.shell}>
+        <AudioFlowTopChrome>
+          <TopAppBar
+            left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
+            right={<AudioFlowGlobalMenuButton />}
+            title="Projekt"
+          />
+        </AudioFlowTopChrome>
 
-            <View pointerEvents="none" style={styles.coverOverlay} />
-            <TopAppBar
-              title="Projekt"
-              left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
-              right={
-                <RoundIconButton label="Opcje projektu" icon="⋯" onPress={handleProjectOptions} />
-              }
-              style={styles.topBar}
-            />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 120 }]}
+        >
+          {hasAudio ? (
+            <View style={[styles.hero, { minHeight: HERO_HEIGHT }]} testID="audioflow-project-hero">
+              {project.coverUrl ? (
+                <Image source={{ uri: project.coverUrl }} style={styles.coverImage} />
+              ) : (
+                <View style={styles.coverArt}>
+                  <View style={styles.coverBandPrimary} />
+                  <View style={styles.coverBandSecondary} />
+                  <View style={styles.coverOrbitLarge} />
+                  <View style={styles.coverOrbitSmall} />
+                </View>
+              )}
 
-            <View style={styles.heroContent}>
-              <View style={styles.heroMetaRow}>
-                <StatusPill
-                  label={statusLabel}
-                  tone={project.status === 'completed' ? 'done' : 'neutral'}
+              <View pointerEvents="none" style={styles.coverOverlay} />
+
+              <View style={styles.heroContent}>
+                <View style={styles.heroMetaRow}>
+                  <StatusPill
+                    label={statusLabel}
+                    tone={project.status === 'completed' ? 'done' : 'neutral'}
+                  />
+                  <Text style={styles.heroMetaText}>
+                    {languageMeta} • {audioMeta}
+                  </Text>
+                </View>
+
+                <View>
+                  <Text style={audioFlowStyles.eyebrow}>Audiobook</Text>
+                  <Text style={[audioFlowStyles.headlineLg, styles.heroTitle]}>
+                    {project.title}
+                  </Text>
+                  <Text style={styles.heroSubtitle}>
+                    {voiceMeta} • {interstitialMeta}
+                  </Text>
+                </View>
+
+                <AudioFlowPlayerPanel
+                  currentTime="00:00"
+                  totalTime={totalDuration}
+                  progress={0}
+                  onNextPress={handleOpenPlayer}
+                  onPlayPress={handleOpenPlayer}
+                  onPreviousPress={handleOpenPlayer}
                 />
-                <Text style={styles.heroMetaText}>
-                  {languageMeta} • {audioMeta}
-                </Text>
               </View>
-
-              <View>
-                <Text style={audioFlowStyles.eyebrow}>Audiobook</Text>
-                <Text style={[audioFlowStyles.headlineLg, styles.heroTitle]}>{project.title}</Text>
-                <Text style={styles.heroSubtitle}>
-                  {voiceMeta} • {interstitialMeta}
+            </View>
+          ) : (
+            <View style={styles.creationHeader}>
+              <GlassPanel style={styles.nextStepPanel}>
+                <View style={styles.heroMetaRow}>
+                  <StatusPill
+                    label={statusLabel}
+                    tone={project.status === 'completed' ? 'done' : 'neutral'}
+                  />
+                  <Text style={styles.heroMetaText}>{languageMeta}</Text>
+                </View>
+                <Text style={audioFlowStyles.eyebrow}>Etap audiobooka</Text>
+                <Text style={[audioFlowStyles.headlineMd, styles.nextStepTitle]}>
+                  {project.status === 'ready_for_tts'
+                    ? 'Następny krok: Text to Speech'
+                    : 'Przygotuj tekst przed nagraniem'}
                 </Text>
-              </View>
+                <Text style={audioFlowStyles.body}>
+                  {project.status === 'ready_for_tts'
+                    ? 'OCR jest gotowy. Wybierz głos lektora, a potem uruchom generowanie audio dla zatwierdzonych scen.'
+                    : 'Najpierw zakończ OCR i zatwierdź tekst scen.'}
+                </Text>
+                {project.status === 'ready_for_tts' && (
+                  <Pressable
+                    accessibilityRole="button"
+                    style={({ pressed }) => [styles.nextStepButton, pressed && styles.pressed]}
+                    onPress={() => router.push(`/(app)/projects/${id}/voice`)}
+                  >
+                    <Text style={styles.nextStepButtonText}>Wybierz głos i generuj audio</Text>
+                  </Pressable>
+                )}
+              </GlassPanel>
+            </View>
+          )}
 
-              <AudioFlowPlayerPanel
-                currentTime="00:00"
-                totalTime={totalDuration}
-                progress={0}
-                onNextPress={handleOpenPlayer}
-                onPlayPress={handleOpenPlayer}
-                onPreviousPress={handleOpenPlayer}
+          <View style={styles.toolsSection}>
+            <View style={styles.toolsHeading}>
+              <View style={styles.toolsHeadingTexts}>
+                <Text style={audioFlowStyles.headlineMd}>Narzędzia projektu</Text>
+                <Text style={styles.toolsCount}>3 dostępne</Text>
+              </View>
+              <GhostButton
+                label="Opcje projektu"
+                onPress={handleProjectOptions}
+                style={styles.toolsMoreButton}
+              />
+            </View>
+            <View style={styles.toolsGrid}>
+              <ProjectToolTile
+                accessibilityLabel="Otwórz zdjęcia stron"
+                body="Skanuj, kadruj i porządkuj strony książki."
+                icon="▧"
+                meta="OCR"
+                onPress={() => router.push(`/(app)/projects/${id}/images`)}
+                title="Zdjęcia stron"
+              />
+
+              <ProjectToolTile
+                accessibilityLabel="Otwórz głos i audio"
+                body={
+                  project.voiceId
+                    ? `Lektor: ${project.voiceId}`
+                    : 'Wybierz lektora, ton i tempo nagrania.'
+                }
+                icon="≋"
+                meta="AI"
+                onPress={() => router.push(`/(app)/projects/${id}/voice`)}
+                title="Głos i audio"
+              />
+
+              <ProjectToolTile
+                accessibilityLabel="Otwórz udostępnianie"
+                body="Link i kod QR dla odbiorców."
+                icon="↗"
+                meta="Link"
+                onPress={() => router.push(`/(app)/projects/${id}/sharing`)}
+                title="Udostępnij"
               />
             </View>
           </View>
-        ) : (
-          <View style={[styles.creationHeader, { paddingTop: insets.top + 8 }]}>
-            <TopAppBar
-              title="Projekt"
-              left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
-              right={
-                <RoundIconButton label="Opcje projektu" icon="⋯" onPress={handleProjectOptions} />
-              }
-              style={styles.topBar}
-            />
-            <GlassPanel style={styles.nextStepPanel}>
-              <View style={styles.heroMetaRow}>
-                <StatusPill
-                  label={statusLabel}
-                  tone={project.status === 'completed' ? 'done' : 'neutral'}
-                />
-                <Text style={styles.heroMetaText}>{languageMeta}</Text>
-              </View>
-              <Text style={audioFlowStyles.eyebrow}>Etap audiobooka</Text>
-              <Text style={[audioFlowStyles.headlineMd, styles.nextStepTitle]}>
-                {project.status === 'ready_for_tts'
-                  ? 'Następny krok: Text to Speech'
-                  : 'Przygotuj tekst przed nagraniem'}
-              </Text>
-              <Text style={audioFlowStyles.body}>
-                {project.status === 'ready_for_tts'
-                  ? 'OCR jest gotowy. Wybierz głos lektora, a potem uruchom generowanie audio dla zatwierdzonych scen.'
-                  : 'Najpierw zakończ OCR i zatwierdź tekst scen.'}
-              </Text>
-              {project.status === 'ready_for_tts' && (
-                <Pressable
-                  accessibilityRole="button"
-                  style={({ pressed }) => [styles.nextStepButton, pressed && styles.pressed]}
-                  onPress={() => router.push(`/(app)/projects/${id}/voice`)}
-                >
-                  <Text style={styles.nextStepButtonText}>Wybierz głos i generuj audio</Text>
-                </Pressable>
-              )}
-            </GlassPanel>
-          </View>
-        )}
-
-        <View style={styles.toolsSection}>
-          <View style={styles.toolsHeading}>
-            <Text style={audioFlowStyles.headlineMd}>Narzędzia projektu</Text>
-            <Text style={styles.toolsCount}>3 dostępne</Text>
-          </View>
-          <View style={styles.toolsGrid}>
-            <ProjectToolTile
-              accessibilityLabel="Otwórz zdjęcia stron"
-              body="Skanuj, kadruj i porządkuj strony książki."
-              icon="▧"
-              meta="OCR"
-              onPress={() => router.push(`/(app)/projects/${id}/images`)}
-              title="Zdjęcia stron"
-            />
-
-            <ProjectToolTile
-              accessibilityLabel="Otwórz głos i audio"
-              body={
-                project.voiceId
-                  ? `Lektor: ${project.voiceId}`
-                  : 'Wybierz lektora, ton i tempo nagrania.'
-              }
-              icon="≋"
-              meta="AI"
-              onPress={() => router.push(`/(app)/projects/${id}/voice`)}
-              title="Głos i audio"
-            />
-
-            <ProjectToolTile
-              accessibilityLabel="Otwórz udostępnianie"
-              body="Link i kod QR dla odbiorców."
-              icon="↗"
-              meta="Link"
-              onPress={() => router.push(`/(app)/projects/${id}/sharing`)}
-              title="Udostępnij"
-            />
-          </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       <AudioFlowFooterMenu
         active="player"
@@ -328,6 +342,9 @@ export default function ProjectDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  shell: {
+    flex: 1,
+  },
   scroll: {
     flex: 1,
   },
@@ -395,10 +412,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(20, 10, 10, 0.36)',
   },
-  topBar: {
-    position: 'relative',
-    zIndex: 2,
-  },
   heroContent: {
     position: 'absolute',
     bottom: t.spacing.stackLg,
@@ -463,9 +476,19 @@ const styles = StyleSheet.create({
     paddingTop: t.spacing.stackLg,
   },
   toolsHeading: {
-    alignItems: 'baseline',
+    alignItems: 'flex-start',
     flexDirection: 'row',
+    gap: t.spacing.stackSm,
     justifyContent: 'space-between',
+  },
+  toolsHeadingTexts: {
+    flex: 1,
+    gap: 4,
+  },
+  toolsMoreButton: {
+    minHeight: 40,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   toolsCount: {
     color: t.color.text.onSurfaceSubtle,

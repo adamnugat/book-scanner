@@ -81,9 +81,10 @@ describe('ProjectsScreen – with projects', () => {
     expect(screen.getByText('Hamlet')).toBeTruthy();
   });
 
-  it('shows user email in header', async () => {
+  it('does not show user email on the dashboard surface', async () => {
     render(<ProjectsScreen />);
-    expect(await screen.findByText('test@example.com', {}, { timeout: 3000 })).toBeTruthy();
+    await screen.findByText('Pan Tadeusz', {}, { timeout: 3000 });
+    expect(screen.queryByText('test@example.com')).toBeNull();
   });
 
   it('shows status badges', async () => {
@@ -92,12 +93,10 @@ describe('ProjectsScreen – with projects', () => {
     expect(screen.getAllByText('Gotowe').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders the AudioFlow dashboard shell and footer create action', async () => {
+  it('renders welcome copy and footer create action', async () => {
     render(<ProjectsScreen />);
 
     expect(await screen.findByText('Witaj ponownie')).toBeTruthy();
-    expect(screen.getByText('AudioFlow')).toBeTruthy();
-    expect(screen.getByLabelText('Logo AudioFlow equalizer')).toBeTruthy();
     expect(screen.queryByText('≋')).toBeNull();
     expect(screen.getByLabelText('Biblioteka')).toBeTruthy();
     expect(screen.getByLabelText('Nowy audiobook')).toBeTruthy();
