@@ -15,6 +15,19 @@ import {
   type ViewStyle,
 } from 'react-native';
 
+/**
+ * Rodziny z {@link https://fonts.google.com/specimen/Quicksand Quicksand} i
+ * {@link https://fonts.google.com/specimen/Varela+Round Varela Round} — jak w
+ * `design-system/reference-views/Dashboard.html`. Ładowane w `app/_layout.tsx`.
+ */
+export const audioFlowFontFamilies = {
+  quicksandSemiBold: 'Quicksand_600SemiBold',
+  quicksandBold: 'Quicksand_700Bold',
+  varelaRound: 'VarelaRound_400Regular',
+} as const;
+
+const ff = audioFlowFontFamilies;
+
 export const audioFlowTokens = {
   color: {
     background: {
@@ -67,11 +80,42 @@ export const audioFlowTokens = {
     full: 9999,
   },
   typography: {
-    headlineLg: { fontSize: 32, lineHeight: 40, fontWeight: '700' as const },
-    headlineMd: { fontSize: 24, lineHeight: 32, fontWeight: '600' as const },
-    bodyMd: { fontSize: 16, lineHeight: 24, fontWeight: '400' as const },
-    labelMd: { fontSize: 14, lineHeight: 20, fontWeight: '600' as const, letterSpacing: 0.14 },
-    labelSm: { fontSize: 12, lineHeight: 16, fontWeight: '500' as const },
+    headlineLg: {
+      fontFamily: ff.quicksandBold,
+      fontSize: 32,
+      letterSpacing: -0.64,
+      lineHeight: 40,
+    },
+    headlineMd: {
+      fontFamily: ff.quicksandSemiBold,
+      fontSize: 24,
+      lineHeight: 32,
+    },
+    bodyLg: {
+      fontFamily: ff.varelaRound,
+      fontSize: 18,
+      fontWeight: '400' as const,
+      lineHeight: 28,
+    },
+    bodyMd: {
+      fontFamily: ff.varelaRound,
+      fontSize: 16,
+      fontWeight: '400' as const,
+      lineHeight: 24,
+    },
+    labelMd: {
+      fontFamily: ff.varelaRound,
+      fontSize: 14,
+      fontWeight: '600' as const,
+      letterSpacing: 0.14,
+      lineHeight: 20,
+    },
+    labelSm: {
+      fontFamily: ff.varelaRound,
+      fontSize: 12,
+      fontWeight: '500' as const,
+      lineHeight: 16,
+    },
     eyebrow: { letterSpacing: 2.16, textTransform: 'uppercase' as const },
   },
   motion: {
@@ -555,6 +599,7 @@ export function ProjectCard({
   onPress,
   actions,
   style,
+  coverUrl,
 }: {
   title: string;
   meta: string;
@@ -563,6 +608,7 @@ export function ProjectCard({
   onPress: (event: GestureResponderEvent) => void;
   actions?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  coverUrl?: string | null;
 }) {
   return (
     <Pressable
@@ -571,7 +617,11 @@ export function ProjectCard({
       style={({ pressed }) => [styles.projectCard, pressed && styles.pressed, style]}
     >
       <View style={styles.projectCardHeader}>
-        <View style={styles.projectCover} />
+        <View style={styles.projectCover}>
+          {coverUrl ? (
+            <Image resizeMode="cover" source={{ uri: coverUrl }} style={styles.projectCoverImage} />
+          ) : null}
+        </View>
         <View style={styles.projectCardBody}>
           <View style={styles.projectTitleRow}>
             <Text numberOfLines={1} style={styles.projectTitle}>
@@ -693,12 +743,14 @@ export const audioFlowStyles = StyleSheet.create({
     ...t.typography.headlineLg,
     color: t.color.text.onDark,
     textShadowColor: 'rgba(255, 255, 255, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
   },
   headlineMd: {
     ...t.typography.headlineMd,
     color: t.color.text.onDark,
     textShadowColor: 'rgba(255, 255, 255, 0.24)',
+    textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
   },
   eyebrow: {
@@ -716,8 +768,7 @@ export const audioFlowStyles = StyleSheet.create({
     borderRadius: t.radius.lg,
     borderWidth: 1,
     color: t.color.text.onDark,
-    fontSize: 16,
-    lineHeight: 24,
+    ...t.typography.bodyMd,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
@@ -757,6 +808,7 @@ const styles = StyleSheet.create({
   },
   pearlButtonText: {
     color: t.color.text.onPearl,
+    fontFamily: ff.varelaRound,
     fontSize: 16,
     fontWeight: '700',
   },
@@ -775,6 +827,7 @@ const styles = StyleSheet.create({
   },
   ghostButtonText: {
     color: t.color.text.onDark,
+    fontFamily: ff.varelaRound,
     fontSize: 15,
     fontWeight: '600',
   },
@@ -826,8 +879,8 @@ const styles = StyleSheet.create({
   },
   pickerTitle: {
     color: t.color.text.onDark,
+    ...t.typography.labelMd,
     fontSize: 16,
-    fontWeight: '700',
     lineHeight: 22,
   },
   pickerTitleSelected: {
@@ -835,14 +888,12 @@ const styles = StyleSheet.create({
   },
   pickerBody: {
     color: t.color.text.onSurfaceSubtle,
-    fontSize: 14,
-    lineHeight: 20,
+    ...t.typography.labelMd,
     marginTop: 4,
   },
   pickerMeta: {
     color: t.color.text.onSurfaceMuted,
-    fontSize: 12,
-    lineHeight: 16,
+    ...t.typography.labelSm,
     marginTop: 4,
   },
   sectionTitle: {
@@ -868,7 +919,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: t.color.text.onSurfaceSubtle,
-    fontSize: 12,
+    ...t.typography.labelSm,
     fontWeight: '600',
   },
   chipTextSelected: {
@@ -975,12 +1026,14 @@ const styles = StyleSheet.create({
   },
   appHeaderTitle: {
     color: t.color.text.onDark,
+    ...t.typography.labelMd,
     fontSize: 16,
-    fontWeight: '700',
     letterSpacing: -0.2,
+    lineHeight: 22,
   },
   appHeaderSubtitle: {
     color: t.color.text.onSurfaceSubtle,
+    fontFamily: ff.varelaRound,
     fontSize: 11,
     lineHeight: 14,
     marginTop: 1,
@@ -1023,7 +1076,7 @@ const styles = StyleSheet.create({
   },
   footerLabel: {
     color: t.color.text.onSurfaceSubtle,
-    fontSize: 12,
+    ...t.typography.labelSm,
     fontWeight: '600',
   },
   footerItemActive: {
@@ -1064,9 +1117,7 @@ const styles = StyleSheet.create({
   },
   formLink: {
     color: t.color.accent.pearl,
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 20,
+    ...t.typography.labelMd,
   },
   statusPill: {
     backgroundColor: t.color.surface.glassLighter,
@@ -1082,7 +1133,7 @@ const styles = StyleSheet.create({
   },
   statusPillText: {
     color: t.color.text.onSurfaceSubtle,
-    fontSize: 12,
+    ...t.typography.labelSm,
     fontWeight: '700',
   },
   statusPillTextDone: {
@@ -1102,7 +1153,7 @@ const styles = StyleSheet.create({
   },
   filterChipLabel: {
     color: t.color.text.onSurfaceSubtle,
-    fontSize: 12,
+    ...t.typography.labelSm,
     fontWeight: '600',
   },
   filterChipLabelSelected: {
@@ -1113,7 +1164,7 @@ const styles = StyleSheet.create({
     borderColor: t.color.surface.glassEdge,
     borderRadius: t.radius.panel,
     borderWidth: 1,
-    marginBottom: 12,
+    marginBottom: t.spacing.stackMd,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
@@ -1128,7 +1179,12 @@ const styles = StyleSheet.create({
     backgroundColor: t.color.accent.pearlTint,
     borderRightColor: t.color.surface.glassEdge,
     borderRightWidth: 1,
-    width: 96,
+    overflow: 'hidden',
+    width: 128,
+  },
+  projectCoverImage: {
+    height: '100%',
+    width: '100%',
   },
   projectCardBody: {
     flex: 1,
@@ -1144,12 +1200,16 @@ const styles = StyleSheet.create({
   projectTitle: {
     color: t.color.text.onDark,
     flex: 1,
+    ...t.typography.labelMd,
     fontSize: 16,
-    fontWeight: '700',
     lineHeight: 22,
+    textShadowColor: 'rgba(255, 255, 255, 0.3)',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
   },
   projectMeta: {
     color: t.color.text.onSurfaceSubtle,
+    ...t.typography.labelSm,
     fontSize: 13,
     lineHeight: 18,
     marginTop: 6,
@@ -1186,13 +1246,13 @@ const styles = StyleSheet.create({
   },
   playerTimeCurrent: {
     color: t.color.text.onDark,
-    fontSize: 12,
+    ...t.typography.labelSm,
     fontVariant: ['tabular-nums'],
     fontWeight: '700',
   },
   playerTimeTotal: {
     color: t.color.text.onSurfaceSubtle,
-    fontSize: 12,
+    ...t.typography.labelSm,
     fontVariant: ['tabular-nums'],
     fontWeight: '600',
   },
@@ -1259,18 +1319,18 @@ const styles = StyleSheet.create({
   },
   toolTileMeta: {
     color: t.color.text.onSurfaceSubtle,
-    fontSize: 12,
+    ...t.typography.labelSm,
     fontWeight: '700',
   },
   toolTileTitle: {
     color: t.color.text.onDark,
+    ...t.typography.labelMd,
     fontSize: 16,
-    fontWeight: '700',
     lineHeight: 22,
   },
   toolTileBody: {
     color: t.color.text.onSurfaceSubtle,
-    fontSize: 12,
+    ...t.typography.labelSm,
     lineHeight: 17,
     marginTop: 4,
   },

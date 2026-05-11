@@ -15,10 +15,8 @@ import { Stack, useLocalSearchParams, router, useFocusEffect } from 'expo-router
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../../../lib/api';
 import {
-  AudioFlowFooterMenu,
   AudioFlowPlayerPanel,
   AudioFlowScreen,
-  GhostButton,
   GlassPanel,
   ProjectToolTile,
   RoundIconButton,
@@ -28,6 +26,7 @@ import {
   audioFlowTokens,
 } from '../../../../components/audioflow';
 import {
+  AudioFlowBottomNavigation,
   AudioFlowGlobalMenuButton,
   AudioFlowTopChrome,
 } from '../../../../components/audioflow-global-navigation';
@@ -42,6 +41,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const HERO_HEIGHT = Math.max(Dimensions.get('window').height * 0.52, 442);
 const t = audioFlowTokens;
+const PROJECT_TOOL_COUNT = 3;
 
 const formatDuration = (durationMs: number) => {
   const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
@@ -155,7 +155,11 @@ export default function ProjectDetailScreen() {
           <AudioFlowTopChrome>
             <TopAppBar
               left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
-              right={<AudioFlowGlobalMenuButton />}
+              right={
+                <View style={styles.topBarRight}>
+                  <AudioFlowGlobalMenuButton />
+                </View>
+              }
               title="Projekt"
             />
           </AudioFlowTopChrome>
@@ -192,7 +196,12 @@ export default function ProjectDetailScreen() {
         <AudioFlowTopChrome>
           <TopAppBar
             left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
-            right={<AudioFlowGlobalMenuButton />}
+            right={
+              <View style={styles.topBarRight}>
+                <RoundIconButton icon="⋮" label="Opcje projektu" onPress={handleProjectOptions} />
+                <AudioFlowGlobalMenuButton />
+              </View>
+            }
             title="Projekt"
           />
         </AudioFlowTopChrome>
@@ -285,13 +294,8 @@ export default function ProjectDetailScreen() {
             <View style={styles.toolsHeading}>
               <View style={styles.toolsHeadingTexts}>
                 <Text style={audioFlowStyles.headlineMd}>Narzędzia projektu</Text>
-                <Text style={styles.toolsCount}>3 dostępne</Text>
+                <Text style={styles.toolsCount}>{`${PROJECT_TOOL_COUNT} dostępne`}</Text>
               </View>
-              <GhostButton
-                label="Opcje projektu"
-                onPress={handleProjectOptions}
-                style={styles.toolsMoreButton}
-              />
             </View>
             <View style={styles.toolsGrid}>
               <ProjectToolTile
@@ -329,7 +333,7 @@ export default function ProjectDetailScreen() {
         </ScrollView>
       </View>
 
-      <AudioFlowFooterMenu
+      <AudioFlowBottomNavigation
         active="player"
         bottomInset={insets.bottom}
         onCreatePress={() => router.push('/(app)/projects/new')}
@@ -342,6 +346,12 @@ export default function ProjectDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  topBarRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
   shell: {
     flex: 1,
   },
@@ -484,11 +494,6 @@ const styles = StyleSheet.create({
   toolsHeadingTexts: {
     flex: 1,
     gap: 4,
-  },
-  toolsMoreButton: {
-    minHeight: 40,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
   },
   toolsCount: {
     color: t.color.text.onSurfaceSubtle,

@@ -32,8 +32,14 @@ const mockDeleteProject = jest.fn();
 const mockPush = jest.fn();
 const mockLogout = jest.fn();
 
+const mockReplace = jest.fn();
+
 jest.mock('expo-router', () => ({
-  router: { push: (...args: unknown[]) => mockPush(...args), replace: jest.fn(), back: jest.fn() },
+  router: {
+    push: (...args: unknown[]) => mockPush(...args),
+    replace: (...args: unknown[]) => mockReplace(...args),
+    back: jest.fn(),
+  },
   useFocusEffect: (callback: () => void) => {
     const react = require('react');
     react.useEffect(() => {
@@ -73,17 +79,19 @@ describe('ProjectsScreen – with projects', () => {
     jest.clearAllMocks();
     mockGetProjects.mockImplementation(() => Promise.resolve(mockProjects));
     mockDeleteProject.mockResolvedValue(undefined);
+    mockReplace.mockClear();
   });
 
   it('T-2.8: renders project list', async () => {
     render(<ProjectsScreen />);
-    expect(await screen.findByText('Pan Tadeusz', {}, { timeout: 3000 })).toBeTruthy();
+    await screen.findByTestId('dashboard-last-played', {}, { timeout: 3000 });
+    expect(screen.getAllByText('Pan Tadeusz').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Hamlet')).toBeTruthy();
   });
 
   it('does not show user email on the dashboard surface', async () => {
     render(<ProjectsScreen />);
-    await screen.findByText('Pan Tadeusz', {}, { timeout: 3000 });
+    await screen.findByTestId('dashboard-last-played', {}, { timeout: 3000 });
     expect(screen.queryByText('test@example.com')).toBeNull();
   });
 
@@ -96,7 +104,8 @@ describe('ProjectsScreen – with projects', () => {
   it('renders welcome copy and footer create action', async () => {
     render(<ProjectsScreen />);
 
-    expect(await screen.findByText('Witaj ponownie')).toBeTruthy();
+    expect(await screen.findByTestId('dashboard-last-played', {}, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByText('Witaj ponownie')).toBeTruthy();
     expect(screen.queryByText('≋')).toBeNull();
     expect(screen.getByLabelText('Biblioteka')).toBeTruthy();
     expect(screen.getByLabelText('Nowy audiobook')).toBeTruthy();
@@ -107,18 +116,16 @@ describe('ProjectsScreen – with projects', () => {
     expect(mockPush).toHaveBeenCalledWith('/(app)/projects/new');
   });
 
-  it('keeps filtering and sorting controls after the AudioFlow redesign', async () => {
+  it('shows last-played widget for the most recently updated project', async () => {
     render(<ProjectsScreen />);
 
-    expect(await screen.findByText('Pan Tadeusz', {}, { timeout: 3000 })).toBeTruthy();
-    fireEvent.press(screen.getAllByText('Gotowe')[0]);
+    expect(await screen.findByTestId('dashboard-last-played', {}, { timeout: 3000 })).toBeTruthy();
+    expect(screen.getByText('Ostatnio odtwarzane')).toBeTruthy();
+    expect(screen.getAllByText('Pan Tadeusz').length).toBeGreaterThanOrEqual(1);
 
-    expect(screen.queryByText('Pan Tadeusz')).toBeNull();
-    expect(screen.getByText('Hamlet')).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Odtwórz ostatni audiobook'));
 
-    fireEvent.press(screen.getByText('Tytuł'));
-
-    expect(screen.getByText('Hamlet')).toBeTruthy();
+    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/player');
   });
 });
 

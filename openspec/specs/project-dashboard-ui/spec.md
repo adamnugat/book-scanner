@@ -83,24 +83,21 @@ The mobile app SHALL present the authenticated project library dashboard using t
 - **WHEN** the authenticated user has no projects
 - **THEN** the dashboard shows an AudioFlow empty state with a clear action to create a new audiobook
 
-### Requirement: Dashboard filters and sorting
+### Requirement: Last Played Audiobook Widget
 
-The mobile app SHALL preserve existing dashboard filtering and sorting while restyling the controls with AudioFlow primitives.
+The system SHALL display a widget for the most recently played or modified audiobook at the top of the dashboard, replacing the previous filters and sorting controls.
 
-#### Scenario: User filters projects
+#### Scenario: User has at least one project
 
-- **WHEN** the user selects a project status filter
-- **THEN** the dashboard filters the list using the existing status logic and marks the selected filter with AudioFlow selected styling
+- **WHEN** the authenticated user has projects on the dashboard
+- **THEN** the system displays the most recent project in a prominent "Ostatnio odtwarzane" widget
+- **THEN** the widget includes the project title, a play button, and a progress bar
+- **THEN** pressing the play button opens the player for that project
 
-#### Scenario: User sorts projects
+#### Scenario: User has no projects
 
-- **WHEN** the user selects date, title, or status sorting
-- **THEN** the dashboard sorts the list using the existing sort logic and marks the selected sort option with AudioFlow selected styling
-
-#### Scenario: Filter returns no matching projects
-
-- **WHEN** projects exist but the selected filter has no matching results
-- **THEN** the dashboard shows an AudioFlow empty-filter state with an action to return to all projects
+- **WHEN** the authenticated user has no projects
+- **THEN** the "Ostatnio odtwarzane" widget is not displayed
 
 ### Requirement: Dashboard project actions
 

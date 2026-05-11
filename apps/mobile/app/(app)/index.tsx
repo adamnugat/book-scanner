@@ -1,20 +1,21 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, FlatList, Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { ProjectResponse, ProjectStatus } from '@book-scanner/shared';
+import type { ProjectResponse } from '@book-scanner/shared';
 
 import {
-  AudioFlowFooterMenu,
   AudioFlowScreen,
-  FilterChip,
+  audioFlowFontFamilies,
   GhostButton,
   GlassPanel,
   PearlButton,
   ProjectCard,
+  RoundIconButton,
   audioFlowStyles,
   audioFlowTokens,
 } from '../../components/audioflow';
+import { AudioFlowBottomNavigation } from '../../components/audioflow-global-navigation';
 import { useToast } from '../../components/Toast';
 import { api } from '../../lib/api';
 
@@ -25,21 +26,12 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Gotowe',
 };
 
-const FILTER_OPTIONS: { label: string; value: ProjectStatus | 'all' }[] = [
-  { label: 'Wszystkie', value: 'all' },
-  { label: 'Szkice', value: 'draft' },
-  { label: 'OCR', value: 'ocr_processing' },
-  { label: 'Do TTS', value: 'ready_for_tts' },
-  { label: 'Gotowe', value: 'completed' },
-];
-
-type SortKey = 'date' | 'title' | 'status';
-
-const SORT_OPTIONS: { label: string; value: SortKey }[] = [
-  { label: 'Data', value: 'date' },
-  { label: 'Tytuł', value: 'title' },
-  { label: 'Status', value: 'status' },
-];
+/** Domyślny pasek postępu przy braku zapisanego stanu odtwarzacza (tylko UI). */
+function dashboardPlaybackProgress(project: ProjectResponse): number {
+  if (project.status === 'completed') return 0.35;
+  if (project.status === 'ready_for_tts') return 0.2;
+  return 0.08;
+}
 
 export default function ProjectsScreen() {
   const { showToast } = useToast();
@@ -50,8 +42,6 @@ export default function ProjectsScreen() {
 
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<ProjectStatus | 'all'>('all');
-  const [sortKey, setSortKey] = useState<SortKey>('date');
 
   const loadProjects = useCallback(async () => {
     try {
@@ -70,15 +60,16 @@ export default function ProjectsScreen() {
     }, [loadProjects]),
   );
 
-  const filtered = useMemo(() => {
-    let list = filter === 'all' ? projects : projects.filter((p) => p.status === filter);
-    list = [...list].sort((a, b) => {
-      if (sortKey === 'title') return a.title.localeCompare(b.title);
-      if (sortKey === 'status') return a.status.localeCompare(b.status);
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-    });
-    return list;
-  }, [projects, filter, sortKey]);
+  const sortedProjects = useMemo(
+    () =>
+      [...projects].sort(
+        (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      ),
+    [projects],
+  );
+
+  const lastPlayed = sortedProjects.length > 0 ? sortedProjects[0] : null;
+  const lastPlayedProgress = lastPlayed ? dashboardPlaybackProgress(lastPlayed) : 0;
 
   const handleDelete = (project: ProjectResponse) => {
     Alert.alert('Usuń projekt', `Czy na pewno chcesz usunąć "${project.title}"?`, [
@@ -101,6 +92,11 @@ export default function ProjectsScreen() {
 
   const createProject = () => router.push('/(app)/projects/new');
 
+  const openLastPlayedPlayer = () => {
+    if (!lastPlayed) return;
+    router.push(`/(app)/projects/${lastPlayed.id}/player`);
+  };
+
   const renderProject = ({ item }: { item: ProjectResponse }) => (
     <ProjectCard
       actions={
@@ -118,6 +114,7 @@ export default function ProjectsScreen() {
           />
         </>
       }
+      coverUrl={item.coverUrl}
       meta={`${item.language.toUpperCase()} · ${new Date(item.updatedAt).toLocaleDateString('pl-PL')}`}
       onPress={() => router.push(`/(app)/projects/${item.id}`)}
       statusLabel={STATUS_LABELS[item.status] || item.status}
@@ -127,46 +124,65 @@ export default function ProjectsScreen() {
     />
   );
 
+  const listHeader = (
+    <>
+      <View style={styles.welcome}>
+        <Text style={styles.eyebrow}>Biblioteka audiobooków</Text>
+        <Text style={styles.welcomeHeadline}>Witaj ponownie</Text>
+        <Text style={styles.welcomeCopy}>
+          {projects.length === 0
+            ? 'Dodaj zdjęcia książki i zamień je w pierwszy audiobook.'
+            : `Masz ${projects.length} ${projects.length === 1 ? 'projekt' : 'projekty'} w swojej bibliotece.`}
+        </Text>
+      </View>
+
+      {lastPlayed ? (
+        <>
+          <GlassPanel style={styles.lastPlayedPanel} testID="dashboard-last-played">
+            <View style={styles.lastPlayedProgressTrack}>
+              <View style={[styles.lastPlayedProgressFill, { width: `${lastPlayedProgress * 100}%` }]} />
+            </View>
+            <View style={styles.lastPlayedRow}>
+              <View style={styles.lastPlayedThumb}>
+                {lastPlayed.coverUrl ? (
+                  <Image
+                    resizeMode="cover"
+                    source={{ uri: lastPlayed.coverUrl }}
+                    style={styles.lastPlayedThumbImage}
+                  />
+                ) : null}
+              </View>
+              <View style={styles.lastPlayedTextCol}>
+                <Text style={styles.lastPlayedEyebrow}>Ostatnio odtwarzane</Text>
+                <Text numberOfLines={2} style={styles.lastPlayedTitle}>
+                  {lastPlayed.title}
+                </Text>
+              </View>
+              <RoundIconButton
+                icon="▶"
+                label="Odtwórz ostatni audiobook"
+                onPress={openLastPlayedPlayer}
+              />
+            </View>
+          </GlassPanel>
+
+          <View style={styles.projectsSection}>
+            <Text
+              accessibilityRole="header"
+              nativeID="dashboard-projects-heading"
+              style={styles.projectsSectionTitle}
+            >
+              Twoje Projekty
+            </Text>
+          </View>
+        </>
+      ) : null}
+    </>
+  );
+
   return (
     <AudioFlowScreen>
       <View style={styles.content}>
-        <View style={styles.welcome}>
-          <Text style={styles.eyebrow}>Biblioteka audiobooków</Text>
-          <Text style={audioFlowStyles.headlineLg}>Witaj ponownie</Text>
-          <Text style={styles.welcomeCopy}>
-            {projects.length === 0
-              ? 'Dodaj zdjęcia książki i zamień je w pierwszy audiobook.'
-              : `Masz ${projects.length} ${projects.length === 1 ? 'projekt' : 'projekty'} w swojej bibliotece.`}
-          </Text>
-        </View>
-
-        <GlassPanel style={styles.toolbar}>
-          <View style={styles.toolbarHeader}>
-            <Text style={audioFlowStyles.headlineMd}>Twoje Projekty</Text>
-            <GhostButton label="Cennik" onPress={() => router.push('/(app)/pricing')} />
-          </View>
-          <View style={styles.chipRow}>
-            {FILTER_OPTIONS.map((opt) => (
-              <FilterChip
-                key={opt.value}
-                label={opt.label}
-                onPress={() => setFilter(opt.value)}
-                selected={filter === opt.value}
-              />
-            ))}
-          </View>
-          <View style={styles.chipRow}>
-            {SORT_OPTIONS.map((opt) => (
-              <FilterChip
-                key={opt.value}
-                label={opt.label}
-                onPress={() => setSortKey(opt.value)}
-                selected={sortKey === opt.value}
-              />
-            ))}
-          </View>
-        </GlassPanel>
-
         {loading ? (
           <GlassPanel
             style={[styles.statePanel, { marginBottom: footerPadding }]}
@@ -175,37 +191,28 @@ export default function ProjectsScreen() {
             <Text style={styles.emptyTitle}>Ładowanie biblioteki...</Text>
             <Text style={styles.emptyHint}>Przygotowujemy Twoje projekty AudioFlow.</Text>
           </GlassPanel>
-        ) : filtered.length === 0 && projects.length > 0 ? (
-          <GlassPanel
-            style={[styles.statePanel, { marginBottom: footerPadding }]}
-            testID="dashboard-state-panel"
-          >
-            <Text style={styles.emptyTitle}>Brak projektów z tym filtrem</Text>
-            <Text style={styles.emptyHint}>Zmień filtr, aby wrócić do pełnej biblioteki.</Text>
-            <PearlButton
-              label="Pokaż wszystkie"
-              onPress={() => setFilter('all')}
-              style={styles.emptyCta}
-            />
-          </GlassPanel>
         ) : projects.length === 0 ? (
-          <GlassPanel
-            style={[styles.statePanel, { marginBottom: footerPadding }]}
-            testID="dashboard-state-panel"
-          >
-            <Text style={styles.emptyTitle}>Nie masz jeszcze żadnych projektów</Text>
-            <Text style={styles.emptyHint}>Stwórz swój pierwszy audiobook!</Text>
-            <PearlButton
-              accessibilityLabel="Utwórz pierwszy audiobook"
-              label="Utwórz pierwszy audiobook"
-              onPress={createProject}
-              style={styles.emptyCta}
-            />
-          </GlassPanel>
+          <>
+            {listHeader}
+            <GlassPanel
+              style={[styles.statePanel, { marginBottom: footerPadding }]}
+              testID="dashboard-state-panel"
+            >
+              <Text style={styles.emptyTitle}>Nie masz jeszcze żadnych projektów</Text>
+              <Text style={styles.emptyHint}>Stwórz swój pierwszy audiobook!</Text>
+              <PearlButton
+                accessibilityLabel="Utwórz pierwszy audiobook"
+                label="Utwórz pierwszy audiobook"
+                onPress={createProject}
+                style={styles.emptyCta}
+              />
+            </GlassPanel>
+          </>
         ) : (
           <FlatList
+            ListHeaderComponent={listHeader}
             contentContainerStyle={[styles.list, { paddingBottom: footerPadding }]}
-            data={filtered}
+            data={sortedProjects}
             key={isTablet ? 'tablet' : 'phone'}
             keyExtractor={(item) => item.id}
             numColumns={isTablet ? 2 : 1}
@@ -215,53 +222,115 @@ export default function ProjectsScreen() {
         )}
       </View>
 
-      <AudioFlowFooterMenu
+      <AudioFlowBottomNavigation
         active="library"
         bottomInset={insets.bottom}
         onCreatePress={createProject}
-        onLibraryPress={() => setFilter('all')}
+        onLibraryPress={() => router.replace('/(app)')}
         playerDisabled
       />
     </AudioFlowScreen>
   );
 }
 
+const t = audioFlowTokens;
+
 const styles = StyleSheet.create({
   content: {
     flex: 1,
-    gap: audioFlowTokens.spacing.stackMd,
-    paddingHorizontal: audioFlowTokens.spacing.marginMobile,
+    gap: t.spacing.stackMd,
+    paddingHorizontal: t.spacing.marginMobile,
   },
   list: {
-    paddingTop: 4,
+    paddingTop: t.spacing.gutterMobile,
   },
   welcome: {
-    alignItems: 'center',
-    marginTop: 8,
+    alignSelf: 'stretch',
+    marginTop: t.spacing.stackMd,
+    width: '100%',
   },
   eyebrow: {
     ...audioFlowStyles.eyebrow,
-    marginBottom: audioFlowTokens.spacing.stackSm,
+    marginBottom: t.spacing.stackSm,
     textAlign: 'center',
+    width: '100%',
+  },
+  welcomeHeadline: {
+    ...audioFlowStyles.headlineLg,
+    textAlign: 'center',
+    width: '100%',
   },
   welcomeCopy: {
     ...audioFlowStyles.body,
-    marginTop: audioFlowTokens.spacing.stackSm,
+    marginTop: t.spacing.stackSm,
     textAlign: 'center',
+    width: '100%',
   },
-  toolbar: {
-    gap: audioFlowTokens.spacing.stackMd,
-    padding: audioFlowTokens.spacing.stackMd,
+  projectsSection: {
+    gap: t.spacing.stackMd,
+    marginTop: t.spacing.sectionGap,
   },
-  toolbarHeader: {
+  projectsSectionTitle: {
+    ...audioFlowStyles.headlineMd,
+    marginBottom: t.spacing.stackLg,
+    textShadowColor: 'rgba(255, 255, 255, 0.3)',
+    textShadowRadius: 10,
+    width: '100%',
+  },
+  lastPlayedPanel: {
+    marginTop: t.spacing.sectionGap,
+    overflow: 'hidden',
+    paddingBottom: 12,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    position: 'relative',
+  },
+  lastPlayedRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 12,
   },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+  lastPlayedThumb: {
+    backgroundColor: t.color.accent.pearlTint,
+    borderRadius: t.radius.md,
+    height: 48,
+    overflow: 'hidden',
+    width: 48,
+  },
+  lastPlayedThumbImage: {
+    height: '100%',
+    width: '100%',
+  },
+  lastPlayedTextCol: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
+  },
+  lastPlayedEyebrow: {
+    ...t.typography.labelSm,
+    color: t.color.text.onSurfaceSubtle,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  lastPlayedTitle: {
+    ...t.typography.labelMd,
+    color: t.color.text.onDark,
+  },
+  lastPlayedProgressTrack: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    bottom: 0,
+    height: 2,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+  },
+  lastPlayedProgressFill: {
+    backgroundColor: t.color.accent.pearl,
+    height: '100%',
+    shadowColor: t.color.accent.pearl,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
   },
   cardTablet: {
     flex: 1,
@@ -278,18 +347,19 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   cardActionDangerText: {
-    color: audioFlowTokens.color.accent.danger,
+    color: t.color.accent.danger,
   },
   statePanel: {
     alignItems: 'center',
-    gap: audioFlowTokens.spacing.stackSm,
-    marginTop: audioFlowTokens.spacing.stackMd,
-    padding: audioFlowTokens.spacing.stackLg,
+    gap: t.spacing.stackSm,
+    marginTop: t.spacing.stackMd,
+    padding: t.spacing.stackLg,
   },
   emptyTitle: {
-    color: audioFlowTokens.color.text.onDark,
+    color: t.color.text.onDark,
+    fontFamily: audioFlowFontFamilies.quicksandSemiBold,
     fontSize: 18,
-    fontWeight: '700',
+    lineHeight: 24,
     textAlign: 'center',
   },
   emptyHint: {
@@ -297,6 +367,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptyCta: {
-    marginTop: audioFlowTokens.spacing.stackMd,
+    marginTop: t.spacing.stackMd,
   },
 });

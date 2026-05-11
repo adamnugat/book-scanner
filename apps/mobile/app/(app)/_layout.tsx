@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import { AudioFlowStackHeader } from '../../components/audioflow-global-navigation';
+import { AudioFlowTopNavigation } from '../../components/audioflow-global-navigation';
 
 const SCREEN_BG = '#131316';
 
@@ -9,7 +9,7 @@ export default function AppLayout() {
       screenOptions={{
         contentStyle: { flex: 1, backgroundColor: SCREEN_BG },
         freezeOnBlur: false,
-        header: (props) => <AudioFlowStackHeader {...props} />,
+        header: (props) => <AudioFlowTopNavigation {...props} />,
         headerShadowVisible: false,
         headerShown: true,
         headerStyle: { backgroundColor: SCREEN_BG },

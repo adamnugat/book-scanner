@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ComponentProps } from 'react';
 import type { NativeStackHeaderProps } from '@react-navigation/native-stack';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../lib/auth-context';
 import {
+  AudioFlowFooterMenu,
   AudioFlowLogo,
   GhostButton,
   GlassPanel,
@@ -115,6 +116,16 @@ export function AudioFlowTopChrome({
   );
 }
 
+/** Górny pasek nawigacji — używany przez Stack (`screenOptions.header`). */
+export function AudioFlowTopNavigation(props: NativeStackHeaderProps) {
+  return <AudioFlowStackHeader {...props} />;
+}
+
+/** Dolne menu aplikacji (Biblioteka / Nowy / Odtwarzacz) — ten sam komponent co `AudioFlowFooterMenu`. */
+export function AudioFlowBottomNavigation(props: ComponentProps<typeof AudioFlowFooterMenu>) {
+  return <AudioFlowFooterMenu {...props} />;
+}
+
 export function AudioFlowStackHeader({ navigation, route, options, back }: NativeStackHeaderProps) {
   const isDashboardHome = route.name === 'index';
 
@@ -164,9 +175,10 @@ const styles = StyleSheet.create({
   },
   brandTitle: {
     color: t.color.text.onDark,
+    ...t.typography.labelMd,
     fontSize: 16,
-    fontWeight: '700',
     letterSpacing: -0.2,
+    lineHeight: 22,
   },
   menuOuter: {
     flex: 1,
