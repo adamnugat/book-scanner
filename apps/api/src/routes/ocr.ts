@@ -38,6 +38,7 @@ function toSceneResponse(s: {
 ocrRouter.post('/process-ocr-batch', requireProjectOwner, async (req, res) => {
   const projectId = requireRouteParam(req, 'projectId');
   const markReadyForAudio = req.body?.markReadyForAudio === true;
+  const force = req.body?.force === true;
   const project = await prisma.project.findUnique({ where: { id: projectId } });
 
   if (!project) {
@@ -61,6 +62,24 @@ ocrRouter.post('/process-ocr-batch', requireProjectOwner, async (req, res) => {
   }
 
   const existingScenes = await prisma.scene.findMany({ where: { projectId } });
+
+  if (force && existingScenes.length > 0) {
+    const imageOrderMap = new Map(images.map((img) => [img.id, img.orderIndex]));
+    await Promise.all(
+      existingScenes.map((scene) =>
+        prisma.scene.update({
+          where: { id: scene.id },
+          data: {
+            ocrText: null,
+            editedText: null,
+            status: 'queued',
+            orderIndex: imageOrderMap.get(scene.pageImageId) ?? scene.orderIndex,
+          },
+        }),
+      ),
+    );
+  }
+
   const existingImageIds = new Set(existingScenes.map((scene) => scene.pageImageId));
   const newImages = images.filter((image) => !existingImageIds.has(image.id));
 

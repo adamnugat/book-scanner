@@ -20,6 +20,8 @@ import {
 import type { SceneResponse } from '@book-scanner/shared';
 
 const STACK_GAP_ABOVE_FOOTER = 10;
+const OCR_POLL_INTERVAL_MS = 1500;
+const OCR_POLL_MAX_ATTEMPTS = 60;
 
 export default function NewProjectReviewScreen() {
   const insets = useSafeAreaInsets();
@@ -30,6 +32,7 @@ export default function NewProjectReviewScreen() {
   const [scenes, setScenes] = useState<SceneResponse[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState('Ładowanie…');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -39,7 +42,28 @@ export default function NewProjectReviewScreen() {
 
     (async () => {
       try {
-        const sceneList = await api.getScenes(projectId);
+        let sceneList: SceneResponse[] = [];
+
+        for (let attempt = 0; attempt < OCR_POLL_MAX_ATTEMPTS; attempt++) {
+          if (!isActive) return;
+          sceneList = await api.getScenes(projectId);
+
+          const total = sceneList.length;
+          const done = sceneList.filter(
+            (s) => s.status !== 'ocr_processing' && s.status !== 'queued',
+          ).length;
+          if (isActive && total > 0) {
+            setLoadingProgress(`${done} / ${total} stron przetworzono`);
+          }
+
+          const allDone = total > 0 && done === total;
+          if (allDone) break;
+
+          if (attempt < OCR_POLL_MAX_ATTEMPTS - 1) {
+            await new Promise((r) => setTimeout(r, OCR_POLL_INTERVAL_MS));
+          }
+        }
+
         if (!isActive) return;
 
         const orderedScenes = [...sceneList].sort((a, b) => a.orderIndex - b.orderIndex);
@@ -93,7 +117,11 @@ export default function NewProjectReviewScreen() {
     return (
       <AudioFlowScreen>
         <View style={styles.centered}>
-          <ActivityIndicator color="#06d6a0" size="large" />
+          <View style={styles.loadingCard}>
+            <ActivityIndicator color="#06d6a0" size="large" />
+            <Text style={styles.loadingTitle}>Rozpoznawanie tekstu</Text>
+            <Text style={styles.loadingProgress}>{loadingProgress}</Text>
+          </View>
         </View>
 
         <AudioFlowFooterMenu
@@ -171,6 +199,27 @@ export default function NewProjectReviewScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingCard: {
+    backgroundColor: '#18213d',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#29355c',
+    padding: 32,
+    alignItems: 'center',
+    minWidth: 260,
+    gap: 16,
+  },
+  loadingTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  loadingProgress: {
+    color: '#aebbd3',
+    fontSize: 14,
+    textAlign: 'center',
+  },
   content: { padding: 20 },
   hero: {
     backgroundColor: '#18213d',

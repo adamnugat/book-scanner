@@ -1,6 +1,7 @@
 import { useState, type ComponentProps } from 'react';
 import type { NativeStackHeaderProps } from '@react-navigation/native-stack';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -46,14 +47,21 @@ function NavigationMenuSheet({ visible, onClose }: { visible: boolean; onClose: 
   return (
     <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
       <View style={styles.menuOuter}>
-        <Pressable
-          accessibilityHint="Zamknij menu bez wyboru"
-          accessibilityLabel="Zamknij menu"
-          accessibilityRole="button"
-          onPress={onClose}
-          style={styles.menuBackdrop}
-          testID="audioflow-global-menu-backdrop"
-        />
+        <BlurView
+          experimentalBlurMethod="dimezisBlurView"
+          intensity={60}
+          style={StyleSheet.absoluteFillObject}
+          tint="dark"
+        >
+          <Pressable
+            accessibilityHint="Zamknij menu bez wyboru"
+            accessibilityLabel="Zamknij menu"
+            accessibilityRole="button"
+            onPress={onClose}
+            style={styles.menuBackdrop}
+            testID="audioflow-global-menu-backdrop"
+          />
+        </BlurView>
         <View pointerEvents="box-none" style={StyleSheet.absoluteFillObject}>
           <View style={styles.menuForeground}>
             <View onStartShouldSetResponder={() => true}>
@@ -185,7 +193,6 @@ const styles = StyleSheet.create({
   },
   menuBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   menuForeground: {
     alignItems: 'center',

@@ -197,7 +197,7 @@ export const api = {
     });
   },
 
-  processOcrBatch(projectId: string, options?: { markReadyForAudio?: boolean }) {
+  processOcrBatch(projectId: string, options?: { markReadyForAudio?: boolean; force?: boolean }) {
     return apiFetch<SceneResponse[]>(`/projects/${projectId}/process-ocr-batch`, {
       method: 'POST',
       body: JSON.stringify(options || {}),

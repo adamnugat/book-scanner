@@ -14,6 +14,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 
 /**
  * Rodziny z {@link https://fonts.google.com/specimen/Quicksand Quicksand} i
@@ -461,6 +462,10 @@ export function AudioFlowFooterMenu({
   onCreatePress,
   onPlayerPress,
   playerDisabled = false,
+  createIcon = '+',
+  createLabel = 'Nowy audiobook',
+  createDisabled = false,
+  createTestID,
 }: {
   active?: 'library' | 'player';
   bottomInset?: number;
@@ -468,10 +473,15 @@ export function AudioFlowFooterMenu({
   onCreatePress: (event: GestureResponderEvent) => void;
   onPlayerPress?: (event: GestureResponderEvent) => void;
   playerDisabled?: boolean;
+  createIcon?: string;
+  createLabel?: string;
+  createDisabled?: boolean;
+  createTestID?: string;
 }) {
   return (
     <View style={[styles.footerWrap, { paddingBottom: Math.max(bottomInset, 8) }]}>
       <View style={styles.footerMenu}>
+        <BlurView experimentalBlurMethod="dimezisBlurView" intensity={20} style={styles.footerMenuBackground} tint="dark" />
         <Pressable
           accessibilityLabel="Biblioteka"
           accessibilityRole="button"
@@ -487,12 +497,19 @@ export function AudioFlowFooterMenu({
         </Pressable>
 
         <Pressable
-          accessibilityLabel="Nowy audiobook"
+          accessibilityLabel={createLabel}
           accessibilityRole="button"
+          accessibilityState={{ disabled: createDisabled }}
+          disabled={createDisabled}
           onPress={onCreatePress}
-          style={({ pressed }) => [styles.footerCreate, pressed && styles.pressed]}
+          testID={createTestID}
+          style={({ pressed }) => [
+            styles.footerCreate,
+            pressed && !createDisabled && styles.pressed,
+            createDisabled && styles.footerItemDisabled,
+          ]}
         >
-          <Text style={styles.footerCreateText}>+</Text>
+          <Text style={styles.footerCreateText}>{createIcon}</Text>
         </Pressable>
 
         <Pressable
@@ -620,7 +637,13 @@ export function ProjectCard({
         <View style={styles.projectCover}>
           {coverUrl ? (
             <Image resizeMode="cover" source={{ uri: coverUrl }} style={styles.projectCoverImage} />
-          ) : null}
+          ) : (
+            <View style={styles.projectCoverMock}>
+              <View style={styles.projectCoverMockBand} />
+              <View style={styles.projectCoverMockBandBottom} />
+              <Text style={styles.projectCoverMockIcon}>📖</Text>
+            </View>
+          )}
         </View>
         <View style={styles.projectCardBody}>
           <View style={styles.projectTitleRow}>
@@ -811,6 +834,7 @@ const styles = StyleSheet.create({
     fontFamily: ff.varelaRound,
     fontSize: 16,
     fontWeight: '700',
+    textAlign: 'center',
   },
   ghostButton: {
     alignItems: 'center',
@@ -830,6 +854,7 @@ const styles = StyleSheet.create({
     fontFamily: ff.varelaRound,
     fontSize: 15,
     fontWeight: '600',
+    textAlign: 'center',
   },
   pressed: {
     opacity: 0.82,
@@ -1045,6 +1070,11 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
   },
+  footerMenuBackground: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: t.radius.panel,
+    overflow: 'hidden',
+  },
   footerMenu: {
     alignItems: 'center',
     backgroundColor: t.color.surface.glass,
@@ -1186,6 +1216,33 @@ const styles = StyleSheet.create({
     height: '100%',
     width: '100%',
   },
+  projectCoverMock: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(70, 35, 45, 0.9)',
+    flex: 1,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  projectCoverMockBand: {
+    backgroundColor: 'rgba(240, 234, 214, 0.12)',
+    bottom: 0,
+    height: '40%',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+  },
+  projectCoverMockBandBottom: {
+    backgroundColor: 'rgba(240, 234, 214, 0.06)',
+    height: 2,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: '60%',
+  },
+  projectCoverMockIcon: {
+    fontSize: 36,
+  },
   projectCardBody: {
     flex: 1,
     justifyContent: 'space-between',
@@ -1295,7 +1352,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.18,
     shadowRadius: 20,
-    width: '48%',
+    width: '47%',
   },
   toolTileHeader: {
     alignItems: 'center',

@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(openspec --version)",
+      "Bash(cp -r /Users/awieczorek/dev/book-scaner/.cursor/skills/openspec-explore /Users/awieczorek/.claude/skills/)",
+      "Bash(cp -r /Users/awieczorek/dev/book-scaner/.cursor/skills/openspec-propose /Users/awieczorek/.claude/skills/)",
+      "Bash(cp -r /Users/awieczorek/dev/book-scaner/.cursor/skills/openspec-apply-change /Users/awieczorek/.claude/skills/)",
+      "Bash(cp -r /Users/awieczorek/dev/book-scaner/.cursor/skills/openspec-archive-change /Users/awieczorek/.claude/skills/)",
+      "Bash(openspec new *)",
+      "Bash(openspec status *)",
+      "Bash(openspec instructions *)",
+      "Bash(npm run *)",
+      "Bash(npx jest *)",
+      "Bash(npx prettier *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(git -C /Users/awieczorek/dev/book-scaner diff HEAD -- apps/mobile/__tests__/new-project-wizard.test.tsx)",
+      "Bash(git -C /Users/awieczorek/dev/book-scaner stash)",
+      "Bash(git -C /Users/awieczorek/dev/book-scaner stash pop)",
+      "Bash(git -C /Users/awieczorek/dev/book-scaner diff bf1fe05 -- apps/mobile/app/\\\\\\(app\\\\\\)/projects/new/index.tsx)",
+      "Bash(openspec list *)"
+    ]
+  }
+}

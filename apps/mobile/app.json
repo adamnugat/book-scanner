@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "scheme": "bookscanner",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
     "splash": {
       "backgroundColor": "#1a1a2e"
     },

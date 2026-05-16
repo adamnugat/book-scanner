@@ -7,7 +7,6 @@ import type { ProjectResponse } from '@book-scanner/shared';
 import {
   AudioFlowScreen,
   audioFlowFontFamilies,
-  GhostButton,
   GlassPanel,
   PearlButton,
   ProjectCard,
@@ -71,25 +70,6 @@ export default function ProjectsScreen() {
   const lastPlayed = sortedProjects.length > 0 ? sortedProjects[0] : null;
   const lastPlayedProgress = lastPlayed ? dashboardPlaybackProgress(lastPlayed) : 0;
 
-  const handleDelete = (project: ProjectResponse) => {
-    Alert.alert('Usuń projekt', `Czy na pewno chcesz usunąć "${project.title}"?`, [
-      { text: 'Anuluj', style: 'cancel' },
-      {
-        text: 'Usuń',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await api.deleteProject(project.id);
-            setProjects((prev) => prev.filter((p) => p.id !== project.id));
-            showToast('Projekt usunięty');
-          } catch {
-            showToast('Nie udało się usunąć projektu', 'error');
-          }
-        },
-      },
-    ]);
-  };
-
   const createProject = () => router.push('/(app)/projects/new');
 
   const openLastPlayedPlayer = () => {
@@ -99,21 +79,6 @@ export default function ProjectsScreen() {
 
   const renderProject = ({ item }: { item: ProjectResponse }) => (
     <ProjectCard
-      actions={
-        <>
-          <GhostButton
-            label="Edytuj"
-            onPress={() => router.push(`/(app)/projects/${item.id}/edit`)}
-            style={styles.cardAction}
-          />
-          <GhostButton
-            label="Usuń"
-            onPress={() => handleDelete(item)}
-            style={styles.cardActionDanger}
-            textStyle={styles.cardActionDangerText}
-          />
-        </>
-      }
       coverUrl={item.coverUrl}
       meta={`${item.language.toUpperCase()} · ${new Date(item.updatedAt).toLocaleDateString('pl-PL')}`}
       onPress={() => router.push(`/(app)/projects/${item.id}`)}
@@ -335,19 +300,6 @@ const styles = StyleSheet.create({
   cardTablet: {
     flex: 1,
     marginHorizontal: 6,
-  },
-  cardAction: {
-    minHeight: 38,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  cardActionDanger: {
-    minHeight: 38,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  cardActionDangerText: {
-    color: t.color.accent.danger,
   },
   statePanel: {
     alignItems: 'center',

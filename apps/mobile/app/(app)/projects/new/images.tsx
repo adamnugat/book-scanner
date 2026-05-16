@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
+  type GestureResponderEvent,
+  type LayoutChangeEvent,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,20 +22,48 @@ import {
   AudioFlowFooterMenu,
   AudioFlowScreen,
   GlassPanel,
-  PearlButton,
   PickerCard,
   audioFlowFooterMenuHeight,
   audioFlowStyles,
   audioFlowTokens,
 } from '../../../../components/audioflow';
-import type { AudioTrackResponse, PageImageResponse, SceneResponse } from '@book-scanner/shared';
+import {
+  createNormalizedRegion,
+  denormalizeRegion,
+  type Point,
+  type Rect,
+  type Size,
+} from '../../../../lib/text-region-geometry';
+import type {
+  AudioTrackResponse,
+  PageImageResponse,
+  SceneResponse,
+  TextRegionInput,
+} from '@book-scanner/shared';
 
 type WizardMode = 'auto' | 'advanced';
 
-const STACK_GAP_ABOVE_FOOTER = 10;
+interface RegionDraft {
+  key: string;
+  orderIndex: number;
+  pageImageId: string;
+  pendingUri?: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+type EditingItem =
+  | { kind: 'uploaded'; image: PageImageResponse }
+  | { kind: 'pending'; asset: ImagePicker.ImagePickerAsset; pendingKey: string };
+
+const EMPTY_LAYOUT: Size = { width: 0, height: 0 };
 
 const AUDIO_READY_POLL_INTERVAL_MS = 1500;
 const AUDIO_READY_MAX_ATTEMPTS = 40;
+const OCR_READY_POLL_INTERVAL_MS = 1500;
+const OCR_READY_MAX_ATTEMPTS = 60;
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -58,6 +89,22 @@ async function waitForGeneratedAudio(
   throw new Error('Audio nadal się generuje. Wróć do projektu za chwilę.');
 }
 
+async function waitForOcrCompletion(projectId: string): Promise<void> {
+  for (let attempt = 0; attempt < OCR_READY_MAX_ATTEMPTS; attempt++) {
+    const scenes = await api.getScenes(projectId);
+    const pending = scenes.filter(
+      (scene) => scene.status === 'ocr_processing' || scene.status === 'queued',
+    );
+    if (pending.length === 0) return;
+
+    if (attempt < OCR_READY_MAX_ATTEMPTS - 1) {
+      await wait(OCR_READY_POLL_INTERVAL_MS);
+    }
+  }
+
+  throw new Error('OCR trwa zbyt długo. Wróć do projektu za chwilę i spróbuj ponownie.');
+}
+
 function countExpectedAudioTracks(scenes: SceneResponse[]): number {
   return scenes.filter(
     (scene) =>
@@ -69,8 +116,8 @@ function countExpectedAudioTracks(scenes: SceneResponse[]): number {
 
 export default function NewProjectImagesScreen() {
   const insets = useSafeAreaInsets();
-  const footerLift = audioFlowFooterMenuHeight(insets.bottom) + STACK_GAP_ABOVE_FOOTER;
-  const scrollBottomPad = 116 + footerLift;
+  const footerLift = audioFlowFooterMenuHeight(insets.bottom);
+  const scrollBottomPad = 24 + footerLift;
 
   const { projectId } = useLocalSearchParams<{ projectId: string }>();
   const [mode, setMode] = useState<WizardMode>('auto');
@@ -78,6 +125,13 @@ export default function NewProjectImagesScreen() {
   const [images, setImages] = useState<PageImageResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [processingStep, setProcessingStep] = useState<'uploading' | 'ocr' | 'audio' | null>(null);
+  const [regions, setRegions] = useState<RegionDraft[]>([]);
+  const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
+  const [editorRegions, setEditorRegions] = useState<RegionDraft[]>([]);
+  const [previewLayout, setPreviewLayout] = useState<Size>(EMPTY_LAYOUT);
+  const [dragStart, setDragStart] = useState<Point | null>(null);
+  const [dragRect, setDragRect] = useState<Rect | null>(null);
 
   const imageCount = pendingAssets.length + images.length;
   const countLabel = imageCount === 1 ? 'Dodano 1 zdjęcie' : `Dodano ${imageCount} zdjęć`;
@@ -137,6 +191,37 @@ export default function NewProjectImagesScreen() {
     }
   };
 
+  const moveUploadedImage = async (index: number, direction: -1 | 1) => {
+    if (!projectId) return;
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= images.length) return;
+
+    const next = [...images];
+    [next[index], next[nextIndex]] = [next[nextIndex], next[index]];
+    setImages(next);
+    try {
+      await api.reorderImages(
+        projectId,
+        next.map((img) => img.id),
+      );
+    } catch {
+      setImages(images);
+      Alert.alert('Błąd', 'Nie udało się zmienić kolejności');
+    }
+  };
+
+  const deleteUploadedImage = async (imageId: string) => {
+    if (!projectId) return;
+    setImages((prev) => prev.filter((img) => img.id !== imageId));
+    setRegions((prev) => prev.filter((r) => r.pageImageId !== imageId));
+    try {
+      await api.deleteImage(projectId, imageId);
+    } catch {
+      Alert.alert('Błąd', 'Nie udało się usunąć zdjęcia');
+      loadImages();
+    }
+  };
+
   const movePendingAsset = (index: number, direction: -1 | 1) => {
     const nextIndex = index + direction;
     if (nextIndex < 0 || nextIndex >= pendingAssets.length) return;
@@ -153,26 +238,61 @@ export default function NewProjectImagesScreen() {
   };
 
   const uploadPendingAssets = async () => {
-    if (!projectId || pendingAssets.length === 0) return images;
-
-    const files = [];
-    for (let index = 0; index < pendingAssets.length; index++) {
-      files.push(await uploadFileFromImagePickerAsset(pendingAssets[index], index));
+    if (!projectId || pendingAssets.length === 0) {
+      return { allImages: images, newlyUploaded: [], originalPending: [] };
     }
 
-    const uploaded = await api.uploadImages(projectId, files);
-    const nextImages = [...images, ...uploaded];
-    setImages(nextImages);
+    const originalPending = [...pendingAssets];
+    const files = [];
+    for (let index = 0; index < originalPending.length; index++) {
+      files.push(await uploadFileFromImagePickerAsset(originalPending[index], index));
+    }
+
+    const newlyUploaded = await api.uploadImages(projectId, files);
+    const allImages = [...images, ...newlyUploaded];
+    setImages(allImages);
     setPendingAssets([]);
-    return nextImages;
+    return { allImages, newlyUploaded, originalPending };
+  };
+
+  const remapAndBuildPayload = (
+    currentRegions: RegionDraft[],
+    originalPending: ImagePicker.ImagePickerAsset[],
+    newlyUploaded: PageImageResponse[],
+  ): TextRegionInput[] => {
+    const remapped = currentRegions.map((r) => {
+      if (!r.pendingUri) return r;
+      const idx = originalPending.findIndex((a) => a.uri === r.pendingUri);
+      if (idx === -1 || idx >= newlyUploaded.length) return null;
+      return { ...r, pageImageId: newlyUploaded[idx].id, pendingUri: undefined };
+    });
+
+    return remapped
+      .filter((r): r is RegionDraft => r !== null && r.pageImageId !== '')
+      .map(({ pageImageId, x, y, width, height }, index) => ({
+        pageImageId,
+        x,
+        y,
+        width,
+        height,
+        orderIndex: index,
+      }));
   };
 
   const runAutomaticFlow = async () => {
     if (!projectId) return;
     setProcessing(true);
+    setProcessingStep('uploading');
     try {
-      await uploadPendingAssets();
+      const { newlyUploaded, originalPending } = await uploadPendingAssets();
+      const payload = remapAndBuildPayload(regions, originalPending, newlyUploaded);
+      if (payload.length > 0) {
+        await api.saveTextRegions(projectId, payload);
+      }
+      setProcessingStep('ocr');
       await api.processOcrBatch(projectId, { markReadyForAudio: true });
+      await waitForOcrCompletion(projectId);
+      setProcessingStep('audio');
       const scenes = await api.generateAudio(projectId);
       await waitForGeneratedAudio(projectId, countExpectedAudioTracks(scenes));
       router.replace(`/(app)/projects/${projectId}/player`);
@@ -181,22 +301,113 @@ export default function NewProjectImagesScreen() {
       Alert.alert('Błąd', message);
     } finally {
       setProcessing(false);
+      setProcessingStep(null);
     }
   };
 
   const runAdvancedFlow = async () => {
     if (!projectId) return;
     setProcessing(true);
+    setProcessingStep('uploading');
     try {
-      await uploadPendingAssets();
-      await api.processOcrBatch(projectId);
+      const { newlyUploaded, originalPending } = await uploadPendingAssets();
+      const payload = remapAndBuildPayload(regions, originalPending, newlyUploaded);
+      if (payload.length > 0) {
+        await api.saveTextRegions(projectId, payload);
+      }
+      setProcessingStep('ocr');
+      await api.processOcrBatch(projectId, { force: true });
       router.push(`/(app)/projects/new/review?projectId=${projectId}`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Nie udało się przygotować OCR';
       Alert.alert('Błąd', message);
     } finally {
       setProcessing(false);
+      setProcessingStep(null);
     }
+  };
+
+  const openRegionEditor = (item: EditingItem) => {
+    setEditingItem(item);
+    const matchKey = item.kind === 'uploaded' ? item.image.id : item.pendingKey;
+    setEditorRegions(
+      regions
+        .filter((r) =>
+          item.kind === 'uploaded' ? r.pageImageId === matchKey : r.pendingUri === matchKey,
+        )
+        .sort((a, b) => a.orderIndex - b.orderIndex)
+        .map((r, index) => ({ ...r, orderIndex: index })),
+    );
+    setPreviewLayout(EMPTY_LAYOUT);
+    setDragStart(null);
+    setDragRect(null);
+  };
+
+  const closeRegionEditor = () => {
+    setEditingItem(null);
+    setEditorRegions([]);
+    setDragStart(null);
+    setDragRect(null);
+  };
+
+  const saveRegionEditor = () => {
+    if (!editingItem) return;
+    setRegions((prev) => {
+      const filtered =
+        editingItem.kind === 'uploaded'
+          ? prev.filter((r) => r.pageImageId !== editingItem.image.id)
+          : prev.filter((r) => r.pendingUri !== editingItem.pendingKey);
+      return [...filtered, ...editorRegions.map((r, index) => ({ ...r, orderIndex: index }))];
+    });
+    closeRegionEditor();
+  };
+
+  const removeEditorRegion = (key: string) => {
+    setEditorRegions((prev) =>
+      prev.filter((r) => r.key !== key).map((r, index) => ({ ...r, orderIndex: index })),
+    );
+  };
+
+  const onPreviewLayout = (event: LayoutChangeEvent) => {
+    setPreviewLayout({
+      width: event.nativeEvent.layout.width,
+      height: event.nativeEvent.layout.height,
+    });
+  };
+
+  const beginDrag = (event: GestureResponderEvent) => {
+    setDragStart({ x: event.nativeEvent.locationX, y: event.nativeEvent.locationY });
+    setDragRect(null);
+  };
+
+  const updateDrag = (event: GestureResponderEvent) => {
+    if (!dragStart || previewLayout.width <= 0 || previewLayout.height <= 0) return;
+    const point = { x: event.nativeEvent.locationX, y: event.nativeEvent.locationY };
+    const normalized = createNormalizedRegion(dragStart, point, previewLayout, 1);
+    setDragRect(normalized ? denormalizeRegion(normalized, previewLayout) : null);
+  };
+
+  const finishDrag = (event: GestureResponderEvent) => {
+    if (!editingItem || !dragStart) return;
+    const point = { x: event.nativeEvent.locationX, y: event.nativeEvent.locationY };
+    const normalized = createNormalizedRegion(dragStart, point, previewLayout);
+    setDragStart(null);
+    setDragRect(null);
+    if (!normalized) return;
+
+    const isUploaded = editingItem.kind === 'uploaded';
+    const baseKey = isUploaded ? editingItem.image.id : editingItem.pendingKey;
+
+    setEditorRegions((prev) => [
+      ...prev,
+      {
+        key: `${baseKey}-${Date.now()}-${prev.length}`,
+        pageImageId: isUploaded ? editingItem.image.id : '',
+        pendingUri: isUploaded ? undefined : editingItem.pendingKey,
+        ...normalized,
+        orderIndex: prev.length,
+      },
+    ]);
   };
 
   const handleContinue = () => {
@@ -213,8 +424,27 @@ export default function NewProjectImagesScreen() {
     void runAdvancedFlow();
   };
 
+  const renderRegionOverlay = (region: RegionDraft, index: number) => {
+    const rect = denormalizeRegion(region, previewLayout);
+    return (
+      <View
+        key={region.key}
+        style={[
+          styles.regionOverlay,
+          { left: rect.x, top: rect.y, width: rect.width, height: rect.height },
+        ]}
+      >
+        <Text style={styles.regionNumber}>{index + 1}</Text>
+      </View>
+    );
+  };
+
   const renderAdvancedItem = ({ item }: { item: (typeof orderedPreviewItems)[number] }) => {
     if (item.kind === 'uploaded') {
+      const imageRegions = regions.filter((r) => r.pageImageId === item.image.id);
+      const editingInfo: EditingItem = { kind: 'uploaded', image: item.image };
+      const uploadedIndex = images.findIndex((img) => img.id === item.image.id);
+      const imgName = item.image.originalFilename || `Strona ${item.image.orderIndex + 1}`;
       return (
         <View style={styles.photoCard}>
           <Text style={styles.photoIndex}>{item.image.orderIndex + 1}</Text>
@@ -225,17 +455,64 @@ export default function NewProjectImagesScreen() {
           />
           <View style={styles.photoInfo}>
             <Text style={styles.photoName} numberOfLines={1}>
-              {item.image.originalFilename || `Strona ${item.image.orderIndex + 1}`}
+              {imgName}
             </Text>
-            <Pressable onPress={() => router.push(`/(app)/projects/${projectId}/text-regions`)}>
-              <Text style={styles.inlineAction}>Edytuj obszary</Text>
-            </Pressable>
+            <View style={styles.photoActions}>
+              <Pressable
+                accessibilityLabel={`Wybierz obszary OCR dla ${imgName}`}
+                accessibilityRole="button"
+                style={styles.smallButton}
+                onPress={() => openRegionEditor(editingInfo)}
+              >
+                <Text style={styles.smallButtonText}>⊡</Text>
+                {imageRegions.length > 0 && (
+                  <Text style={styles.regionBadge}>{imageRegions.length}</Text>
+                )}
+              </Pressable>
+              <Pressable
+                accessibilityLabel={`Przenieś ${imgName} wyżej`}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: uploadedIndex === 0 }}
+                style={[styles.smallButton, uploadedIndex === 0 && styles.smallButtonDisabled]}
+                onPress={() => moveUploadedImage(uploadedIndex, -1)}
+                disabled={uploadedIndex === 0}
+              >
+                <Text style={styles.smallButtonText}>↑</Text>
+              </Pressable>
+              <Pressable
+                accessibilityLabel={`Przenieś ${imgName} niżej`}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: uploadedIndex === images.length - 1 }}
+                style={[
+                  styles.smallButton,
+                  uploadedIndex === images.length - 1 && styles.smallButtonDisabled,
+                ]}
+                onPress={() => moveUploadedImage(uploadedIndex, 1)}
+                disabled={uploadedIndex === images.length - 1}
+              >
+                <Text style={styles.smallButtonText}>↓</Text>
+              </Pressable>
+              <Pressable
+                accessibilityLabel={`Usuń ${imgName}`}
+                accessibilityRole="button"
+                style={styles.deleteButton}
+                onPress={() => deleteUploadedImage(item.image.id)}
+              >
+                <Text style={styles.deleteText}>✕</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       );
     }
 
     const pendingName = item.asset.fileName || `Strona ${item.index + 1}`;
+    const pendingRegions = regions.filter((r) => r.pendingUri === item.asset.uri);
+    const editingInfo: EditingItem = {
+      kind: 'pending',
+      asset: item.asset,
+      pendingKey: item.asset.uri,
+    };
 
     return (
       <View style={styles.photoCard}>
@@ -245,8 +522,18 @@ export default function NewProjectImagesScreen() {
           <Text style={styles.photoName} numberOfLines={1}>
             {pendingName}
           </Text>
-          <Text style={styles.inlineMuted}>Edytuj obszary po wysłaniu</Text>
           <View style={styles.photoActions}>
+            <Pressable
+              accessibilityLabel={`Wybierz obszary OCR dla ${pendingName}`}
+              accessibilityRole="button"
+              style={styles.smallButton}
+              onPress={() => openRegionEditor(editingInfo)}
+            >
+              <Text style={styles.smallButtonText}>⊡</Text>
+              {pendingRegions.length > 0 && (
+                <Text style={styles.regionBadge}>{pendingRegions.length}</Text>
+              )}
+            </Pressable>
             <Pressable
               accessibilityLabel={`Przenieś ${pendingName} wyżej`}
               accessibilityRole="button"
@@ -273,9 +560,10 @@ export default function NewProjectImagesScreen() {
             <Pressable
               accessibilityLabel={`Usuń ${pendingName}`}
               accessibilityRole="button"
+              style={styles.deleteButton}
               onPress={() => removePendingAsset(item.index)}
             >
-              <Text style={styles.deleteText}>Usuń</Text>
+              <Text style={styles.deleteText}>✕</Text>
             </Pressable>
           </View>
         </View>
@@ -399,22 +687,122 @@ export default function NewProjectImagesScreen() {
         )}
       </ScrollView>
 
-      <GlassPanel style={[styles.bottomBar, { bottom: footerLift }]}>
-        <PearlButton
-          label={processing ? 'Przetwarzanie...' : 'Dalej'}
-          testID="wizard-continue"
-          onPress={handleContinue}
-          disabled={!canContinue}
-        />
-      </GlassPanel>
-
       <AudioFlowFooterMenu
         active="library"
         bottomInset={insets.bottom}
-        onCreatePress={() => router.push('/(app)/projects/new')}
+        createIcon="›"
+        createLabel={processing ? 'Przetwarzanie...' : 'Dalej'}
+        createDisabled={!canContinue}
+        createTestID="wizard-continue"
+        onCreatePress={handleContinue}
         onLibraryPress={() => router.replace('/(app)')}
         playerDisabled
       />
+
+      {processing && processingStep && (
+        <View style={styles.processingOverlay}>
+          <View style={styles.processingCard}>
+            <ActivityIndicator color="#06d6a0" size="large" />
+            <Text style={styles.processingTitle}>
+              {processingStep === 'uploading' && 'Wgrywanie zdjęć'}
+              {processingStep === 'ocr' && 'Rozpoznawanie tekstu'}
+              {processingStep === 'audio' && 'Generowanie audio'}
+            </Text>
+            <Text style={styles.processingSubtitle}>
+              {processingStep === 'uploading' && 'Przesyłamy Twoje zdjęcia do serwera…'}
+              {processingStep === 'ocr' && 'Odczytujemy tekst ze stron książki…'}
+              {processingStep === 'audio' && 'Tworzymy pliki dźwiękowe dla każdej strony…'}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      <Modal
+        visible={Boolean(editingItem)}
+        animationType="slide"
+        onRequestClose={closeRegionEditor}
+      >
+        {editingItem && (
+          <View style={styles.editorContainer}>
+            <Text style={styles.editorTitle}>
+              {editingItem.kind === 'uploaded'
+                ? `Strona ${editingItem.image.orderIndex + 1} — regiony OCR`
+                : `${editingItem.asset.fileName ?? 'Zdjęcie'} — regiony OCR`}
+            </Text>
+            <Text style={styles.editorHint}>
+              Przeciągnij palcem po zdjęciu, aby dodać prostokątny region.
+            </Text>
+
+            <View
+              style={styles.editorPreview}
+              onLayout={onPreviewLayout}
+              onStartShouldSetResponder={() => true}
+              onMoveShouldSetResponder={() => true}
+              onResponderGrant={beginDrag}
+              onResponderMove={updateDrag}
+              onResponderRelease={finishDrag}
+              onResponderTerminate={() => {
+                setDragStart(null);
+                setDragRect(null);
+              }}
+            >
+              <PageImagePreview
+                thumbnailUrl={
+                  editingItem.kind === 'uploaded' ? editingItem.image.thumbnailUrl : null
+                }
+                imageUrl={
+                  editingItem.kind === 'uploaded'
+                    ? editingItem.image.imageUrl
+                    : editingItem.asset.uri
+                }
+                style={styles.editorImage}
+                resizeMode="contain"
+              />
+              {previewLayout.width > 0 && editorRegions.map(renderRegionOverlay)}
+              {dragRect && (
+                <View
+                  style={[
+                    styles.dragOverlay,
+                    {
+                      left: dragRect.x,
+                      top: dragRect.y,
+                      width: dragRect.width,
+                      height: dragRect.height,
+                    },
+                  ]}
+                />
+              )}
+            </View>
+
+            <Text style={styles.editorCount}>
+              {editorRegions.length === 0
+                ? 'Brak regionów — OCR odczyta całą stronę.'
+                : `Regiony: ${editorRegions.length}`}
+            </Text>
+
+            {editorRegions.map((region, index) => (
+              <View key={region.key} style={styles.editorRegionRow}>
+                <Text style={styles.editorRegionName}>Region {index + 1}</Text>
+                <Pressable
+                  style={styles.deleteRegionBtn}
+                  onPress={() => removeEditorRegion(region.key)}
+                >
+                  <Text style={styles.deleteRegionText}>Usuń</Text>
+                </Pressable>
+              </View>
+            ))}
+
+            <View style={styles.editorActions}>
+              <Pressable style={styles.cancelEditorBtn} onPress={closeRegionEditor}>
+                <Text style={styles.cancelEditorText}>Anuluj</Text>
+              </Pressable>
+              <Pressable style={styles.saveEditorBtn} onPress={saveRegionEditor}>
+                <Text style={styles.saveEditorText}>Zapisz</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+      </Modal>
     </AudioFlowScreen>
   );
 }
@@ -527,7 +915,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   inlineAction: { color: audioFlowTokens.color.accent.pearl, fontSize: 13, fontWeight: '800' },
-  inlineMuted: { color: audioFlowTokens.color.text.onSurfaceSubtle, fontSize: 13, marginBottom: 8 },
+
   photoActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   smallButton: {
     backgroundColor: audioFlowTokens.color.surface.glassLight,
@@ -539,21 +927,133 @@ const styles = StyleSheet.create({
   },
   smallButtonDisabled: { opacity: 0.35 },
   smallButtonText: { color: audioFlowTokens.color.text.onDark, fontSize: 14, fontWeight: '900' },
+  deleteButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
   deleteText: {
     color: audioFlowTokens.color.accent.danger,
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  regionBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: audioFlowTokens.color.accent.pearl,
+    borderRadius: 8,
+    minWidth: 16,
+    paddingHorizontal: 3,
+    fontSize: 10,
+    fontWeight: '900',
+    color: '#101320',
+    textAlign: 'center',
+    overflow: 'hidden',
+  },
+  editorContainer: {
+    flex: 1,
+    backgroundColor: '#101320',
+    padding: 16,
+    paddingTop: 48,
+  },
+  editorTitle: { color: '#fff', fontSize: 20, fontWeight: '900', marginBottom: 4 },
+  editorHint: { color: '#94a3b8', fontSize: 13, marginBottom: 14 },
+  editorPreview: {
+    height: 380,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#0f3460',
+    borderWidth: 1,
+    borderColor: '#334155',
+    marginBottom: 12,
+  },
+  editorImage: { width: '100%', height: '100%' },
+  regionOverlay: {
+    position: 'absolute',
+    borderWidth: 2,
+    borderColor: '#06d6a0',
+    backgroundColor: 'rgba(6, 214, 160, 0.16)',
+  },
+  regionNumber: {
+    minWidth: 24,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor: '#06d6a0',
+    color: '#1a1a2e',
     fontSize: 13,
     fontWeight: '800',
-    paddingHorizontal: 6,
+    textAlign: 'center',
   },
-  bottomBar: {
+  dragOverlay: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 16,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    borderTopLeftRadius: audioFlowTokens.radius.panel,
-    borderTopRightRadius: audioFlowTokens.radius.panel,
+    borderWidth: 2,
+    borderColor: '#e94560',
+    backgroundColor: 'rgba(233, 69, 96, 0.14)',
   },
+  editorCount: { color: '#94a3b8', fontSize: 14, marginBottom: 8 },
+  editorRegionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#1e2d4a',
+  },
+  editorRegionName: { color: '#e0e0e0', fontSize: 14 },
+  deleteRegionBtn: { paddingVertical: 4, paddingHorizontal: 8 },
+  deleteRegionText: { color: '#e94560', fontSize: 13, fontWeight: '600' },
+  editorActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 'auto',
+    paddingTop: 16,
+  },
+  processingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(16, 19, 32, 0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+  },
+  processingCard: {
+    backgroundColor: '#18213d',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#29355c',
+    padding: 32,
+    alignItems: 'center',
+    minWidth: 260,
+    gap: 16,
+  },
+  processingTitle: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  processingSubtitle: {
+    color: '#aebbd3',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  cancelEditorBtn: {
+    flex: 1,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  cancelEditorText: { color: '#cbd5e1', fontSize: 15, fontWeight: '600' },
+  saveEditorBtn: {
+    flex: 2,
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    backgroundColor: '#06d6a0',
+  },
+  saveEditorText: { color: '#1a1a2e', fontSize: 15, fontWeight: '800' },
 });

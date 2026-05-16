@@ -198,7 +198,6 @@ export default function ProjectDetailScreen() {
             left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
             right={
               <View style={styles.topBarRight}>
-                <RoundIconButton icon="⋮" label="Opcje projektu" onPress={handleProjectOptions} />
                 <AudioFlowGlobalMenuButton />
               </View>
             }
@@ -296,6 +295,7 @@ export default function ProjectDetailScreen() {
                 <Text style={audioFlowStyles.headlineMd}>Narzędzia projektu</Text>
                 <Text style={styles.toolsCount}>{`${PROJECT_TOOL_COUNT} dostępne`}</Text>
               </View>
+              <RoundIconButton icon="⋮" label="Opcje projektu" onPress={handleProjectOptions} />
             </View>
             <View style={styles.toolsGrid}>
               <ProjectToolTile
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     paddingTop: t.spacing.stackLg,
   },
   toolsHeading: {
-    alignItems: 'flex-start',
+    alignItems: 'center',
     flexDirection: 'row',
     gap: t.spacing.stackSm,
     justifyContent: 'space-between',

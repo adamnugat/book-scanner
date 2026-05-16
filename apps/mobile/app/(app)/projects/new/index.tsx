@@ -16,7 +16,6 @@ import {
   AudioFlowFooterMenu,
   AudioFlowScreen,
   GlassPanel,
-  PearlButton,
   PickerCard,
   SectionHeading,
   audioFlowStyles,
@@ -227,18 +226,15 @@ export default function NewProjectScreen() {
           </>
         )}
 
-        <PearlButton
-          label={submitting ? 'Tworzenie...' : 'Dalej'}
-          onPress={handleCreate}
-          disabled={!canSubmit}
-          style={styles.submitButton}
-        />
       </ScrollView>
 
       <AudioFlowFooterMenu
         active="library"
         bottomInset={insets.bottom}
-        onCreatePress={() => router.push('/(app)/projects/new')}
+        createIcon="›"
+        createLabel={submitting ? 'Tworzenie...' : 'Dalej'}
+        createDisabled={!canSubmit}
+        onCreatePress={() => void handleCreate()}
         onLibraryPress={() => router.replace('/(app)')}
         playerDisabled
       />
@@ -308,5 +304,4 @@ const styles = StyleSheet.create({
   sectionHeading: { marginBottom: 12 },
   emptyText: { color: audioFlowTokens.color.accent.danger, fontSize: 14, lineHeight: 20 },
   optionCard: { marginBottom: 10 },
-  submitButton: { marginTop: 4 },
 });

@@ -68,7 +68,7 @@ describe('New audiobook wizard step 1', () => {
     fireEvent.changeText(screen.getByPlaceholderText('np. Pan Tadeusz'), 'Pan Tadeusz');
     fireEvent.press(screen.getByText('Marta'));
     fireEvent.press(screen.getByText('Page turn'));
-    fireEvent.press(screen.getByText('Dalej'));
+    fireEvent.press(screen.getByLabelText('Dalej'));
 
     await waitFor(() => {
       expect(mockCreateProject).toHaveBeenCalledWith({
