@@ -161,7 +161,7 @@ export function AudioFlowScreen({
         source={require('../assets/images/background.jpg')}
         style={[
           StyleSheet.absoluteFill,
-          { opacity: variant === 'login' ? 1 : 0.3, width: '100%', height: '100%' },
+          { opacity: variant === 'login' ? 0.5 : 0.1, width: '100%', height: '100%' },
         ]}
         resizeMode="cover"
       />
@@ -487,12 +487,14 @@ export function AudioFlowFooterMenu({
   return (
     <View style={[styles.footerWrap, { paddingBottom: Math.max(bottomInset, 8) }]}>
       <View style={[styles.footerMenu, variant === 'create-only' && styles.footerMenuCreateOnly]}>
-        <BlurView
-          experimentalBlurMethod="dimezisBlurView"
-          intensity={20}
-          style={styles.footerMenuBackground}
-          tint="dark"
-        />
+        {variant === 'full' && (
+          <BlurView
+            experimentalBlurMethod="dimezisBlurView"
+            intensity={20}
+            style={styles.footerMenuBackground}
+            tint="dark"
+          />
+        )}
         {variant === 'full' ? (
           <Pressable
             accessibilityLabel="Biblioteka"
@@ -538,7 +540,9 @@ export function AudioFlowFooterMenu({
               playerDisabled && styles.footerItemDisabled,
             ]}
           >
-            <Text style={[styles.footerIcon, active === 'player' && styles.footerItemActive]}>▶</Text>
+            <Text style={[styles.footerIcon, active === 'player' && styles.footerItemActive]}>
+              ▶
+            </Text>
             <Text style={[styles.footerLabel, active === 'player' && styles.footerItemActive]}>
               Odtwarzacz
             </Text>
@@ -817,7 +821,7 @@ export const audioFlowStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#131316',
+    backgroundColor: t.color.background.deep2,
     overflow: 'hidden',
   },
   glassPanel: {
@@ -1107,7 +1111,10 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
   },
   footerMenuCreateOnly: {
+    backgroundColor: 'transparent',
+    borderWidth: 0,
     justifyContent: 'center',
+    shadowOpacity: 0,
   },
   footerItem: {
     alignItems: 'center',

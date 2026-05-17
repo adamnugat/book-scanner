@@ -40,7 +40,7 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Gotowe',
 };
 
-const HERO_HEIGHT = Math.max(Dimensions.get('window').height * 0.52, 442);
+const HERO_HEIGHT = Math.max(Dimensions.get('window').height * 0.44, 360);
 const t = audioFlowTokens;
 const PROJECT_TOOL_COUNT = 3;
 
