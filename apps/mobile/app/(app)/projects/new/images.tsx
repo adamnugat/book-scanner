@@ -42,6 +42,14 @@ import type {
 } from '@book-scanner/shared';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 
+const t = audioFlowTokens;
+
+const PROCESSING_STEPS: { id: 'uploading' | 'ocr' | 'audio'; label: string }[] = [
+  { id: 'uploading', label: 'Wgrywanie zdjęć' },
+  { id: 'ocr', label: 'Rozpoznawanie tekstu' },
+  { id: 'audio', label: 'Generowanie audio' },
+];
+
 type WizardMode = 'auto' | 'advanced';
 
 interface RegionDraft {
@@ -113,6 +121,73 @@ function countExpectedAudioTracks(scenes: SceneResponse[]): number {
       scene.status === 'audio_done' ||
       scene.status === 'ready_for_audio',
   ).length;
+}
+
+const timelineStyles = StyleSheet.create({
+  container: { gap: 0, minWidth: 240 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 4 },
+  iconWrap: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  icon: { fontSize: 18, fontWeight: '700', lineHeight: 28, textAlign: 'center' },
+  label: { ...audioFlowStyles.body, flex: 1 },
+  connector: {
+    width: 1,
+    height: 12,
+    marginLeft: 13,
+    backgroundColor: t.color.surface.glassEdge,
+  },
+});
+
+function ProcessingTimeline({ currentStep }: { currentStep: 'uploading' | 'ocr' | 'audio' }) {
+  const stepOrder = ['uploading', 'ocr', 'audio'] as const;
+  const currentIndex = stepOrder.indexOf(currentStep);
+
+  return (
+    <View style={timelineStyles.container}>
+      {PROCESSING_STEPS.map((step, index) => {
+        const isDone = index < currentIndex;
+        const isActive = index === currentIndex;
+        const isPending = index > currentIndex;
+        const stateLabel = isDone
+          ? `${step.label} — ukończone`
+          : isActive
+            ? `${step.label} — w toku`
+            : `${step.label} — oczekuje`;
+
+        return (
+          <View key={step.id}>
+            <View
+              style={timelineStyles.row}
+              accessible
+              accessibilityLabel={stateLabel}
+            >
+              <View style={timelineStyles.iconWrap}>
+                {isDone && (
+                  <Text style={[timelineStyles.icon, { color: t.color.accent.pearl }]}>✓</Text>
+                )}
+                {isActive && (
+                  <ActivityIndicator size="small" color={t.color.accent.pearlBright} />
+                )}
+                {isPending && (
+                  <Text style={[timelineStyles.icon, { color: t.color.text.onSurfaceMuted }]}>○</Text>
+                )}
+              </View>
+              <Text
+                style={[
+                  timelineStyles.label,
+                  isPending ? { color: t.color.text.onSurfaceMuted } : { color: t.color.text.onDark },
+                ]}
+              >
+                {step.label}
+              </Text>
+            </View>
+            {index < PROCESSING_STEPS.length - 1 && (
+              <View style={timelineStyles.connector} />
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
 }
 
 export default function NewProjectImagesScreen() {
@@ -706,19 +781,9 @@ export default function NewProjectImagesScreen() {
 
       {processing && processingStep && (
         <View style={styles.processingOverlay}>
-          <View style={styles.processingCard}>
-            <ActivityIndicator color="#06d6a0" size="large" />
-            <Text style={styles.processingTitle}>
-              {processingStep === 'uploading' && 'Wgrywanie zdjęć'}
-              {processingStep === 'ocr' && 'Rozpoznawanie tekstu'}
-              {processingStep === 'audio' && 'Generowanie audio'}
-            </Text>
-            <Text style={styles.processingSubtitle}>
-              {processingStep === 'uploading' && 'Przesyłamy Twoje zdjęcia do serwera…'}
-              {processingStep === 'ocr' && 'Odczytujemy tekst ze stron książki…'}
-              {processingStep === 'audio' && 'Tworzymy pliki dźwiękowe dla każdej strony…'}
-            </Text>
-          </View>
+          <GlassPanel style={styles.processingCard}>
+            <ProcessingTimeline currentStep={processingStep} />
+          </GlassPanel>
         </View>
       )}
 
@@ -1017,32 +1082,15 @@ const styles = StyleSheet.create({
   },
   processingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(16, 19, 32, 0.92)',
+    backgroundColor: 'rgba(19, 19, 22, 0.94)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
   },
   processingCard: {
-    backgroundColor: '#18213d',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#29355c',
     padding: 32,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     minWidth: 260,
-    gap: 16,
-  },
-  processingTitle: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '900',
-    textAlign: 'center',
-  },
-  processingSubtitle: {
-    color: '#aebbd3',
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
   },
   cancelEditorBtn: {
     flex: 1,

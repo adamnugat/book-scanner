@@ -20,7 +20,8 @@
       "Bash(git -C /Users/awieczorek/dev/book-scaner diff bf1fe05 -- apps/mobile/app/\\\\\\(app\\\\\\)/projects/new/index.tsx)",
       "Bash(openspec list *)",
       "Bash(npx eslint *)",
-      "Bash(docker compose *)"
+      "Bash(docker compose *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(d['instruction']\\); print\\('---TEMPLATE---'\\); print\\(d['template']\\)\")"
     ]
   }
 }
