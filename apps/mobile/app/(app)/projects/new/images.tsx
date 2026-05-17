@@ -40,6 +40,7 @@ import type {
   SceneResponse,
   TextRegionInput,
 } from '@book-scanner/shared';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 
 type WizardMode = 'auto' | 'advanced';
 
@@ -574,7 +575,9 @@ export default function NewProjectImagesScreen() {
   if (loading) {
     return (
       <AudioFlowScreen style={styles.centered}>
-        <ActivityIndicator color={audioFlowTokens.color.accent.pearl} size="large" />
+        <FadeZoomContent>
+          <ActivityIndicator color={audioFlowTokens.color.accent.pearl} size="large" />
+        </FadeZoomContent>
 
         <AudioFlowFooterMenu
           active="library"
@@ -589,6 +592,7 @@ export default function NewProjectImagesScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <ScrollView
         style={styles.container}
         contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
@@ -686,6 +690,7 @@ export default function NewProjectImagesScreen() {
           </View>
         )}
       </ScrollView>
+      </FadeZoomContent>
 
       <AudioFlowFooterMenu
         active="library"

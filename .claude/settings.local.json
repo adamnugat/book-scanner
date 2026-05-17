@@ -18,7 +18,9 @@
       "Bash(git -C /Users/awieczorek/dev/book-scaner stash)",
       "Bash(git -C /Users/awieczorek/dev/book-scaner stash pop)",
       "Bash(git -C /Users/awieczorek/dev/book-scaner diff bf1fe05 -- apps/mobile/app/\\\\\\(app\\\\\\)/projects/new/index.tsx)",
-      "Bash(openspec list *)"
+      "Bash(openspec list *)",
+      "Bash(npx eslint *)",
+      "Bash(docker compose *)"
     ]
   }
 }

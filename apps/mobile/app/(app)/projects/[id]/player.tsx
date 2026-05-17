@@ -10,10 +10,13 @@ import {
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
+import { Asset } from 'expo-asset';
 import { api } from '../../../../lib/api';
 import { offlineCache } from '../../../../lib/offline-cache';
 import { useNetwork } from '../../../../lib/use-network';
 import { AudioFlowScreen } from '../../../../components/audioflow';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
+import { buildPlaylistWithJingles, getLocalJingle } from '../../../../lib/local-jingles';
 import type { PlaylistItemResponse } from '@book-scanner/shared';
 
 export default function PlayerScreen() {
@@ -63,8 +66,26 @@ export default function PlayerScreen() {
         } else if (!isOnline) {
           Alert.alert('Offline', 'Brak połączenia i brak pobranego cache. Pobierz audio online.');
         } else {
-          const items = await api.getPlaylist(id);
-          setPlaylist(items);
+          const [items, project] = await Promise.all([
+            api.getPlaylist(id),
+            api.getProject(id),
+          ]);
+
+          const jinglePreset = project.interstitialPreset;
+          if (jinglePreset?.startsWith('local:')) {
+            const jingle = getLocalJingle(jinglePreset);
+            if (jingle) {
+              const jingleAsset = Asset.fromModule(jingle.asset);
+              await jingleAsset.downloadAsync();
+              const jingleUri = jingleAsset.localUri ?? jingleAsset.uri;
+              setPlaylist(buildPlaylistWithJingles(items, jingleUri));
+            } else {
+              setPlaylist(items);
+            }
+          } else {
+            setPlaylist(items);
+          }
+
           setIsCached(cached !== null);
           if (cached) setCacheSize(cached.totalSize);
         }
@@ -235,6 +256,7 @@ export default function PlayerScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <View style={styles.container}>
       {(isOfflineMode || !isOnline) && (
         <View style={styles.offlineBanner}>
@@ -340,6 +362,7 @@ export default function PlayerScreen() {
         contentContainerStyle={styles.trackList}
       />
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

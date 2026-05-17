@@ -11,6 +11,7 @@ import {
 import { Link } from 'expo-router';
 import { api } from '../../lib/api';
 import { AudioFlowScreen } from '../../components/audioflow';
+import { FadeZoomContent } from '../../components/FadeZoomContent';
 
 export default function ResetPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -52,6 +53,7 @@ export default function ResetPasswordScreen() {
 
   return (
     <AudioFlowScreen variant="login">
+      <FadeZoomContent>
       <View style={styles.container}>
         <Text style={styles.title}>Resetuj hasło</Text>
         <Text style={styles.subtitle}>Podaj email powiązany z kontem</Text>
@@ -79,6 +81,7 @@ export default function ResetPasswordScreen() {
           Wróć do logowania
         </Link>
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

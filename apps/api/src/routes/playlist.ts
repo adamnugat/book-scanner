@@ -27,9 +27,11 @@ async function rebuildPlaylist(projectId: string): Promise<number> {
 
   await prisma.playlistItem.deleteMany({ where: { projectId } });
 
-  const interstitial = project.interstitialPreset
-    ? await prisma.interstitialPreset.findFirst({ where: { name: project.interstitialPreset } })
-    : await prisma.interstitialPreset.findFirst();
+  const interstitial = project.interstitialPreset?.startsWith('local:')
+    ? null
+    : project.interstitialPreset
+      ? await prisma.interstitialPreset.findFirst({ where: { name: project.interstitialPreset } })
+      : await prisma.interstitialPreset.findFirst();
 
   const items = [];
   let order = 0;

@@ -16,6 +16,7 @@ import { api } from '../../../../../lib/api';
 import { useToast } from '../../../../../components/Toast';
 import { PageImagePreview } from '../../../../../components/PageImagePreview';
 import { AudioFlowScreen } from '../../../../../components/audioflow';
+import { FadeZoomContent } from '../../../../../components/FadeZoomContent';
 import type { SceneResponse } from '@book-scanner/shared';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -198,6 +199,7 @@ export default function SceneEditorScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <View style={styles.container}>
       {isDesktop ? (
         <View style={styles.desktopLayout}>
@@ -251,6 +253,7 @@ export default function SceneEditorScreen() {
         </Pressable>
       </View>
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

@@ -21,11 +21,9 @@ import {
   audioFlowStyles,
   audioFlowTokens,
 } from '../../../../components/audioflow';
-import type {
-  InterstitialPresetResponse,
-  SupportedLanguage,
-  VoiceResponse,
-} from '@book-scanner/shared';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
+import type { SupportedLanguage, VoiceResponse } from '@book-scanner/shared';
+import { LOCAL_JINGLES } from '../../../../lib/local-jingles';
 
 const LANGUAGES: { id: SupportedLanguage; label: string }[] = [
   { id: 'pl', label: 'Polski' },
@@ -39,9 +37,8 @@ export default function NewProjectScreen() {
   const [title, setTitle] = useState('');
   const [language, setLanguage] = useState<SupportedLanguage>('pl');
   const [voices, setVoices] = useState<VoiceResponse[]>([]);
-  const [presets, setPresets] = useState<InterstitialPresetResponse[]>([]);
   const [selectedVoiceId, setSelectedVoiceId] = useState<string | null>(null);
-  const [selectedPresetName, setSelectedPresetName] = useState<string | null>(null);
+  const [selectedPresetName, setSelectedPresetName] = useState<string>(LOCAL_JINGLES[0].name);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -51,28 +48,19 @@ export default function NewProjectScreen() {
     (async () => {
       setLoadingOptions(true);
       try {
-        const [voiceList, presetList] = await Promise.all([
-          api.getVoices(language),
-          api.getInterstitialPresets(),
-        ]);
+        const voiceList = await api.getVoices(language);
 
         if (!isActive) return;
 
         setVoices(voiceList);
-        setPresets(presetList);
         setSelectedVoiceId((current) =>
           current && voiceList.some((voice) => voice.elevenlabsVoiceId === current)
             ? current
             : (voiceList[0]?.elevenlabsVoiceId ?? null),
         );
-        setSelectedPresetName((current) =>
-          current && presetList.some((preset) => preset.name === current)
-            ? current
-            : (presetList[0]?.name ?? null),
-        );
       } catch {
         if (isActive) {
-          Alert.alert('Błąd', 'Nie udało się pobrać głosów lub wstawek audio');
+          Alert.alert('Błąd', 'Nie udało się pobrać głosów lektora');
         }
       } finally {
         if (isActive) setLoadingOptions(false);
@@ -85,12 +73,8 @@ export default function NewProjectScreen() {
   }, [language]);
 
   const canSubmit = useMemo(
-    () =>
-      title.trim().length > 0 &&
-      Boolean(selectedVoiceId) &&
-      Boolean(selectedPresetName) &&
-      !submitting,
-    [selectedPresetName, selectedVoiceId, submitting, title],
+    () => title.trim().length > 0 && Boolean(selectedVoiceId) && !submitting,
+    [selectedVoiceId, submitting, title],
   );
 
   const handleCreate = async () => {
@@ -99,8 +83,8 @@ export default function NewProjectScreen() {
       return;
     }
 
-    if (!selectedVoiceId || !selectedPresetName) {
-      Alert.alert('Uzupełnij konfigurację', 'Wybierz głos lektora i wstawkę między stronami');
+    if (!selectedVoiceId) {
+      Alert.alert('Uzupełnij konfigurację', 'Wybierz głos lektora');
       return;
     }
 
@@ -123,6 +107,7 @@ export default function NewProjectScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <ScrollView
         style={styles.container}
         contentContainerStyle={[styles.content, { paddingBottom: 24 + footerPadding }]}
@@ -170,7 +155,7 @@ export default function NewProjectScreen() {
         {loadingOptions ? (
           <GlassPanel style={styles.loadingCard}>
             <ActivityIndicator color={audioFlowTokens.color.accent.pearl} />
-            <Text style={styles.loadingText}>Ładowanie głosów i wstawek...</Text>
+            <Text style={styles.loadingText}>Ładowanie głosów...</Text>
           </GlassPanel>
         ) : (
           <>
@@ -202,31 +187,27 @@ export default function NewProjectScreen() {
             <View style={styles.section}>
               <SectionHeading
                 title="Wstawka muzyczna"
-                hint="Ten krótki dźwięk oddzieli pliki audio dla kolejnych stron."
+                hint="Ten dźwięk oddzieli pliki audio dla kolejnych stron."
                 style={styles.sectionHeading}
               />
-              {presets.length === 0 ? (
-                <Text style={styles.emptyText}>Brak dostępnych wstawek audio.</Text>
-              ) : (
-                presets.map((preset) => {
-                  const selected = selectedPresetName === preset.name;
-                  return (
-                    <PickerCard
-                      key={preset.id}
-                      selected={selected}
-                      title={preset.name}
-                      meta={formatDuration(preset.durationMs)}
-                      onPress={() => setSelectedPresetName(preset.name)}
-                      style={styles.optionCard}
-                    />
-                  );
-                })
-              )}
+              {LOCAL_JINGLES.map((jingle) => {
+                const selected = selectedPresetName === jingle.name;
+                return (
+                  <PickerCard
+                    key={jingle.name}
+                    selected={selected}
+                    title={`${jingle.icon}  ${jingle.label}`}
+                    onPress={() => setSelectedPresetName(jingle.name)}
+                    style={styles.optionCard}
+                  />
+                );
+              })}
             </View>
           </>
         )}
 
       </ScrollView>
+      </FadeZoomContent>
 
       <AudioFlowFooterMenu
         active="library"
@@ -242,10 +223,6 @@ export default function NewProjectScreen() {
   );
 }
 
-function formatDuration(durationMs: number): string {
-  const seconds = Math.round(durationMs / 1000);
-  return seconds === 1 ? '1 sekunda' : `${seconds} sek.`;
-}
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

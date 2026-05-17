@@ -11,6 +11,7 @@ import {
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { api } from '../../../../lib/api';
 import { AudioFlowScreen } from '../../../../components/audioflow';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type { SceneResponse } from '@book-scanner/shared';
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
@@ -130,6 +131,7 @@ export default function ScenesScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Sceny ({scenes.length})</Text>
@@ -174,6 +176,7 @@ export default function ScenesScreen() {
         </>
       )}
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

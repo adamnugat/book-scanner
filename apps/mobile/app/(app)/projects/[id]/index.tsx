@@ -31,6 +31,7 @@ import {
   AudioFlowTopChrome,
 } from '../../../../components/audioflow-global-navigation';
 import type { AudioTrackResponse, ProjectResponse } from '@book-scanner/shared';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 
 const STATUS_LABELS: Record<string, string> = {
   draft: 'Szkic',
@@ -205,6 +206,7 @@ export default function ProjectDetailScreen() {
           />
         </AudioFlowTopChrome>
 
+        <FadeZoomContent>
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 120 }]}
@@ -331,6 +333,7 @@ export default function ProjectDetailScreen() {
             </View>
           </View>
         </ScrollView>
+        </FadeZoomContent>
       </View>
 
       <AudioFlowBottomNavigation

@@ -48,7 +48,7 @@ Proces dodawania audiobooka musi być prosty, liniowy i zoptymalizowany pod kąt
 
 ### Requirement: AudioFlow styling for project setup step
 
-The audiobook creation wizard SHALL render the project setup step using the AudioFlow mobile design system while preserving the existing project creation behavior.
+The audiobook creation wizard SHALL render the project setup step using the AudioFlow mobile design system while presenting local bundled jingle presets as selectable options, and without fetching interstitial presets from the backend API.
 
 #### Scenario: User opens project setup step
 
@@ -57,37 +57,25 @@ The audiobook creation wizard SHALL render the project setup step using the Audi
 
 #### Scenario: User configures project basics
 
-- **WHEN** the user enters a title and selects language, voice, and interstitial preset
-- **THEN** the screen SHALL preserve the existing validation, API loading states, selected values, and project creation request behavior
+- **WHEN** the user enters a title and selects language, voice, and jingle preset
+- **THEN** the jingle picker SHALL display options from `LOCAL_JINGLES` (local:page-turn-1, local:page-turn-2, local:page-turn-3) without making a network request to `/interstitial-presets`
+- **AND** each option SHALL display its `icon` emoji alongside the label — `🔔` for page-turn-1 and page-turn-2, `🎙️` for page-turn-3
+- **AND** the screen SHALL preserve the existing validation, voice API loading states, selected values, and project creation request behavior
+
+#### Scenario: Icon differentiates jingle types
+
+- **WHEN** the user views the jingle picker
+- **THEN** `local:page-turn-1` and `local:page-turn-2` SHALL display a sound icon (e.g. `🔔`) and `local:page-turn-3` SHALL display a voice/microphone icon (e.g. `🎙️`)
+
+#### Scenario: Jingle preset sent to backend
+
+- **WHEN** the user submits the project creation form with a local jingle selected
+- **THEN** the `interstitialPreset` field in the create-project request SHALL be the `name` value from `LOCAL_JINGLES` (e.g. `'local:page-turn-1'`)
 
 #### Scenario: Options fail to load
 
-- **WHEN** voice or interstitial preset loading fails
+- **WHEN** voice loading fails (note: jingle options are local and cannot fail to load)
 - **THEN** the screen SHALL preserve the existing error feedback behavior while presenting the error state within the AudioFlow visual language
-
-### Requirement: AudioFlow styling for photo step
-
-The audiobook creation wizard SHALL render the photo step using the AudioFlow mobile design system while preserving the existing image selection and processing behavior.
-
-#### Scenario: User opens photo step
-
-- **WHEN** the user navigates to `projects/new/images`
-- **THEN** the screen presents the AudioFlow top app bar, title block, photo source actions, mode cards, and pearl-accented continue action based on `design-system/reference-views/Add Photos.html`
-
-#### Scenario: User adds photos
-
-- **WHEN** the user adds photos from the gallery or camera
-- **THEN** the screen SHALL preserve the existing pending image state, uploaded image state, count display, and preview behavior
-
-#### Scenario: User selects automatic mode
-
-- **WHEN** the user continues in automatic mode
-- **THEN** the screen SHALL preserve the existing upload, batch OCR, audio generation, audio polling, and player navigation behavior
-
-#### Scenario: User selects advanced mode
-
-- **WHEN** the user continues in advanced mode
-- **THEN** the screen SHALL preserve the existing upload, batch OCR, review-step navigation, pending image reorder, pending image removal, and region-edit affordances
 
 ### Requirement: Wizard accessibility and testability
 

@@ -13,6 +13,7 @@ import { Audio } from 'expo-av';
 import { api } from '../../../../lib/api';
 import { offlineCache } from '../../../../lib/offline-cache';
 import { AudioFlowScreen } from '../../../../components/audioflow';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type {
   AudioTrackResponse,
   ProjectResponse,
@@ -294,6 +295,7 @@ export default function VoiceSelectScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Głos i audio</Text>
@@ -376,6 +378,7 @@ export default function VoiceSelectScreen() {
         </Pressable>
       </View>
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

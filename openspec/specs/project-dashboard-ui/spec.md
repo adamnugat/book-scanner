@@ -85,19 +85,25 @@ The mobile app SHALL present the authenticated project library dashboard using t
 
 ### Requirement: Last Played Audiobook Widget
 
-The system SHALL display a widget for the most recently played or modified audiobook at the top of the dashboard, replacing the previous filters and sorting controls.
+System SHALL wyświetlać widget dla ostatnio zmodyfikowanego/odtwarzanego audiobooka na górze dashboardu. Widget SHALL natychmiast znikać gdy lista projektów jest pusta — w tym gdy ostatni projekt zostanie usunięty lokalnie przed ponownym pobraniem z API.
 
-#### Scenario: User has at least one project
+#### Scenario: Użytkownik ma co najmniej jeden projekt
 
-- **WHEN** the authenticated user has projects on the dashboard
-- **THEN** the system displays the most recent project in a prominent "Ostatnio odtwarzane" widget
-- **THEN** the widget includes the project title, a play button, and a progress bar
-- **THEN** pressing the play button opens the player for that project
+- **WHEN** uwierzytelniony użytkownik ma projekty na dashboardzie
+- **THEN** system wyświetla najnowszy projekt w widocznym widgecie „Ostatnio odtwarzane"
+- **THEN** widget zawiera tytuł projektu, przycisk play i pasek postępu
+- **THEN** naciśnięcie przycisku play otwiera odtwarzacz dla tego projektu
 
-#### Scenario: User has no projects
+#### Scenario: Użytkownik nie ma projektów
 
-- **WHEN** the authenticated user has no projects
-- **THEN** the "Ostatnio odtwarzane" widget is not displayed
+- **WHEN** uwierzytelniony użytkownik nie ma żadnych projektów
+- **THEN** widget „Ostatnio odtwarzane" nie jest wyświetlany
+
+#### Scenario: Użytkownik usuwa ostatni projekt
+
+- **WHEN** użytkownik usuwa jedyny pozostały projekt z dashboardu
+- **THEN** widget „Ostatnio odtwarzane" znika natychmiast po lokalnej aktualizacji stanu listy projektów
+- **THEN** widget nie wyświetla linku do usuniętego projektu w żadnym momencie po potwierdzeniu usunięcia
 
 ### Requirement: Dashboard project actions
 

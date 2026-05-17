@@ -14,6 +14,7 @@ import {
 import { useLocalSearchParams } from 'expo-router';
 import { api } from '../../../../lib/api';
 import { AudioFlowScreen } from '../../../../components/audioflow';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 
 interface ShareEntry {
   id: string;
@@ -122,6 +123,7 @@ export default function SharingScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <View style={styles.container}>
       <Text style={styles.sectionTitle}>Udostępnij projekt</Text>
       <View style={styles.shareRow}>
@@ -189,6 +191,7 @@ export default function SharingScreen() {
         </Pressable>
       )}
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

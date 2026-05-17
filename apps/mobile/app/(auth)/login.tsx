@@ -12,6 +12,7 @@ import {
   audioFlowStyles,
   audioFlowTokens,
 } from '../../components/audioflow';
+import { FadeZoomContent } from '../../components/FadeZoomContent';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -38,6 +39,7 @@ export default function LoginScreen() {
 
   return (
     <AudioFlowScreen style={styles.screen} variant="login">
+      <FadeZoomContent>
       <View style={styles.content}>
         <View style={styles.brand}>
           <AudioFlowLogo size="lg" />
@@ -83,6 +85,7 @@ export default function LoginScreen() {
           <FormLink>Nie masz konta? Zarejestruj się</FormLink>
         </Link>
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

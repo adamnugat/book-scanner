@@ -16,6 +16,8 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 
+import { ProjectCoverTexture } from './ProjectCoverTexture';
+
 /**
  * Rodziny z {@link https://fonts.google.com/specimen/Quicksand Quicksand} i
  * {@link https://fonts.google.com/specimen/Varela+Round Varela Round} — jak w
@@ -179,6 +181,7 @@ export function GlassPanel({
 }) {
   return (
     <View style={[styles.glassPanel, style]} testID={testID}>
+      <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
       {children}
     </View>
   );
@@ -292,6 +295,7 @@ export function PickerCard({
         style,
       ]}
     >
+      <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
       <View style={[styles.radioDot, selected && styles.radioDotSelected]} />
       <View style={styles.pickerContent}>
         <Text style={[styles.pickerTitle, selected && styles.pickerTitleSelected]}>{title}</Text>
@@ -466,6 +470,7 @@ export function AudioFlowFooterMenu({
   createLabel = 'Nowy audiobook',
   createDisabled = false,
   createTestID,
+  variant = 'full',
 }: {
   active?: 'library' | 'player';
   bottomInset?: number;
@@ -477,24 +482,32 @@ export function AudioFlowFooterMenu({
   createLabel?: string;
   createDisabled?: boolean;
   createTestID?: string;
+  variant?: 'full' | 'create-only';
 }) {
   return (
     <View style={[styles.footerWrap, { paddingBottom: Math.max(bottomInset, 8) }]}>
-      <View style={styles.footerMenu}>
-        <BlurView experimentalBlurMethod="dimezisBlurView" intensity={20} style={styles.footerMenuBackground} tint="dark" />
-        <Pressable
-          accessibilityLabel="Biblioteka"
-          accessibilityRole="button"
-          onPress={onLibraryPress}
-          style={({ pressed }) => [styles.footerItem, pressed && styles.pressed]}
-        >
-          <Text style={[styles.footerIcon, active === 'library' && styles.footerItemActive]}>
-            ▦
-          </Text>
-          <Text style={[styles.footerLabel, active === 'library' && styles.footerItemActive]}>
-            Biblioteka
-          </Text>
-        </Pressable>
+      <View style={[styles.footerMenu, variant === 'create-only' && styles.footerMenuCreateOnly]}>
+        <BlurView
+          experimentalBlurMethod="dimezisBlurView"
+          intensity={20}
+          style={styles.footerMenuBackground}
+          tint="dark"
+        />
+        {variant === 'full' ? (
+          <Pressable
+            accessibilityLabel="Biblioteka"
+            accessibilityRole="button"
+            onPress={onLibraryPress}
+            style={({ pressed }) => [styles.footerItem, pressed && styles.pressed]}
+          >
+            <Text style={[styles.footerIcon, active === 'library' && styles.footerItemActive]}>
+              ▦
+            </Text>
+            <Text style={[styles.footerLabel, active === 'library' && styles.footerItemActive]}>
+              Biblioteka
+            </Text>
+          </Pressable>
+        ) : null}
 
         <Pressable
           accessibilityLabel={createLabel}
@@ -512,23 +525,25 @@ export function AudioFlowFooterMenu({
           <Text style={styles.footerCreateText}>{createIcon}</Text>
         </Pressable>
 
-        <Pressable
-          accessibilityLabel="Odtwarzacz"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: playerDisabled }}
-          disabled={playerDisabled}
-          onPress={onPlayerPress}
-          style={({ pressed }) => [
-            styles.footerItem,
-            pressed && !playerDisabled && styles.pressed,
-            playerDisabled && styles.footerItemDisabled,
-          ]}
-        >
-          <Text style={[styles.footerIcon, active === 'player' && styles.footerItemActive]}>▶</Text>
-          <Text style={[styles.footerLabel, active === 'player' && styles.footerItemActive]}>
-            Odtwarzacz
-          </Text>
-        </Pressable>
+        {variant === 'full' ? (
+          <Pressable
+            accessibilityLabel="Odtwarzacz"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: playerDisabled }}
+            disabled={playerDisabled}
+            onPress={onPlayerPress}
+            style={({ pressed }) => [
+              styles.footerItem,
+              pressed && !playerDisabled && styles.pressed,
+              playerDisabled && styles.footerItemDisabled,
+            ]}
+          >
+            <Text style={[styles.footerIcon, active === 'player' && styles.footerItemActive]}>▶</Text>
+            <Text style={[styles.footerLabel, active === 'player' && styles.footerItemActive]}>
+              Odtwarzacz
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -614,22 +629,27 @@ export function ProjectCard({
   statusLabel,
   statusTone = 'neutral',
   onPress,
+  onLongPress,
   actions,
   style,
   coverUrl,
+  projectId,
 }: {
   title: string;
   meta: string;
   statusLabel: string;
   statusTone?: 'neutral' | 'done';
   onPress: (event: GestureResponderEvent) => void;
+  onLongPress?: () => void;
   actions?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   coverUrl?: string | null;
+  projectId?: string;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
+      onLongPress={onLongPress}
       onPress={onPress}
       style={({ pressed }) => [styles.projectCard, pressed && styles.pressed, style]}
     >
@@ -637,13 +657,9 @@ export function ProjectCard({
         <View style={styles.projectCover}>
           {coverUrl ? (
             <Image resizeMode="cover" source={{ uri: coverUrl }} style={styles.projectCoverImage} />
-          ) : (
-            <View style={styles.projectCoverMock}>
-              <View style={styles.projectCoverMockBand} />
-              <View style={styles.projectCoverMockBandBottom} />
-              <Text style={styles.projectCoverMockIcon}>📖</Text>
-            </View>
-          )}
+          ) : projectId ? (
+            <ProjectCoverTexture projectId={projectId} style={styles.projectCoverFill} />
+          ) : null}
         </View>
         <View style={styles.projectCardBody}>
           <View style={styles.projectTitleRow}>
@@ -747,6 +763,7 @@ export function ProjectToolTile({
       onPress={onPress}
       style={({ pressed }) => [styles.toolTile, pressed && styles.pressed, style]}
     >
+      <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
       <View style={styles.toolTileHeader}>
         <View style={styles.toolTileIconWrap}>
           <Text style={styles.toolTileIcon}>{icon}</Text>
@@ -804,7 +821,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   glassPanel: {
-    backgroundColor: t.color.surface.glass,
+    overflow: 'hidden',
     borderColor: t.color.surface.glassEdge,
     borderRadius: t.radius.panel,
     borderWidth: 1,
@@ -865,7 +882,7 @@ const styles = StyleSheet.create({
   },
   pickerCard: {
     alignItems: 'flex-start',
-    backgroundColor: t.color.surface.glassMuted,
+    overflow: 'hidden',
     borderColor: t.color.surface.glassEdge,
     borderRadius: t.radius.card,
     borderWidth: 1,
@@ -1089,6 +1106,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 20,
   },
+  footerMenuCreateOnly: {
+    justifyContent: 'center',
+  },
   footerItem: {
     alignItems: 'center',
     flex: 1,
@@ -1216,6 +1236,9 @@ const styles = StyleSheet.create({
     height: '100%',
     width: '100%',
   },
+  projectCoverFill: {
+    flex: 1,
+  },
   projectCoverMock: {
     alignItems: 'center',
     backgroundColor: 'rgba(70, 35, 45, 0.9)',
@@ -1340,7 +1363,7 @@ const styles = StyleSheet.create({
     marginLeft: 3,
   },
   toolTile: {
-    backgroundColor: t.color.surface.glass,
+    overflow: 'hidden',
     borderColor: t.color.surface.glassEdge,
     borderRadius: t.radius.panel,
     borderWidth: 1,

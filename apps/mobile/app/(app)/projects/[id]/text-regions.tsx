@@ -15,6 +15,7 @@ import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { api } from '../../../../lib/api';
 import { PageImagePreview } from '../../../../components/PageImagePreview';
 import { AudioFlowScreen } from '../../../../components/audioflow';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import {
   createNormalizedRegion,
   denormalizeRegion,
@@ -214,6 +215,7 @@ export default function TextRegionsScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <View style={styles.container}>
       <Text style={styles.title}>Zaznacz regiony tekstu</Text>
       <Text style={styles.subtitle}>Opcjonalne - pomiń jeśli OCR ma skanować całe strony</Text>
@@ -340,6 +342,7 @@ export default function TextRegionsScreen() {
         </Pressable>
       </View>
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

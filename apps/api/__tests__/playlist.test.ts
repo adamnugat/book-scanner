@@ -176,6 +176,56 @@ describe('Playlist', () => {
       expect(res.body.itemCount).toBe(2);
     });
 
+    it('T-7.9: builds scene-only playlist when interstitialPreset starts with local:', async () => {
+      db.project.findUnique.mockResolvedValue({ ...projectA, interstitialPreset: 'local:page-turn-1' });
+      db.scene.findMany.mockResolvedValue([scene1, scene2]);
+      db.playlistItem.deleteMany.mockResolvedValue({ count: 0 });
+
+      let order = 0;
+      db.playlistItem.create.mockImplementation(async (args) => ({
+        id: `pl-${++order}`,
+        projectId: 'proj-1',
+        type: (args as { data: { type: string } }).data.type,
+        referenceId: (args as { data: { referenceId: string } }).data.referenceId,
+        orderIndex: (args as { data: { orderIndex: number } }).data.orderIndex,
+      }));
+
+      const res = await request(app)
+        .post('/projects/proj-1/build-playlist')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.itemCount).toBe(2);
+      expect(db.interstitialPreset.findFirst).not.toHaveBeenCalled();
+      const calls = db.playlistItem.create.mock.calls;
+      expect(calls.every((c) => (c[0] as { data: { type: string } }).data.type === 'scene')).toBe(true);
+    });
+
+    it('T-7.10: standard preset still injects interstitials between scenes', async () => {
+      db.project.findUnique.mockResolvedValue({ ...projectA, interstitialPreset: 'Soft chime' });
+      db.scene.findMany.mockResolvedValue([scene1, scene2]);
+      db.playlistItem.deleteMany.mockResolvedValue({ count: 0 });
+      db.interstitialPreset.findFirst.mockResolvedValue(interstitial);
+
+      let order = 0;
+      db.playlistItem.create.mockImplementation(async (args) => ({
+        id: `pl-${++order}`,
+        projectId: 'proj-1',
+        type: (args as { data: { type: string } }).data.type,
+        referenceId: (args as { data: { referenceId: string } }).data.referenceId,
+        orderIndex: (args as { data: { orderIndex: number } }).data.orderIndex,
+      }));
+
+      const res = await request(app)
+        .post('/projects/proj-1/build-playlist')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.itemCount).toBe(3);
+      const calls = db.playlistItem.create.mock.calls;
+      expect((calls[1][0] as { data: { type: string } }).data.type).toBe('interstitial');
+    });
+
     it('rejects when no audio scenes → 400', async () => {
       db.project.findUnique.mockResolvedValue(projectA);
       db.scene.findMany.mockResolvedValue([]);

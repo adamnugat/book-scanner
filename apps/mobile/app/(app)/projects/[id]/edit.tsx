@@ -11,6 +11,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { api } from '../../../../lib/api';
 import { AudioFlowScreen } from '../../../../components/audioflow';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type { SupportedLanguage } from '@book-scanner/shared';
 
 export default function EditProjectScreen() {
@@ -64,6 +65,7 @@ export default function EditProjectScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <View style={styles.container}>
         <Text style={styles.heading}>Edytuj projekt</Text>
 
@@ -98,6 +100,7 @@ export default function EditProjectScreen() {
           )}
         </Pressable>
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 
 const mockProjects = [
   {
@@ -107,7 +107,9 @@ describe('ProjectsScreen – with projects', () => {
     expect(await screen.findByTestId('dashboard-last-played', {}, { timeout: 3000 })).toBeTruthy();
     expect(screen.getByText('Witaj ponownie')).toBeTruthy();
     expect(screen.queryByText('≋')).toBeNull();
-    expect(screen.getByLabelText('Biblioteka')).toBeTruthy();
+    // dashboard uses create-only variant — Biblioteka and Odtwarzacz buttons are hidden
+    expect(screen.queryByLabelText('Biblioteka')).toBeNull();
+    expect(screen.queryByLabelText('Odtwarzacz')).toBeNull();
     expect(screen.getByLabelText('Nowy audiobook')).toBeTruthy();
     expect(screen.getAllByLabelText('Nowy audiobook')).toHaveLength(1);
 
@@ -126,6 +128,57 @@ describe('ProjectsScreen – with projects', () => {
     fireEvent.press(screen.getByLabelText('Odtwórz ostatni audiobook'));
 
     expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/player');
+  });
+});
+
+describe('ProjectsScreen – last-played section', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockDeleteProject.mockResolvedValue(undefined);
+  });
+
+  it('does not render last-played widget when projects list is empty', async () => {
+    mockGetProjects.mockImplementation(() => Promise.resolve([]));
+    render(<ProjectsScreen />);
+    await screen.findByText('Nie masz jeszcze żadnych projektów', {}, { timeout: 3000 });
+    expect(screen.queryByTestId('dashboard-last-played')).toBeNull();
+  });
+
+  it('hides last-played widget after all projects are deleted via Alert confirmation', async () => {
+    mockGetProjects.mockImplementation(() => Promise.resolve([mockProjects[0]]));
+
+    const { Alert } = require('react-native');
+    let capturedButtons: Array<{ text: string; onPress?: () => void }> = [];
+    jest.spyOn(Alert, 'alert').mockImplementation(
+      (_title: string, _msg: string, buttons: typeof capturedButtons) => {
+        capturedButtons = buttons ?? [];
+      },
+    );
+
+    render(<ProjectsScreen />);
+    await screen.findByTestId('dashboard-last-played', {}, { timeout: 3000 });
+
+    // Trigger long-press via the project card's accessibility role
+    const projectCards = screen.getAllByRole('button');
+    // The first pressable button in the list is the project card
+    const card = projectCards.find((el) => {
+      const label = el.props.accessibilityLabel;
+      return !label; // ProjectCard has no accessibilityLabel, just role="button"
+    });
+    if (card) fireEvent(card, 'longPress');
+
+    // Confirm deletion via captured Alert button — wrap in act to flush async state update
+    const deleteBtn = capturedButtons.find((b) => b.text === 'Usuń');
+    if (deleteBtn?.onPress) {
+      await act(async () => {
+        await deleteBtn.onPress!();
+      });
+    }
+
+    expect(mockDeleteProject).toHaveBeenCalledWith('proj-1');
+    await waitFor(() => {
+      expect(screen.queryByTestId('dashboard-last-played')).toBeNull();
+    });
   });
 });
 

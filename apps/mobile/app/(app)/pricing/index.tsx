@@ -7,6 +7,7 @@ import {
   AudioFlowFooterMenu,
   AudioFlowScreen,
 } from '../../../components/audioflow';
+import { FadeZoomContent } from '../../../components/FadeZoomContent';
 import { api } from '../../../lib/api';
 
 interface Plan {
@@ -57,9 +58,11 @@ export default function PricingScreen() {
   if (loading) {
     return (
       <AudioFlowScreen>
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#e94560" />
-        </View>
+        <FadeZoomContent>
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color="#e94560" />
+          </View>
+        </FadeZoomContent>
 
         <AudioFlowFooterMenu
           active="library"
@@ -74,6 +77,7 @@ export default function PricingScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <ScrollView
         style={styles.container}
         contentContainerStyle={[styles.content, { paddingBottom: footerPadding }]}
@@ -129,6 +133,7 @@ export default function PricingScreen() {
           );
         })}
       </ScrollView>
+      </FadeZoomContent>
 
       <AudioFlowFooterMenu
         active="library"

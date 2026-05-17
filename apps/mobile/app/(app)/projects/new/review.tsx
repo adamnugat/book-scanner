@@ -17,6 +17,7 @@ import {
   AudioFlowScreen,
   audioFlowFooterMenuHeight,
 } from '../../../../components/audioflow';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type { SceneResponse } from '@book-scanner/shared';
 
 const STACK_GAP_ABOVE_FOOTER = 10;
@@ -116,13 +117,15 @@ export default function NewProjectReviewScreen() {
   if (loading) {
     return (
       <AudioFlowScreen>
-        <View style={styles.centered}>
-          <View style={styles.loadingCard}>
-            <ActivityIndicator color="#06d6a0" size="large" />
-            <Text style={styles.loadingTitle}>Rozpoznawanie tekstu</Text>
-            <Text style={styles.loadingProgress}>{loadingProgress}</Text>
+        <FadeZoomContent>
+          <View style={styles.centered}>
+            <View style={styles.loadingCard}>
+              <ActivityIndicator color="#06d6a0" size="large" />
+              <Text style={styles.loadingTitle}>Rozpoznawanie tekstu</Text>
+              <Text style={styles.loadingProgress}>{loadingProgress}</Text>
+            </View>
           </View>
-        </View>
+        </FadeZoomContent>
 
         <AudioFlowFooterMenu
           active="library"
@@ -137,6 +140,7 @@ export default function NewProjectReviewScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <View style={styles.container}>
         <ScrollView contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}>
           <View style={styles.hero}>
@@ -184,6 +188,7 @@ export default function NewProjectReviewScreen() {
           </Pressable>
         </View>
       </View>
+      </FadeZoomContent>
 
       <AudioFlowFooterMenu
         active="library"

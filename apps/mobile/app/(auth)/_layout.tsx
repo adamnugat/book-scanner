@@ -7,6 +7,7 @@ export default function AuthLayout() {
   return (
     <Stack
       screenOptions={{
+        animation: 'none',
         contentStyle: { flex: 1, backgroundColor: SCREEN_BG },
         freezeOnBlur: false,
         header: (props) => <AudioFlowTopNavigation {...props} />,

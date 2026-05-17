@@ -1,6 +1,6 @@
 ### Requirement: Stabilny pełny ekran przy wyłącznie wstecznej nawigacji
 
-System (aplikacja mobilna Book Scanner) SHALL zapewniać, że przy **cofaniu się** w standardowym stosie nawigacji (expo-router / React Navigation Stack) użytkownik nie widzi zauważalnego „migania” ani jednoklatkowego przebłysku na **całym obszarze ekranu** (od góry do dołu), które sugerowałoby błędne renderowanie, nagłą zmianę tła lub **niespójną kompozycję sąsiednich widoków** podczas animacji przejścia wstecz. Wymaganie dotyczy **wyłącznie** nawigacji wstecz; nawigacja w przód jest poza zakresem tego wymagania.
+System (aplikacja mobilna Book Scanner) SHALL zapewniać, że przy **cofaniu się** w standardowym stosie nawigacji (expo-router / React Navigation Stack) użytkownik nie widzi zauważalnego „migania” ani jednoklatkowego przebłysku na **całym obszarze ekranu** (od góry do dołu), które sugerowałoby błędne renderowanie, nagłą zmianę tła lub **niespójną kompozycję sąsiednich widoków** podczas animacji przejścia wstecz. Wymaganie dotyczy **wyłącznie** nawigacji wstecz; nawigacja w przód jest poza zakresem tego wymagania. Stack nawigacji SHALL używać `animation: 'none'` jako ustawienia domyślnego — animacja ekranu jest delegowana do komponentu `FadeZoomContent` wewnątrz treści ekranu.
 
 #### Scenario: Cofnięcie z podstrony projektu
 
@@ -12,10 +12,10 @@ System (aplikacja mobilna Book Scanner) SHALL zapewniać, że przy **cofaniu si�
 - **WHEN** użytkownik cofa się w obrębie flow uwierzytelniania (np. rejestracja lub reset hasła → logowanie) lub innych tras poza szczegółami projektu, o ile są w tym samym modelu stacka
 - **THEN** obowiązują te same oczekiwania co w scenariuszu podstron projektu: brak zauważalnego pełnoekranowego flashu w trakcie animacji cofnięcia
 
-#### Scenario: Nawigacja w przód bez regresji
+#### Scenario: Nawigacja w przód z animacją fade-zoom treści
 
-- **WHEN** użytkownik przechodzi **w przód** (`push`) między ekranami w obrębie `(app)` lub `(auth)`
-- **THEN** zachowanie wizualne pozostaje co najmniej tak dobre jak przed zmianą; niniejsze wymaganie **nie wymusza** nowych kryteriów jakości dla animacji w przód poza brakiem regresji
+- **WHEN** użytkownik przechodzi **w przód** (`push`) między ekranami w obrębie `(app)`
+- **THEN** obszar treści nowego ekranu pojawia się z animacją fade-in + zoom-in; header i footer pozostają bez animacji scale
 
 #### Scenario: Spójne tło i kompozycja sceny przy cofaniu
 
@@ -48,24 +48,25 @@ The mobile app SHALL use an AudioFlow-compatible top header on redesigned primar
 
 ### Requirement: AudioFlow footer menu
 
-The mobile app SHALL provide an AudioFlow bottom footer menu for redesigned primary app screens.
+Aplikacja mobilna SHALL zapewniać AudioFlow dolne menu nawigacyjne dla przeprojektowanych głównych ekranów. Na widoku dashboardu `/(app)` dolne menu SHALL zawierać wyłącznie centralny przycisk tworzenia — bez przycisków bocznych (Biblioteka, Odtwarzacz). Na pozostałych ekranach zachowanie SHALL pozostać bez zmian.
 
-#### Scenario: Dashboard footer shows library state
+#### Scenario: Dashboard footer shows only create button
 
-- **WHEN** the authenticated dashboard is displayed
-- **THEN** the footer menu shows the library/dashboard destination as active
+- **WHEN** uwierzytelniony dashboard `/(app)` jest wyświetlany
+- **THEN** dolne menu zawiera wyłącznie centralny przycisk `+` (tworzenie nowego audiobooka)
+- **THEN** przyciski „Biblioteka" i „Odtwarzacz" nie są renderowane ani widoczne
 
 #### Scenario: Dashboard footer starts new audiobook
 
-- **WHEN** the user presses the raised pearl footer action
-- **THEN** the system navigates to the existing new audiobook route `/(app)/projects/new`
+- **WHEN** użytkownik naciska centralny przycisk `+` w dolnym menu dashboardu
+- **THEN** system nawiguje do istniejącej trasy `/(app)/projects/new`
 
-#### Scenario: Footer avoids invalid project routes
+#### Scenario: Footer na ekranach projektów zachowuje pełną strukturę
 
-- **WHEN** a footer menu destination would require a concrete project id that is not available
-- **THEN** the footer menu does not navigate to a placeholder or invalid project route
+- **WHEN** użytkownik jest na ekranie projektu (np. szczegóły, zdjęcia, głos)
+- **THEN** dolne menu zachowuje pełną strukturę z trzema przyciskami zgodnie z wcześniejszym zachowaniem
 
 #### Scenario: Footer respects safe area and content
 
-- **WHEN** the footer menu is rendered on a mobile device
-- **THEN** the screen content leaves enough bottom padding so the footer does not cover tappable dashboard content
+- **WHEN** dolne menu jest renderowane na urządzeniu mobilnym
+- **THEN** treść ekranu ma wystarczający padding dolny żeby menu nie zasłaniało klikalnej zawartości dashboardu

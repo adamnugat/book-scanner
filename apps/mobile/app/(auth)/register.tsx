@@ -11,6 +11,7 @@ import {
 import { Link, router } from 'expo-router';
 import { useAuth } from '../../lib/auth-context';
 import { AudioFlowScreen } from '../../components/audioflow';
+import { FadeZoomContent } from '../../components/FadeZoomContent';
 
 export default function RegisterScreen() {
   const { register } = useAuth();
@@ -46,6 +47,7 @@ export default function RegisterScreen() {
 
   return (
     <AudioFlowScreen variant="login">
+      <FadeZoomContent>
       <View style={styles.container}>
         <Text style={styles.title}>Utwórz konto</Text>
 
@@ -90,6 +92,7 @@ export default function RegisterScreen() {
           Masz już konto? Zaloguj się
         </Link>
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

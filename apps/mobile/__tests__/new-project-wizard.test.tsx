@@ -3,7 +3,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 
 const mockCreateProject = jest.fn();
 const mockGetVoices = jest.fn();
-const mockGetInterstitialPresets = jest.fn();
 const mockRouterReplace = jest.fn();
 
 jest.mock('expo-router', () => ({
@@ -16,9 +15,12 @@ jest.mock('../lib/api', () => ({
   api: {
     createProject: (...args: unknown[]) => mockCreateProject(...args),
     getVoices: (...args: unknown[]) => mockGetVoices(...args),
-    getInterstitialPresets: (...args: unknown[]) => mockGetInterstitialPresets(...args),
   },
 }));
+
+jest.mock('../assets/audio/page-turn-1.mp3', () => 1, { virtual: true });
+jest.mock('../assets/audio/page-turn-2.wav', () => 2, { virtual: true });
+jest.mock('../assets/audio/page-turn-3.mp3', () => 3, { virtual: true });
 
 import NewProjectScreen from '../app/(app)/projects/new';
 
@@ -34,28 +36,20 @@ describe('New audiobook wizard step 1', () => {
         previewUrl: null,
       },
     ]);
-    mockGetInterstitialPresets.mockResolvedValue([
-      {
-        id: 'page-turn',
-        name: 'Page turn',
-        audioUrl: 'presets/page-turn.mp3',
-        durationMs: 1500,
-      },
-    ]);
     mockCreateProject.mockResolvedValue({
       id: 'proj-1',
       title: 'Pan Tadeusz',
       language: 'pl',
       coverUrl: null,
       voiceId: 'marta-voice',
-      interstitialPreset: 'Page turn',
+      interstitialPreset: 'local:page-turn-1',
       status: 'draft',
       createdAt: '2026-05-11T00:00:00.000Z',
       updatedAt: '2026-05-11T00:00:00.000Z',
     });
   });
 
-  it('loads voices and interstitial presets and creates a project before step 2', async () => {
+  it('loads voices, shows local jingle options, creates project before step 2', async () => {
     render(<NewProjectScreen />);
 
     expect(await screen.findByText('Krok 1 z 3')).toBeTruthy();
@@ -63,11 +57,13 @@ describe('New audiobook wizard step 1', () => {
     expect(screen.getByText('Lektor')).toBeTruthy();
     expect(screen.getByText('Wstawka muzyczna')).toBeTruthy();
     expect(await screen.findByText('Marta')).toBeTruthy();
-    expect(await screen.findByText('Page turn')).toBeTruthy();
+
+    expect(screen.getByText('🔔  Przewracanie strony 1')).toBeTruthy();
+    expect(screen.getByText('🔔  Przewracanie strony 2')).toBeTruthy();
+    expect(screen.getByText('🎙️  Wstawka głosowa')).toBeTruthy();
 
     fireEvent.changeText(screen.getByPlaceholderText('np. Pan Tadeusz'), 'Pan Tadeusz');
     fireEvent.press(screen.getByText('Marta'));
-    fireEvent.press(screen.getByText('Page turn'));
     fireEvent.press(screen.getByLabelText('Dalej'));
 
     await waitFor(() => {
@@ -75,11 +71,17 @@ describe('New audiobook wizard step 1', () => {
         title: 'Pan Tadeusz',
         language: 'pl',
         voiceId: 'marta-voice',
-        interstitialPreset: 'Page turn',
+        interstitialPreset: 'local:page-turn-1',
       });
     });
     expect(mockGetVoices).toHaveBeenCalledWith('pl');
-    expect(mockGetInterstitialPresets).toHaveBeenCalled();
     expect(mockRouterReplace).toHaveBeenCalledWith('/(app)/projects/new/images?projectId=proj-1');
+  });
+
+  it('does not fetch interstitial presets from backend', async () => {
+    const mockGetInterstitialPresets = jest.fn();
+    render(<NewProjectScreen />);
+    await screen.findByText('Marta');
+    expect(mockGetInterstitialPresets).not.toHaveBeenCalled();
   });
 });

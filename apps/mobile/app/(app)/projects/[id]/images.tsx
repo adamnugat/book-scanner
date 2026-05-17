@@ -16,6 +16,7 @@ import { uploadFileFromImagePickerAsset } from '../../../../lib/image-upload';
 import { useToast } from '../../../../components/Toast';
 import { PageImagePreview } from '../../../../components/PageImagePreview';
 import { AudioFlowScreen } from '../../../../components/audioflow';
+import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type { PageImageResponse } from '@book-scanner/shared';
 
 interface FileProgress {
@@ -249,6 +250,7 @@ export default function ProjectImagesScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <View style={styles.container} ref={dropRef} {...dropZoneProps}>
       <View style={styles.header}>
         <Text style={styles.title}>Zdjęcia stron ({images.length})</Text>
@@ -375,6 +377,7 @@ export default function ProjectImagesScreen() {
         )}
       </View>
       </View>
+      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }

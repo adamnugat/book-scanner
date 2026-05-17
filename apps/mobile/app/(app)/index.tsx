@@ -15,6 +15,7 @@ import {
   audioFlowTokens,
 } from '../../components/audioflow';
 import { AudioFlowBottomNavigation } from '../../components/audioflow-global-navigation';
+import { FadeZoomContent } from '../../components/FadeZoomContent';
 import { useToast } from '../../components/Toast';
 import { api } from '../../lib/api';
 
@@ -77,11 +78,39 @@ export default function ProjectsScreen() {
     router.push(`/(app)/projects/${lastPlayed.id}/player`);
   };
 
+  const handleDeleteProject = useCallback(
+    (item: ProjectResponse) => {
+      Alert.alert(
+        'Usuń audiobook',
+        `Czy na pewno chcesz usunąć „${item.title}"? Tej operacji nie można cofnąć.`,
+        [
+          { text: 'Anuluj', style: 'cancel' },
+          {
+            text: 'Usuń',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await api.deleteProject(item.id);
+                setProjects((prev) => prev.filter((p) => p.id !== item.id));
+                showToast('Audiobook usunięty');
+              } catch {
+                Alert.alert('Błąd', 'Nie udało się usunąć projektu');
+              }
+            },
+          },
+        ],
+      );
+    },
+    [showToast],
+  );
+
   const renderProject = ({ item }: { item: ProjectResponse }) => (
     <ProjectCard
       coverUrl={item.coverUrl}
       meta={`${item.language.toUpperCase()} · ${new Date(item.updatedAt).toLocaleDateString('pl-PL')}`}
+      onLongPress={() => handleDeleteProject(item)}
       onPress={() => router.push(`/(app)/projects/${item.id}`)}
+      projectId={item.id}
       statusLabel={STATUS_LABELS[item.status] || item.status}
       statusTone={item.status === 'completed' ? 'done' : 'neutral'}
       style={isTablet && styles.cardTablet}
@@ -147,6 +176,7 @@ export default function ProjectsScreen() {
 
   return (
     <AudioFlowScreen>
+      <FadeZoomContent>
       <View style={styles.content}>
         {loading ? (
           <GlassPanel
@@ -186,13 +216,13 @@ export default function ProjectsScreen() {
           />
         )}
       </View>
+      </FadeZoomContent>
 
       <AudioFlowBottomNavigation
         active="library"
         bottomInset={insets.bottom}
         onCreatePress={createProject}
-        onLibraryPress={() => router.replace('/(app)')}
-        playerDisabled
+        variant="create-only"
       />
     </AudioFlowScreen>
   );
