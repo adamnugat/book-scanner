@@ -1,0 +1,1 @@
+/Users/awieczorek/dev/book-scaner/packages/shared/src/types.ts

@@ -1,0 +1,22 @@
+/Users/awieczorek/dev/book-scaner/apps/mobile/lib/local-jingles.ts
+/Users/awieczorek/dev/book-scaner/apps/mobile/lib/offline-cache.ts
+/Users/awieczorek/dev/book-scaner/apps/mobile/lib/text-region-geometry.ts
+/Users/awieczorek/dev/book-scaner/apps/mobile/lib/use-network.ts
+/Users/awieczorek/dev/book-scaner/design-system/Design System.html
+/Users/awieczorek/dev/book-scaner/design-system/README.md
+/Users/awieczorek/dev/book-scaner/design-system/tailwind-preset.js
+/Users/awieczorek/dev/book-scaner/design-system/reference-views/Add Photos.html
+/Users/awieczorek/dev/book-scaner/design-system/reference-views/Dashboard.html
+/Users/awieczorek/dev/book-scaner/design-system/reference-views/Export.html
+/Users/awieczorek/dev/book-scaner/design-system/reference-views/Login.html
+/Users/awieczorek/dev/book-scaner/design-system/reference-views/New Project.html
+/Users/awieczorek/dev/book-scaner/design-system/reference-views/Page Photos.html
+/Users/awieczorek/dev/book-scaner/design-system/reference-views/Project Details.html
+/Users/awieczorek/dev/book-scaner/design-system/reference-views/Share.html
+/Users/awieczorek/dev/book-scaner/design-system/reference-views/Voice and Audio.html
+/Users/awieczorek/dev/book-scaner/openspec/config.yaml
+/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-05-add-touch-ocr-region-selection/.openspec.yaml
+/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-05-add-touch-ocr-region-selection/design.md
+/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-05-add-touch-ocr-region-selection/proposal.md
+/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-05-add-touch-ocr-region-selection/tasks.md
+/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-05-add-touch-ocr-region-selection/specs/touch-ocr-region-selection/spec.md
