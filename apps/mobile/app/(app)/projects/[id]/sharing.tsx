@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   Pressable,
   FlatList,
   Image,
@@ -13,8 +12,18 @@ import {
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { api } from '../../../../lib/api';
-import { AudioFlowScreen } from '../../../../components/audioflow';
+import {
+  AudioFlowScreen,
+  audioFlowTokens,
+  GlassPanel,
+  PearlButton,
+  GhostButton,
+  AudioFlowTextField,
+  SectionHeading,
+} from '../../../../components/audioflow';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
+
+const t = audioFlowTokens;
 
 interface ShareEntry {
   id: string;
@@ -115,7 +124,7 @@ export default function SharingScreen() {
     return (
       <AudioFlowScreen>
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#e94560" />
+          <ActivityIndicator size="large" color={t.color.accent.pearl} />
         </View>
       </AudioFlowScreen>
     );
@@ -124,134 +133,144 @@ export default function SharingScreen() {
   return (
     <AudioFlowScreen>
       <FadeZoomContent>
-      <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Udostępnij projekt</Text>
-      <View style={styles.shareRow}>
-        <TextInput
-          style={styles.emailInput}
-          placeholder="Email użytkownika..."
-          placeholderTextColor="#666"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <Pressable style={styles.shareBtn} onPress={handleShare} disabled={sharing}>
-          {sharing ? (
-            <ActivityIndicator color="#fff" size="small" />
-          ) : (
-            <Text style={styles.shareBtnText}>Udostępnij</Text>
-          )}
-        </Pressable>
-      </View>
+        <View style={styles.container}>
+          <FlatList
+            data={shares}
+            keyExtractor={(item) => item.id}
+            ListHeaderComponent={
+              <>
+                <SectionHeading title="Udostępnij projekt" style={styles.sectionHeading} />
+                <View style={styles.shareRow}>
+                  <AudioFlowTextField
+                    placeholder="Email użytkownika..."
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    style={styles.emailField}
+                  />
+                  <PearlButton
+                    label={sharing ? '…' : 'Udostępnij'}
+                    onPress={handleShare}
+                    disabled={sharing}
+                    style={styles.shareBtn}
+                  />
+                </View>
 
-      <Text style={styles.sectionTitle}>Osoby z dostępem ({shares.length})</Text>
-      {shares.length === 0 ? (
-        <Text style={styles.emptyText}>Nikt nie ma jeszcze dostępu</Text>
-      ) : (
-        <FlatList
-          data={shares}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.shareItem}>
-              <View style={styles.shareInfo}>
-                <Text style={styles.shareEmail}>{item.sharedWithEmail}</Text>
-                <Text style={styles.shareRole}>{item.role}</Text>
-              </View>
-              <Pressable onPress={() => handleRevoke(item)}>
-                <Text style={styles.revokeText}>Odbierz</Text>
-              </Pressable>
-            </View>
-          )}
-          style={styles.shareList}
-        />
-      )}
-
-      <Text style={styles.sectionTitle}>Kod QR</Text>
-      {qr ? (
-        <View style={styles.qrSection}>
-          <Image source={{ uri: qr.qrImageUrl }} style={styles.qrImage} resizeMode="contain" />
-          <Text style={styles.deepLink} numberOfLines={2}>
-            {qr.deepLinkUrl}
-          </Text>
-          <Pressable style={styles.shareLinkBtn} onPress={handleShareLink}>
-            <Text style={styles.shareLinkBtnText}>Udostępnij link</Text>
-          </Pressable>
-          <Pressable style={styles.regenerateBtn} onPress={handleGenerateQr}>
-            <Text style={styles.regenerateBtnText}>Wygeneruj ponownie</Text>
-          </Pressable>
+                <SectionHeading
+                  title={`Osoby z dostępem (${shares.length})`}
+                  style={styles.sectionHeading}
+                />
+                {shares.length === 0 && (
+                  <Text style={styles.emptyText}>Nikt nie ma jeszcze dostępu</Text>
+                )}
+              </>
+            }
+            renderItem={({ item }) => (
+              <GlassPanel style={styles.shareItem}>
+                <View style={styles.shareInfo}>
+                  <Text style={styles.shareEmail}>{item.sharedWithEmail}</Text>
+                  <Text style={styles.shareRole}>{item.role}</Text>
+                </View>
+                <Pressable onPress={() => handleRevoke(item)}>
+                  <Text style={styles.revokeText}>Odbierz</Text>
+                </Pressable>
+              </GlassPanel>
+            )}
+            ListFooterComponent={
+              <>
+                <SectionHeading title="Kod QR" style={styles.sectionHeading} />
+                {qr ? (
+                  <GlassPanel style={styles.qrPanel}>
+                    <Image
+                      source={{ uri: qr.qrImageUrl }}
+                      style={styles.qrImage}
+                      resizeMode="contain"
+                    />
+                    <Text style={styles.deepLink} numberOfLines={2}>
+                      {qr.deepLinkUrl}
+                    </Text>
+                    <GhostButton
+                      label="Udostępnij link"
+                      onPress={handleShareLink}
+                      style={styles.qrActionBtn}
+                    />
+                    <Pressable style={styles.regenerateBtn} onPress={handleGenerateQr}>
+                      <Text style={styles.regenerateText}>Wygeneruj ponownie</Text>
+                    </Pressable>
+                  </GlassPanel>
+                ) : (
+                  <PearlButton
+                    label={generatingQr ? '…' : 'Wygeneruj QR'}
+                    onPress={handleGenerateQr}
+                    disabled={generatingQr}
+                  />
+                )}
+              </>
+            }
+            contentContainerStyle={styles.listContent}
+          />
         </View>
-      ) : (
-        <Pressable style={styles.generateQrBtn} onPress={handleGenerateQr} disabled={generatingQr}>
-          {generatingQr ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.generateQrBtnText}>Wygeneruj QR</Text>
-          )}
-        </Pressable>
-      )}
-      </View>
       </FadeZoomContent>
     </AudioFlowScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent', padding: 20 },
+  container: { flex: 1, backgroundColor: 'transparent' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  sectionTitle: {
-    color: '#e0e0e0',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 12,
+  listContent: { padding: t.spacing.gutterMobile, paddingBottom: 40 },
+  sectionHeading: { marginTop: t.spacing.stackMd, marginBottom: t.spacing.stackSm },
+  shareRow: { flexDirection: 'row', gap: t.spacing.stackSm, alignItems: 'flex-end' },
+  emailField: { flex: 1 },
+  shareBtn: { minWidth: 110 },
+  emptyText: {
+    color: t.color.text.onSurfaceMuted,
+    fontSize: 14,
+    fontFamily: 'VarelaRound_400Regular',
   },
-  shareRow: { flexDirection: 'row', gap: 8 },
-  emailInput: {
-    flex: 1,
-    backgroundColor: '#16213e',
-    color: '#e0e0e0',
-    borderRadius: 8,
-    padding: 14,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: '#0f3460',
-  },
-  shareBtn: {
-    backgroundColor: '#e94560',
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
-  },
-  shareBtnText: { color: '#fff', fontWeight: '600' },
-  emptyText: { color: '#666', fontSize: 14 },
-  shareList: { maxHeight: 200 },
   shareItem: {
+    borderRadius: t.radius.card,
+    padding: 12,
+    marginBottom: t.spacing.stackSm,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    backgroundColor: '#16213e',
-    borderRadius: 8,
-    marginBottom: 6,
   },
   shareInfo: { flex: 1 },
-  shareEmail: { color: '#e0e0e0', fontSize: 14 },
-  shareRole: { color: '#888', fontSize: 12, marginTop: 2 },
-  revokeText: { color: '#e94560', fontSize: 13 },
-  qrSection: { alignItems: 'center' },
-  qrImage: { width: 200, height: 200, backgroundColor: '#fff', borderRadius: 8 },
-  deepLink: { color: '#888', fontSize: 12, marginTop: 8, textAlign: 'center' },
-  shareLinkBtn: {
-    backgroundColor: '#0f3460',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 12,
-    paddingHorizontal: 24,
+  shareEmail: {
+    color: t.color.text.onDark,
+    fontSize: 14,
+    fontFamily: 'VarelaRound_400Regular',
   },
-  shareLinkBtnText: { color: '#e0e0e0', fontWeight: '600' },
-  regenerateBtn: { marginTop: 8, padding: 8 },
-  regenerateBtnText: { color: '#888', fontSize: 13 },
-  generateQrBtn: { backgroundColor: '#e94560', borderRadius: 8, padding: 16, alignItems: 'center' },
-  generateQrBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  shareRole: {
+    color: t.color.text.onSurfaceMuted,
+    fontSize: 12,
+    fontFamily: 'VarelaRound_400Regular',
+    marginTop: 2,
+  },
+  revokeText: {
+    color: t.color.accent.danger,
+    fontSize: 13,
+    fontFamily: 'VarelaRound_400Regular',
+  },
+  qrPanel: {
+    borderRadius: t.radius.card,
+    padding: t.spacing.gutterMobile,
+    alignItems: 'center',
+    gap: t.spacing.stackSm,
+  },
+  qrImage: { width: 200, height: 200, backgroundColor: '#fff', borderRadius: t.radius.md },
+  deepLink: {
+    color: t.color.text.onSurfaceMuted,
+    fontSize: 12,
+    fontFamily: 'VarelaRound_400Regular',
+    textAlign: 'center',
+  },
+  qrActionBtn: { alignSelf: 'stretch' },
+  regenerateBtn: { padding: 8 },
+  regenerateText: {
+    color: t.color.text.onSurfaceMuted,
+    fontSize: 13,
+    fontFamily: 'VarelaRound_400Regular',
+  },
 });

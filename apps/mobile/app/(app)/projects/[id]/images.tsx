@@ -15,9 +15,17 @@ import { api } from '../../../../lib/api';
 import { uploadFileFromImagePickerAsset } from '../../../../lib/image-upload';
 import { useToast } from '../../../../components/Toast';
 import { PageImagePreview } from '../../../../components/PageImagePreview';
-import { AudioFlowScreen } from '../../../../components/audioflow';
+import {
+  AudioFlowScreen,
+  audioFlowTokens,
+  GlassPanel,
+  PearlButton,
+  GhostButton,
+} from '../../../../components/audioflow';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type { PageImageResponse } from '@book-scanner/shared';
+
+const t = audioFlowTokens;
 
 interface FileProgress {
   name: string;
@@ -186,7 +194,7 @@ export default function ProjectImagesScreen() {
   };
 
   const renderImage = ({ item, index }: { item: PageImageResponse; index: number }) => (
-    <View style={styles.card}>
+    <GlassPanel style={styles.card}>
       <View style={styles.cardRow}>
         <Text style={styles.pageNum}>{index + 1}</Text>
         <PageImagePreview
@@ -223,14 +231,14 @@ export default function ProjectImagesScreen() {
           <Text style={styles.deleteBtnText}>Usuń</Text>
         </Pressable>
       </View>
-    </View>
+    </GlassPanel>
   );
 
   if (loading) {
     return (
       <AudioFlowScreen>
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#e94560" />
+          <ActivityIndicator size="large" color={t.color.accent.pearl} />
         </View>
       </AudioFlowScreen>
     );
@@ -251,132 +259,127 @@ export default function ProjectImagesScreen() {
   return (
     <AudioFlowScreen>
       <FadeZoomContent>
-      <View style={styles.container} ref={dropRef} {...dropZoneProps}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Zdjęcia stron ({images.length})</Text>
-      </View>
-
-      {isDragOver && (
-        <View style={styles.dropOverlay}>
-          <Text style={styles.dropOverlayText}>Upuść pliki tutaj</Text>
-        </View>
-      )}
-
-      {pendingAssets.length > 0 && (
-        <View style={styles.pendingPanel}>
-          <Text style={styles.pendingTitle}>Podgląd zdjęć ({pendingAssets.length})</Text>
-          {pendingAssets.map((asset, index) => (
-            <View key={`${asset.uri}-${index}`} style={styles.pendingItem}>
-              <PageImagePreview
-                imageUrl={asset.uri}
-                style={styles.pendingThumb}
-                resizeMode="contain"
-              />
-              <View style={styles.pendingInfo}>
-                <Text style={styles.pendingName} numberOfLines={1}>
-                  {asset.fileName || `Strona ${index + 1}`}
-                </Text>
-                <Pressable
-                  style={styles.pendingRemoveBtn}
-                  onPress={() => removePendingAsset(index)}
-                >
-                  <Text style={styles.pendingRemoveText}>Usuń z podglądu</Text>
-                </Pressable>
-              </View>
+        <View style={styles.container} ref={dropRef} {...dropZoneProps}>
+          {isDragOver && (
+            <View style={styles.dropOverlay}>
+              <Text style={styles.dropOverlayText}>Upuść pliki tutaj</Text>
             </View>
-          ))}
-          <View style={styles.pendingActions}>
-            <Pressable style={styles.pendingCancelBtn} onPress={() => setPendingAssets([])}>
-              <Text style={styles.pendingCancelText}>Anuluj</Text>
-            </Pressable>
-            <Pressable style={styles.pendingUploadBtn} onPress={confirmPendingUpload}>
-              <Text style={styles.pendingUploadText}>Wyślij zdjęcia</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
+          )}
 
-      {images.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            {Platform.OS === 'web'
-              ? 'Przeciągnij pliki lub kliknij „Galeria"'
-              : 'Dodaj zdjęcia stron książki'}
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={images}
-          keyExtractor={(item) => item.id}
-          renderItem={renderImage}
-          contentContainerStyle={styles.list}
-        />
-      )}
-
-      {uploading && (
-        <View style={styles.uploadOverlay}>
-          {fileProgress.length > 0 ? (
-            <View style={styles.progressList}>
-              <Text style={styles.uploadTitle}>Przesyłanie plików</Text>
-              {fileProgress.map((fp, i) => (
-                <View key={i} style={styles.progressItem}>
-                  <Text style={styles.progressName} numberOfLines={1}>
-                    {fp.name}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.progressStatus,
-                      {
-                        color:
-                          fp.status === 'done'
-                            ? '#06d6a0'
-                            : fp.status === 'error'
-                              ? '#e94560'
-                              : fp.status === 'uploading'
-                                ? '#f0a500'
-                                : '#888',
-                      },
-                    ]}
-                  >
-                    {fp.status === 'done'
-                      ? '✓'
-                      : fp.status === 'error'
-                        ? '✗'
-                        : fp.status === 'uploading'
-                          ? '↑'
-                          : '•'}
-                  </Text>
+          {pendingAssets.length > 0 && (
+            <GlassPanel style={styles.pendingPanel}>
+              <Text style={styles.pendingTitle}>Podgląd zdjęć ({pendingAssets.length})</Text>
+              {pendingAssets.map((asset, index) => (
+                <View key={`${asset.uri}-${index}`} style={styles.pendingItem}>
+                  <PageImagePreview
+                    imageUrl={asset.uri}
+                    style={styles.pendingThumb}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.pendingInfo}>
+                    <Text style={styles.pendingName} numberOfLines={1}>
+                      {asset.fileName || `Strona ${index + 1}`}
+                    </Text>
+                    <Pressable
+                      style={styles.pendingRemoveBtn}
+                      onPress={() => removePendingAsset(index)}
+                    >
+                      <Text style={styles.pendingRemoveText}>Usuń z podglądu</Text>
+                    </Pressable>
+                  </View>
                 </View>
               ))}
+              <View style={styles.pendingActions}>
+                <GhostButton
+                  label="Anuluj"
+                  onPress={() => setPendingAssets([])}
+                  style={styles.pendingActionBtn}
+                />
+                <PearlButton
+                  label="Wyślij zdjęcia"
+                  onPress={confirmPendingUpload}
+                  style={styles.pendingActionBtn}
+                />
+              </View>
+            </GlassPanel>
+          )}
+
+          {images.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                {Platform.OS === 'web'
+                  ? 'Przeciągnij pliki lub kliknij „Galeria"'
+                  : 'Dodaj zdjęcia stron książki'}
+              </Text>
             </View>
           ) : (
-            <>
-              <ActivityIndicator size="large" color="#fff" />
-              <Text style={styles.uploadText}>Przesyłanie...</Text>
-            </>
+            <FlatList
+              data={images}
+              keyExtractor={(item) => item.id}
+              renderItem={renderImage}
+              contentContainerStyle={styles.list}
+            />
           )}
-        </View>
-      )}
 
-      <View style={styles.bottomBar}>
-        <Pressable style={styles.addBtn} onPress={pickFromGallery}>
-          <Text style={styles.addBtnText}>Galeria</Text>
-        </Pressable>
-        {Platform.OS !== 'web' && (
-          <Pressable style={styles.addBtn} onPress={takePhoto}>
-            <Text style={styles.addBtnText}>Aparat</Text>
-          </Pressable>
-        )}
-        {images.length > 0 && (
-          <Pressable
-            style={styles.nextBtn}
-            onPress={() => router.push(`/(app)/projects/${id}/text-regions`)}
-          >
-            <Text style={styles.nextBtnText}>Dalej →</Text>
-          </Pressable>
-        )}
-      </View>
-      </View>
+          {uploading && (
+            <View style={styles.uploadOverlay}>
+              {fileProgress.length > 0 ? (
+                <GlassPanel style={styles.progressList}>
+                  <Text style={styles.uploadTitle}>Przesyłanie plików</Text>
+                  {fileProgress.map((fp, i) => (
+                    <View key={i} style={styles.progressItem}>
+                      <Text style={styles.progressName} numberOfLines={1}>
+                        {fp.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.progressStatus,
+                          {
+                            color:
+                              fp.status === 'done'
+                                ? t.color.accent.softGreen
+                                : fp.status === 'error'
+                                  ? t.color.accent.danger
+                                  : fp.status === 'uploading'
+                                    ? t.color.accent.pearl
+                                    : t.color.text.onSurfaceMuted,
+                          },
+                        ]}
+                      >
+                        {fp.status === 'done'
+                          ? '✓'
+                          : fp.status === 'error'
+                            ? '✗'
+                            : fp.status === 'uploading'
+                              ? '↑'
+                              : '•'}
+                      </Text>
+                    </View>
+                  ))}
+                </GlassPanel>
+              ) : (
+                <>
+                  <ActivityIndicator size="large" color={t.color.accent.pearl} />
+                  <Text style={styles.uploadText}>Przesyłanie...</Text>
+                </>
+              )}
+            </View>
+          )}
+
+          <View style={styles.bottomBar}>
+            <GhostButton label="Galeria" onPress={pickFromGallery} style={styles.bottomBtn} />
+            {Platform.OS !== 'web' && (
+              <GhostButton label="Aparat" onPress={takePhoto} style={styles.bottomBtn} />
+            )}
+            {images.length > 0 && (
+              <PearlButton
+                label="Dalej →"
+                onPress={() => router.push(`/(app)/projects/${id}/text-regions`)}
+                style={styles.bottomBtn}
+              />
+            )}
+          </View>
+        </View>
       </FadeZoomContent>
     </AudioFlowScreen>
   );
@@ -385,54 +388,76 @@ export default function ProjectImagesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  header: { padding: 20, paddingBottom: 8 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#e0e0e0' },
-  list: { padding: 16, paddingBottom: 100 },
+  list: { padding: t.spacing.gutterMobile, paddingBottom: 100 },
   card: {
-    backgroundColor: '#16213e',
-    borderRadius: 10,
+    borderRadius: t.radius.card,
     padding: 12,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#0f3460',
+    marginBottom: t.spacing.stackSm,
   },
   cardRow: { flexDirection: 'row', alignItems: 'center' },
-  pageNum: { color: '#888', fontSize: 16, fontWeight: 'bold', width: 28, textAlign: 'center' },
+  pageNum: {
+    color: t.color.text.onSurfaceMuted,
+    fontSize: 16,
+    fontWeight: 'bold',
+    width: 28,
+    textAlign: 'center',
+  },
   thumb: {
     width: 60,
     height: 80,
-    borderRadius: 6,
-    backgroundColor: '#0f3460',
+    borderRadius: t.radius.md,
+    backgroundColor: t.color.surface.glassMuted,
     marginHorizontal: 10,
   },
   cardInfo: { flex: 1 },
-  filename: { color: '#e0e0e0', fontSize: 14 },
-  meta: { color: '#666', fontSize: 12, marginTop: 2 },
-  cardActions: { flexDirection: 'row', gap: 8, marginTop: 8, justifyContent: 'flex-end' },
+  filename: { color: t.color.text.onDark, fontSize: 14, fontFamily: 'VarelaRound_400Regular' },
+  meta: {
+    color: t.color.text.onSurfaceMuted,
+    fontSize: 12,
+    fontFamily: 'VarelaRound_400Regular',
+    marginTop: 2,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    gap: t.spacing.stackSm,
+    marginTop: t.spacing.stackSm,
+    justifyContent: 'flex-end',
+  },
   moveBtn: {
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#0f3460',
+    borderRadius: t.radius.md,
+    backgroundColor: t.color.surface.glassLight,
+    borderWidth: 1,
+    borderColor: t.color.surface.glassEdge,
   },
   moveBtnDisabled: { opacity: 0.3 },
-  moveBtnText: { color: '#e0e0e0', fontSize: 16 },
-  deleteBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 6 },
-  deleteBtnText: { color: '#e94560', fontSize: 14 },
+  moveBtnText: { color: t.color.text.onDark, fontSize: 16 },
+  deleteBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: t.radius.md },
+  deleteBtnText: { color: t.color.accent.danger, fontSize: 14, fontFamily: 'VarelaRound_400Regular' },
   emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#888', fontSize: 16 },
+  emptyText: { color: t.color.text.onSurfaceMuted, fontSize: 16, fontFamily: 'VarelaRound_400Regular' },
   uploadOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  uploadText: { color: '#fff', marginTop: 12, fontSize: 16 },
-  uploadTitle: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  uploadText: {
+    color: t.color.text.onDark,
+    marginTop: 12,
+    fontSize: 16,
+    fontFamily: 'VarelaRound_400Regular',
+  },
+  uploadTitle: {
+    color: t.color.text.onDark,
+    fontSize: 16,
+    fontFamily: 'Quicksand_600SemiBold',
+    marginBottom: 12,
+  },
   progressList: {
-    backgroundColor: '#16213e',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: t.radius.card,
+    padding: t.spacing.gutterMobile,
     width: '80%',
     maxWidth: 400,
   },
@@ -442,73 +467,76 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 4,
   },
-  progressName: { color: '#e0e0e0', fontSize: 13, flex: 1, marginRight: 8 },
+  progressName: {
+    color: t.color.text.onDark,
+    fontSize: 13,
+    fontFamily: 'VarelaRound_400Regular',
+    flex: 1,
+    marginRight: 8,
+  },
   progressStatus: { fontSize: 16, fontWeight: 'bold' },
   dropOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(233,69,96,0.15)',
+    backgroundColor: t.color.accent.pearlTint,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 10,
     borderWidth: 3,
-    borderColor: '#e94560',
+    borderColor: t.color.accent.pearlBorder,
     borderStyle: 'dashed',
-    borderRadius: 12,
+    borderRadius: t.radius.card,
     margin: 8,
   },
-  dropOverlayText: { color: '#e94560', fontSize: 20, fontWeight: 'bold' },
+  dropOverlayText: {
+    color: t.color.accent.pearl,
+    fontSize: 20,
+    fontFamily: 'Quicksand_700Bold',
+  },
   pendingPanel: {
-    marginHorizontal: 16,
-    marginTop: 8,
+    marginHorizontal: t.spacing.gutterMobile,
+    marginTop: t.spacing.stackSm,
     padding: 12,
-    borderRadius: 12,
-    backgroundColor: '#16213e',
-    borderWidth: 1,
-    borderColor: '#0f3460',
+    borderRadius: t.radius.card,
   },
-  pendingTitle: { color: '#e0e0e0', fontSize: 16, fontWeight: '700', marginBottom: 10 },
+  pendingTitle: {
+    color: t.color.text.onDark,
+    fontSize: 16,
+    fontFamily: 'Quicksand_600SemiBold',
+    marginBottom: 10,
+  },
   pendingItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  pendingThumb: { width: 72, height: 96, borderRadius: 8, marginRight: 12 },
+  pendingThumb: { width: 72, height: 96, borderRadius: t.radius.md, marginRight: 12 },
   pendingInfo: { flex: 1 },
-  pendingName: { color: '#e0e0e0', fontSize: 14, marginBottom: 6 },
-  pendingRemoveBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
-  pendingRemoveText: { color: '#e94560', fontSize: 13, fontWeight: '600' },
-  pendingActions: { flexDirection: 'row', gap: 10, justifyContent: 'flex-end', marginTop: 2 },
-  pendingCancelBtn: { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8 },
-  pendingCancelText: { color: '#cbd5e1', fontSize: 14, fontWeight: '600' },
-  pendingUploadBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: '#06d6a0',
+  pendingName: {
+    color: t.color.text.onDark,
+    fontSize: 14,
+    fontFamily: 'VarelaRound_400Regular',
+    marginBottom: 6,
   },
-  pendingUploadText: { color: '#1a1a2e', fontSize: 14, fontWeight: '700' },
+  pendingRemoveBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
+  pendingRemoveText: {
+    color: t.color.accent.danger,
+    fontSize: 13,
+    fontFamily: 'VarelaRound_400Regular',
+  },
+  pendingActions: {
+    flexDirection: 'row',
+    gap: t.spacing.stackSm,
+    justifyContent: 'flex-end',
+    marginTop: t.spacing.stackSm,
+  },
+  pendingActionBtn: { flex: 1 },
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     flexDirection: 'row',
-    padding: 16,
+    padding: t.spacing.gutterMobile,
     gap: 12,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: t.color.surface.glassMuted,
     borderTopWidth: 1,
-    borderTopColor: '#0f3460',
+    borderTopColor: t.color.surface.glassEdge,
   },
-  addBtn: {
-    flex: 1,
-    backgroundColor: '#e94560',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-  },
-  addBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  nextBtn: {
-    flex: 1,
-    backgroundColor: '#06d6a0',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-  },
-  nextBtnText: { color: '#1a1a2e', fontSize: 15, fontWeight: '700' },
+  bottomBtn: { flex: 1 },
 });
