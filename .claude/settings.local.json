@@ -28,7 +28,8 @@
       "Skill(graphify)",
       "Bash(cat /Users/awieczorek/dev/book-scaner/.claude/settings.local.json 2>/dev/null; echo \"---\"; cat /Users/awieczorek/.claude/settings.json 2>/dev/null | head -80)",
       "Read(//Users/awieczorek/.claude/**)",
-      "Bash(graphify query *)"
+      "Bash(graphify query *)",
+      "Bash(npm test *)"
     ]
   }
 }

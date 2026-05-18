@@ -708,6 +708,9 @@ export function AudioFlowPlayerPanel({
   onPlayPress,
   onPreviousPress,
   onNextPress,
+  isPlaying,
+  onSkipBack,
+  onSkipForward,
 }: {
   progress: number;
   currentTime: string;
@@ -715,6 +718,9 @@ export function AudioFlowPlayerPanel({
   onPlayPress: (event: GestureResponderEvent) => void;
   onPreviousPress?: (event: GestureResponderEvent) => void;
   onNextPress?: (event: GestureResponderEvent) => void;
+  isPlaying?: boolean;
+  onSkipBack?: () => void;
+  onSkipForward?: () => void;
 }) {
   return (
     <GlassPanel style={styles.playerPanel}>
@@ -729,14 +735,38 @@ export function AudioFlowPlayerPanel({
           icon="‹‹"
           onPress={onPreviousPress ?? onPlayPress}
         />
+        {onSkipBack != null && (
+          <Pressable
+            accessibilityLabel="-10s"
+            accessibilityRole="button"
+            onPress={onSkipBack}
+            style={({ pressed }) => [styles.roundIconButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.roundIconText}>
+              {'«'}<Text style={styles.skipNumber}>{'10'}</Text>
+            </Text>
+          </Pressable>
+        )}
         <Pressable
           accessibilityLabel="Odtwarzaj lub pauza"
           accessibilityRole="button"
           onPress={onPlayPress}
           style={({ pressed }) => [styles.playerPlayButton, pressed && styles.pressed]}
         >
-          <Text style={styles.playerPlayIcon}>▶</Text>
+          <Text style={styles.playerPlayIcon}>{isPlaying ? '⏸' : '▶'}</Text>
         </Pressable>
+        {onSkipForward != null && (
+          <Pressable
+            accessibilityLabel="+10s"
+            accessibilityRole="button"
+            onPress={onSkipForward}
+            style={({ pressed }) => [styles.roundIconButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.roundIconText}>
+              <Text style={styles.skipNumber}>{'10'}</Text>{'»'}
+            </Text>
+          </Pressable>
+        )}
         <RoundIconButton label="Następny rozdział" icon="››" onPress={onNextPress ?? onPlayPress} />
       </View>
     </GlassPanel>
@@ -1013,6 +1043,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 22,
+  },
+  skipNumber: {
+    fontSize: 11,
   },
   appHeader: {
     alignItems: 'center',

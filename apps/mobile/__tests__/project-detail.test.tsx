@@ -7,7 +7,11 @@ const mockReplace = jest.fn();
 const mockBack = jest.fn();
 const mockGetProject = jest.fn();
 const mockGetAudioTracks = jest.fn();
+const mockGetVoices = jest.fn();
 const mockDeleteProject = jest.fn();
+const mockHandlePlayPause = jest.fn();
+const mockGoToSceneIndex = jest.fn();
+const mockSeekBy = jest.fn();
 const screenOptions: Array<{ headerTransparent?: boolean }> = [];
 
 jest.mock('expo-router', () => ({
@@ -44,8 +48,32 @@ jest.mock('../lib/api', () => ({
   api: {
     getProject: (...args: unknown[]) => mockGetProject(...args),
     getAudioTracks: (...args: unknown[]) => mockGetAudioTracks(...args),
+    getVoices: (...args: unknown[]) => mockGetVoices(...args),
     deleteProject: (...args: unknown[]) => mockDeleteProject(...args),
   },
+}));
+
+jest.mock('../lib/use-audio-player', () => ({
+  useAudioPlayer: () => ({
+    playlist: [],
+    loading: false,
+    currentIndex: 0,
+    isPlaying: false,
+    positionMs: 0,
+    durationMs: 0,
+    isOfflineMode: false,
+    isCached: false,
+    cacheSize: 0,
+    downloading: false,
+    downloadProgress: { done: 0, total: 0 },
+    handlePlayPause: mockHandlePlayPause,
+    goToSceneIndex: mockGoToSceneIndex,
+    seekBy: mockSeekBy,
+    loadAndPlay: jest.fn(),
+    jumpToScene: jest.fn(),
+    handleDownloadOffline: jest.fn(),
+    handleDeleteCache: jest.fn(),
+  }),
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -83,6 +111,7 @@ describe('ProjectDetailScreen TTS next step', () => {
     screenOptions.length = 0;
     mockGetProject.mockResolvedValue(baseProject);
     mockGetAudioTracks.mockResolvedValue([]);
+    mockGetVoices.mockResolvedValue([]);
   });
 
   it('shows a Text to Speech CTA when OCR is complete', async () => {
@@ -126,10 +155,14 @@ describe('ProjectDetailScreen TTS next step', () => {
     expect(screen.getByLabelText('Poprzedni rozdział')).toBeTruthy();
     expect(screen.getByLabelText('Odtwarzaj lub pauza')).toBeTruthy();
     expect(screen.getByLabelText('Następny rozdział')).toBeTruthy();
+    expect(screen.getByText('Zaawansowany odtwarzacz')).toBeTruthy();
     expect(screen.queryByText('Następny krok: Text to Speech')).toBeNull();
 
     fireEvent.press(screen.getByLabelText('Odtwarzaj lub pauza'));
+    expect(mockHandlePlayPause).toHaveBeenCalled();
+    expect(mockPush).not.toHaveBeenCalledWith('/(app)/projects/proj-1/player');
 
+    fireEvent.press(screen.getByText('Zaawansowany odtwarzacz'));
     expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/player');
   });
 

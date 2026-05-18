@@ -1,238 +1,45 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  Pressable,
-  FlatList,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Audio } from 'expo-av';
-import { Asset } from 'expo-asset';
-import { api } from '../../../../lib/api';
-import { offlineCache } from '../../../../lib/offline-cache';
+import { useAudioPlayer } from '../../../../lib/use-audio-player';
 import { useNetwork } from '../../../../lib/use-network';
 import { AudioFlowScreen } from '../../../../components/audioflow';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
-import { buildPlaylistWithJingles, getLocalJingle } from '../../../../lib/local-jingles';
-import type { PlaylistItemResponse } from '@book-scanner/shared';
+
+const formatTime = (ms: number) => {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
+};
 
 export default function PlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { isOnline } = useNetwork();
-  const [playlist, setPlaylist] = useState<PlaylistItemResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [positionMs, setPositionMs] = useState(0);
-  const [durationMs, setDurationMs] = useState(0);
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const [downloadProgress, setDownloadProgress] = useState({ done: 0, total: 0 });
-  const [isCached, setIsCached] = useState(false);
-  const [cacheSize, setCacheSize] = useState(0);
-  const soundRef = useRef<Audio.Sound | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        try {
-          await Audio.setAudioModeAsync({
-            playsInSilentModeIOS: true,
-            staysActiveInBackground: true,
-          });
-        } catch (audioModeErr) {
-          console.warn('Audio.setAudioModeAsync failed', audioModeErr);
-        }
-
-        const cached = await offlineCache.getCachedPlaylist(id);
-
-        if (!isOnline && cached) {
-          const offlineItems: PlaylistItemResponse[] = cached.items.map((c, i) => ({
-            id: c.id,
-            projectId: id,
-            type: 'scene' as const,
-            referenceId: c.id,
-            orderIndex: i,
-            audioUrl: c.localUri,
-            durationMs: c.durationMs,
-          }));
-          setPlaylist(offlineItems);
-          setIsOfflineMode(true);
-          setIsCached(true);
-          setCacheSize(cached.totalSize);
-        } else if (!isOnline) {
-          Alert.alert('Offline', 'Brak połączenia i brak pobranego cache. Pobierz audio online.');
-        } else {
-          const [items, project] = await Promise.all([
-            api.getPlaylist(id),
-            api.getProject(id),
-          ]);
-
-          const jinglePreset = project.interstitialPreset;
-          if (jinglePreset?.startsWith('local:')) {
-            const jingle = getLocalJingle(jinglePreset);
-            if (jingle) {
-              const jingleAsset = Asset.fromModule(jingle.asset);
-              await jingleAsset.downloadAsync();
-              const jingleUri = jingleAsset.localUri ?? jingleAsset.uri;
-              setPlaylist(buildPlaylistWithJingles(items, jingleUri));
-            } else {
-              setPlaylist(items);
-            }
-          } else {
-            setPlaylist(items);
-          }
-
-          setIsCached(cached !== null);
-          if (cached) setCacheSize(cached.totalSize);
-        }
-      } catch (err) {
-        console.error('Player init failed', err);
-        const msg = err instanceof Error ? err.message : 'Nieznany błąd';
-        Alert.alert('Nie udało się załadować playlisty', msg);
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => {
-      soundRef.current?.unloadAsync();
-    };
-  }, [id, isOnline]);
-
-  const loadAndPlay = useCallback(
-    async (index: number) => {
-      if (index < 0 || index >= playlist.length) return;
-
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-
-      setCurrentIndex(index);
-      setPositionMs(0);
-      setIsPlaying(true);
-
-      try {
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: playlist[index].audioUrl },
-          { shouldPlay: true },
-          (status) => {
-            if (status.isLoaded) {
-              setPositionMs(status.positionMillis);
-              setDurationMs(status.durationMillis || playlist[index].durationMs);
-              if (status.didJustFinish) {
-                playNext(index);
-              }
-            }
-          },
-        );
-        soundRef.current = sound;
-      } catch {
-        setIsPlaying(false);
-      }
-    },
-    [playlist],
-  );
-
-  const playNext = useCallback(
-    (fromIndex: number) => {
-      const next = fromIndex + 1;
-      if (next < playlist.length) {
-        loadAndPlay(next);
-      } else {
-        setIsPlaying(false);
-      }
-    },
-    [playlist, loadAndPlay],
-  );
-
-  const handlePlayPause = async () => {
-    if (!soundRef.current) {
-      if (playlist.length > 0) loadAndPlay(currentIndex);
-      return;
-    }
-
-    const status = await soundRef.current.getStatusAsync();
-    if (status.isLoaded && status.isPlaying) {
-      await soundRef.current.pauseAsync();
-      setIsPlaying(false);
-    } else if (status.isLoaded) {
-      await soundRef.current.playAsync();
-      setIsPlaying(true);
-    }
-  };
-
-  const goToSceneIndex = (direction: -1 | 1) => {
-    const sceneIndices = playlist
-      .map((item, i) => (item.type === 'scene' ? i : -1))
-      .filter((i) => i >= 0);
-
-    const currentScenePos = sceneIndices.findIndex((i) => i >= currentIndex);
-    const targetPos = currentScenePos + direction;
-
-    if (targetPos >= 0 && targetPos < sceneIndices.length) {
-      loadAndPlay(sceneIndices[targetPos]);
-    }
-  };
-
-  const jumpToScene = (sceneOrderIndex: number) => {
-    const targetIndex = playlist.findIndex(
-      (item) => item.type === 'scene' && item.sceneOrderIndex === sceneOrderIndex,
-    );
-    if (targetIndex >= 0) {
-      loadAndPlay(targetIndex);
-    }
-  };
-
-  const handleDownloadOffline = async () => {
-    if (playlist.length === 0) return;
-    setDownloading(true);
-    try {
-      await offlineCache.downloadProject(id, playlist, (done, total) => {
-        setDownloadProgress({ done, total });
-      });
-      setIsCached(true);
-      const size = await offlineCache.getCacheSize(id);
-      setCacheSize(size);
-      Alert.alert('Pobrano', 'Audio jest teraz dostępne offline.');
-    } catch {
-      Alert.alert('Błąd', 'Nie udało się pobrać audio.');
-    } finally {
-      setDownloading(false);
-    }
-  };
-
-  const handleDeleteCache = () => {
-    Alert.alert('Usuń cache', 'Usunąć pobrane audio z tego projektu?', [
-      { text: 'Anuluj', style: 'cancel' },
-      {
-        text: 'Usuń',
-        style: 'destructive',
-        onPress: async () => {
-          await offlineCache.deleteProjectCache(id);
-          setIsCached(false);
-        },
-      },
-    ]);
-  };
+  const {
+    playlist,
+    loading,
+    currentIndex,
+    isPlaying,
+    positionMs,
+    durationMs,
+    isOfflineMode,
+    isCached,
+    cacheSize,
+    downloading,
+    downloadProgress,
+    handlePlayPause,
+    goToSceneIndex,
+    jumpToScene,
+    handleDownloadOffline,
+    handleDeleteCache,
+  } = useAudioPlayer(id);
 
   const currentItem = playlist[currentIndex];
   const sceneItems = playlist.filter((p) => p.type === 'scene');
   const totalDuration = playlist.reduce((sum, p) => sum + p.durationMs, 0);
-
   const progressBefore = playlist.slice(0, currentIndex).reduce((s, p) => s + p.durationMs, 0);
   const globalProgress = totalDuration > 0 ? (progressBefore + positionMs) / totalDuration : 0;
-
   const trackProgress = durationMs > 0 ? positionMs / durationMs : 0;
-
-  const formatTime = (ms: number) => {
-    const s = Math.floor(ms / 1000);
-    const m = Math.floor(s / 60);
-    return `${m}:${String(s % 60).padStart(2, '0')}`;
-  };
 
   if (loading) {
     return (

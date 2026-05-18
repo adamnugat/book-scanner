@@ -14,6 +14,7 @@ import {
 import { Stack, useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../../../lib/api';
+import { useAudioPlayer } from '../../../../lib/use-audio-player';
 import {
   AudioFlowPlayerPanel,
   AudioFlowScreen,
@@ -30,7 +31,7 @@ import {
   AudioFlowGlobalMenuButton,
   AudioFlowTopChrome,
 } from '../../../../components/audioflow-global-navigation';
-import type { AudioTrackResponse, ProjectResponse } from '@book-scanner/shared';
+import type { AudioTrackResponse, ProjectResponse, VoiceResponse } from '@book-scanner/shared';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -63,6 +64,9 @@ export default function ProjectDetailScreen() {
   const insets = useSafeAreaInsets();
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [audioTracks, setAudioTracks] = useState<AudioTrackResponse[]>([]);
+  const [voices, setVoices] = useState<VoiceResponse[]>([]);
+
+  const audioPlayer = useAudioPlayer(id);
 
   useFocusEffect(
     useCallback(() => {
@@ -70,15 +74,17 @@ export default function ProjectDetailScreen() {
 
       (async () => {
         try {
-          const [projectData, audioTracks] = await Promise.all([
+          const [projectData, audioTracks, voicesData] = await Promise.all([
             api.getProject(id),
             api.getAudioTracks(id),
+            api.getVoices(),
           ]);
 
           if (!isActive) return;
 
           setProject(projectData);
           setAudioTracks(audioTracks);
+          setVoices(voicesData);
         } catch {
           Alert.alert('Błąd', 'Nie udało się pobrać projektu');
           router.back();
@@ -177,7 +183,8 @@ export default function ProjectDetailScreen() {
   const audioMeta =
     audioTracks.length === 1 ? '1 ścieżka audio' : `${audioTracks.length} ścieżek audio`;
   const languageMeta = project.language.toUpperCase();
-  const voiceMeta = project.voiceId ? `Lektor: ${project.voiceId}` : 'Lektor do wyboru';
+  const voiceName = project.voiceId ? voices.find((v) => v.elevenlabsVoiceId === project.voiceId)?.name : null;
+  const voiceMeta = voiceName ? `Lektor: ${voiceName}` : 'Lektor do wyboru';
   const interstitialMeta = project.interstitialPreset
     ? `Wstawka: ${project.interstitialPreset}`
     : 'Bez wstawki';
@@ -248,13 +255,31 @@ export default function ProjectDetailScreen() {
                 </View>
 
                 <AudioFlowPlayerPanel
-                  currentTime="00:00"
-                  totalTime={totalDuration}
-                  progress={0}
-                  onNextPress={handleOpenPlayer}
-                  onPlayPress={handleOpenPlayer}
-                  onPreviousPress={handleOpenPlayer}
+                  progress={
+                    audioPlayer.durationMs > 0
+                      ? audioPlayer.positionMs / audioPlayer.durationMs
+                      : 0
+                  }
+                  currentTime={formatDuration(audioPlayer.positionMs)}
+                  totalTime={
+                    audioPlayer.durationMs > 0
+                      ? formatDuration(audioPlayer.durationMs)
+                      : totalDuration
+                  }
+                  isPlaying={audioPlayer.isPlaying}
+                  onPlayPress={() => audioPlayer.handlePlayPause()}
+                  onPreviousPress={() => audioPlayer.goToSceneIndex(-1)}
+                  onNextPress={() => audioPlayer.goToSceneIndex(1)}
+                  onSkipBack={() => audioPlayer.seekBy(-10000)}
+                  onSkipForward={() => audioPlayer.seekBy(10000)}
                 />
+                <Pressable
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.advancedPlayerButton, pressed && styles.pressed]}
+                  onPress={handleOpenPlayer}
+                >
+                  <Text style={styles.advancedPlayerButtonText}>Zaawansowany odtwarzacz</Text>
+                </Pressable>
               </View>
             </View>
           ) : (
@@ -312,8 +337,8 @@ export default function ProjectDetailScreen() {
               <ProjectToolTile
                 accessibilityLabel="Otwórz głos i audio"
                 body={
-                  project.voiceId
-                    ? `Lektor: ${project.voiceId}`
+                  voiceName
+                    ? `Lektor: ${voiceName}`
                     : 'Wybierz lektora, ton i tempo nagrania.'
                 }
                 icon="≋"
@@ -507,5 +532,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: t.spacing.stackMd,
+  },
+  advancedPlayerButton: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginTop: 8,
+  },
+  advancedPlayerButtonText: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
