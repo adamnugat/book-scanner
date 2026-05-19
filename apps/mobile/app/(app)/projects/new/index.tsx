@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,24 +10,27 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Audio } from 'expo-av';
 import { api } from '../../../../lib/api';
 import {
   AudioFlowFooterMenu,
   AudioFlowScreen,
   GlassPanel,
   PickerCard,
-  SectionHeading,
+  SectionAccordion,
   audioFlowStyles,
   audioFlowTokens,
 } from '../../../../components/audioflow';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type { SupportedLanguage, VoiceResponse } from '@book-scanner/shared';
-import { LOCAL_JINGLES } from '../../../../lib/local-jingles';
+import { LOCAL_JINGLES, type LocalJingle } from '../../../../lib/local-jingles';
 
 const LANGUAGES: { id: SupportedLanguage; label: string }[] = [
   { id: 'pl', label: 'Polski' },
   { id: 'en', label: 'English' },
 ];
+
+type ExpandedSection = 'language' | 'voice' | 'jingle' | null;
 
 export default function NewProjectScreen() {
   const insets = useSafeAreaInsets();
@@ -41,6 +43,9 @@ export default function NewProjectScreen() {
   const [selectedPresetName, setSelectedPresetName] = useState<string>(LOCAL_JINGLES[0].name);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<ExpandedSection>(null);
+  const [playingJingleName, setPlayingJingleName] = useState<string | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -72,10 +77,52 @@ export default function NewProjectScreen() {
     };
   }, [language]);
 
+  useEffect(() => {
+    return () => {
+      void soundRef.current?.unloadAsync();
+    };
+  }, []);
+
   const canSubmit = useMemo(
     () => title.trim().length > 0 && Boolean(selectedVoiceId) && !submitting,
     [selectedVoiceId, submitting, title],
   );
+
+  const handleEditPress = (section: ExpandedSection) => {
+    setExpandedSection((current) => (current === section ? null : section));
+  };
+
+  const handleJinglePress = async (jingle: LocalJingle) => {
+    setSelectedPresetName(jingle.name);
+
+    if (soundRef.current) {
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
+    }
+
+    if (playingJingleName === jingle.name) {
+      setPlayingJingleName(null);
+      return;
+    }
+
+    try {
+      setPlayingJingleName(jingle.name);
+      const { sound } = await Audio.Sound.createAsync(
+        jingle.asset,
+        { shouldPlay: true },
+        (status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            setPlayingJingleName(null);
+            soundRef.current = null;
+            void sound.unloadAsync();
+          }
+        },
+      );
+      soundRef.current = sound;
+    } catch {
+      setPlayingJingleName(null);
+    }
+  };
 
   const handleCreate = async () => {
     if (!title.trim()) {
@@ -105,108 +152,124 @@ export default function NewProjectScreen() {
     }
   };
 
+  const languageSummary = LANGUAGES.find((l) => l.id === language)?.label ?? language;
+  const voiceSummary = loadingOptions
+    ? 'Ładowanie...'
+    : (voices.find((v) => v.elevenlabsVoiceId === selectedVoiceId)?.name ?? '');
+  const jingleSummary =
+    LOCAL_JINGLES.find((j) => j.name === selectedPresetName)?.label ?? selectedPresetName;
+
   return (
     <AudioFlowScreen>
       <FadeZoomContent>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={[styles.content, { paddingBottom: 24 + footerPadding }]}
-      >
-        <View style={styles.hero}>
-          <Text style={styles.stepLabel}>Krok 1 z 3</Text>
-          <Text style={styles.heading}>Zacznijmy od podstaw</Text>
-          <Text style={styles.subheading}>
-            Nadaj audiobookowi tytuł, wybierz język narracji i brzmienie, które poprowadzi słuchacza
-            przez kolejne strony.
-          </Text>
-        </View>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[styles.content, { paddingBottom: 24 + footerPadding }]}
+        >
+          <View style={styles.hero}>
+            <Text style={styles.stepLabel}>Krok 1 z 3</Text>
+            <Text style={styles.heading}>Zacznijmy od podstaw</Text>
+            <Text style={styles.subheading}>
+              Nadaj audiobookowi tytuł, wybierz język narracji i brzmienie, które poprowadzi
+              słuchacza przez kolejne strony.
+            </Text>
+          </View>
 
-        <GlassPanel style={styles.card}>
-          <Text style={styles.label}>Tytuł</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="np. Pan Tadeusz"
-            placeholderTextColor={audioFlowTokens.color.text.onSurfaceMuted}
-            value={title}
-            onChangeText={setTitle}
-          />
+          <GlassPanel style={styles.card}>
+            <Text style={styles.label}>Tytuł</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="np. Pan Tadeusz"
+              placeholderTextColor={audioFlowTokens.color.text.onSurfaceMuted}
+              value={title}
+              onChangeText={setTitle}
+            />
+          </GlassPanel>
 
-          <Text style={styles.label}>Język</Text>
-          <View style={styles.optionRow}>
+          <SectionAccordion
+            title="Język"
+            description="Wybierz język narracji audiobooka."
+            selectedSummary={languageSummary}
+            isExpanded={expandedSection === 'language'}
+            onEditPress={() => handleEditPress('language')}
+          >
             {LANGUAGES.map((lang) => {
               const selected = language === lang.id;
               return (
-                <Pressable
+                <PickerCard
                   key={lang.id}
-                  style={[styles.choicePill, selected && styles.choicePillSelected]}
-                  onPress={() => setLanguage(lang.id)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                >
-                  <Text style={[styles.choiceText, selected && styles.choiceTextSelected]}>
-                    {lang.label}
-                  </Text>
-                </Pressable>
+                  selected={selected}
+                  title={lang.label}
+                  onPress={() => {
+                    setLanguage(lang.id);
+                    setExpandedSection(null);
+                  }}
+                  style={styles.optionCard}
+                />
               );
             })}
-          </View>
-        </GlassPanel>
+          </SectionAccordion>
 
-        {loadingOptions ? (
-          <GlassPanel style={styles.loadingCard}>
-            <ActivityIndicator color={audioFlowTokens.color.accent.pearl} />
-            <Text style={styles.loadingText}>Ładowanie głosów...</Text>
-          </GlassPanel>
-        ) : (
-          <>
-            <View style={styles.section}>
-              <SectionHeading
+          {loadingOptions ? (
+            <GlassPanel style={styles.loadingCard}>
+              <ActivityIndicator color={audioFlowTokens.color.accent.pearl} />
+              <Text style={styles.loadingText}>Ładowanie głosów...</Text>
+            </GlassPanel>
+          ) : (
+            <>
+              <SectionAccordion
                 title="Lektor"
-                hint="Wybierz głos, który przeczyta wszystkie strony."
-                style={styles.sectionHeading}
-              />
-              {voices.length === 0 ? (
-                <Text style={styles.emptyText}>Brak dostępnych głosów dla wybranego języka.</Text>
-              ) : (
-                voices.map((voice) => {
-                  const selected = selectedVoiceId === voice.elevenlabsVoiceId;
+                description="Wybierz głos, który przeczyta wszystkie strony."
+                selectedSummary={voiceSummary}
+                isExpanded={expandedSection === 'voice'}
+                onEditPress={() => handleEditPress('voice')}
+              >
+                {voices.length === 0 ? (
+                  <Text style={styles.emptyText}>
+                    Brak dostępnych głosów dla wybranego języka.
+                  </Text>
+                ) : (
+                  voices.map((voice) => {
+                    const selected = selectedVoiceId === voice.elevenlabsVoiceId;
+                    return (
+                      <PickerCard
+                        key={voice.id}
+                        selected={selected}
+                        title={voice.name}
+                        meta={voice.language.toUpperCase()}
+                        onPress={() => setSelectedVoiceId(voice.elevenlabsVoiceId)}
+                        style={styles.optionCard}
+                      />
+                    );
+                  })
+                )}
+              </SectionAccordion>
+
+              <SectionAccordion
+                title="Wstawka muzyczna"
+                description="Ten dźwięk oddzieli pliki audio dla kolejnych stron."
+                selectedSummary={jingleSummary}
+                isExpanded={expandedSection === 'jingle'}
+                onEditPress={() => handleEditPress('jingle')}
+              >
+                {LOCAL_JINGLES.map((jingle) => {
+                  const selected = selectedPresetName === jingle.name;
+                  const playing = playingJingleName === jingle.name;
                   return (
                     <PickerCard
-                      key={voice.id}
+                      key={jingle.name}
                       selected={selected}
-                      title={voice.name}
-                      meta={voice.language.toUpperCase()}
-                      onPress={() => setSelectedVoiceId(voice.elevenlabsVoiceId)}
+                      title={`${jingle.icon}  ${jingle.label}`}
+                      onPress={() => void handleJinglePress(jingle)}
+                      trailing={playing ? <Text style={styles.playIcon}>▶</Text> : undefined}
                       style={styles.optionCard}
                     />
                   );
-                })
-              )}
-            </View>
-
-            <View style={styles.section}>
-              <SectionHeading
-                title="Wstawka muzyczna"
-                hint="Ten dźwięk oddzieli pliki audio dla kolejnych stron."
-                style={styles.sectionHeading}
-              />
-              {LOCAL_JINGLES.map((jingle) => {
-                const selected = selectedPresetName === jingle.name;
-                return (
-                  <PickerCard
-                    key={jingle.name}
-                    selected={selected}
-                    title={`${jingle.icon}  ${jingle.label}`}
-                    onPress={() => setSelectedPresetName(jingle.name)}
-                    style={styles.optionCard}
-                  />
-                );
-              })}
-            </View>
-          </>
-        )}
-
-      </ScrollView>
+                })}
+              </SectionAccordion>
+            </>
+          )}
+        </ScrollView>
       </FadeZoomContent>
 
       <AudioFlowFooterMenu
@@ -222,7 +285,6 @@ export default function NewProjectScreen() {
     </AudioFlowScreen>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -248,28 +310,7 @@ const styles = StyleSheet.create({
   },
   input: {
     ...audioFlowStyles.field,
-    marginBottom: 18,
   },
-  optionRow: { flexDirection: 'row', gap: 10 },
-  choicePill: {
-    flex: 1,
-    borderRadius: audioFlowTokens.radius.card,
-    borderWidth: 1,
-    borderColor: audioFlowTokens.color.surface.glassEdge,
-    paddingVertical: 13,
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-  },
-  choicePillSelected: {
-    borderColor: audioFlowTokens.color.accent.pearlBorder,
-    backgroundColor: audioFlowTokens.color.accent.pearlTint,
-  },
-  choiceText: {
-    color: audioFlowTokens.color.text.onSurfaceSubtle,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  choiceTextSelected: { color: audioFlowTokens.color.text.onDark },
   loadingCard: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -277,8 +318,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   loadingText: { color: audioFlowTokens.color.text.onSurfaceSubtle, marginTop: 10 },
-  section: { marginBottom: 22 },
-  sectionHeading: { marginBottom: 12 },
   emptyText: { color: audioFlowTokens.color.accent.danger, fontSize: 14, lineHeight: 20 },
   optionCard: { marginBottom: 10 },
+  playIcon: {
+    color: audioFlowTokens.color.accent.pearl,
+    fontSize: 16,
+    fontWeight: '700',
+    marginLeft: 4,
+    marginTop: 2,
+  },
 });

@@ -15,6 +15,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { Feather } from '@expo/vector-icons';
 
 import { ProjectCoverTexture } from './ProjectCoverTexture';
 
@@ -320,6 +321,53 @@ export function SectionHeading({
     <View style={style}>
       <Text style={styles.sectionTitle}>{title}</Text>
       {hint ? <Text style={styles.sectionHint}>{hint}</Text> : null}
+    </View>
+  );
+}
+
+interface SectionAccordionProps {
+  title: string;
+  description: string;
+  selectedSummary: string;
+  isExpanded: boolean;
+  onEditPress: () => void;
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
+}
+
+export function SectionAccordion({
+  title,
+  description,
+  selectedSummary,
+  isExpanded,
+  onEditPress,
+  children,
+  style,
+}: SectionAccordionProps) {
+  return (
+    <View style={[styles.accordion, style]}>
+      <View style={styles.accordionHeader}>
+        <Text style={styles.accordionTitle}>{title}</Text>
+        {!isExpanded && (
+          <Text style={styles.accordionSummary} numberOfLines={1}>
+            {selectedSummary}
+          </Text>
+        )}
+        <Pressable
+          accessibilityLabel={`Edytuj ${title}`}
+          accessibilityRole="button"
+          onPress={onEditPress}
+          style={({ pressed }) => [styles.accordionEditBtn, pressed && styles.pressed]}
+        >
+          <Feather name="edit-2" size={18} color={t.color.text.onSurfaceSubtle} />
+        </Pressable>
+      </View>
+      {isExpanded && (
+        <View style={styles.accordionBody}>
+          <Text style={styles.accordionDescription}>{description}</Text>
+          {children}
+        </View>
+      )}
     </View>
   );
 }
@@ -1453,5 +1501,36 @@ const styles = StyleSheet.create({
     ...t.typography.labelSm,
     lineHeight: 17,
     marginTop: 4,
+  },
+  accordion: {
+    marginBottom: 16,
+  },
+  accordionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    paddingVertical: 4,
+  },
+  accordionTitle: {
+    ...t.typography.headlineMd,
+    color: t.color.text.onDark,
+  },
+  accordionSummary: {
+    color: t.color.text.onSurfaceSubtle,
+    ...t.typography.labelMd,
+    flex: 1,
+    marginLeft: 10,
+    textAlign: 'right',
+  },
+  accordionEditBtn: {
+    marginLeft: 8,
+    padding: 8,
+  },
+  accordionBody: {
+    marginTop: 10,
+  },
+  accordionDescription: {
+    ...t.typography.bodyMd,
+    color: t.color.text.onSurfaceSubtle,
+    marginBottom: 14,
   },
 });

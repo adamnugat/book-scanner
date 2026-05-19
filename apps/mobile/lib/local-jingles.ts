@@ -9,6 +9,13 @@ export interface LocalJingle {
 
 export const LOCAL_JINGLES: LocalJingle[] = [
   {
+    name: 'local:page-turn-3',
+    label: 'Wstawka głosowa',
+    icon: '🎙️',
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    asset: require('../assets/audio/page-turn-3.mp3'),
+  },
+  {
     name: 'local:page-turn-1',
     label: 'Przewracanie strony 1',
     icon: '🔔',
@@ -21,13 +28,6 @@ export const LOCAL_JINGLES: LocalJingle[] = [
     icon: '🔔',
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     asset: require('../assets/audio/page-turn-2.wav'),
-  },
-  {
-    name: 'local:page-turn-3',
-    label: 'Wstawka głosowa',
-    icon: '🎙️',
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    asset: require('../assets/audio/page-turn-3.mp3'),
   },
 ];
 

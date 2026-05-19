@@ -22,6 +22,15 @@ jest.mock('../assets/audio/page-turn-1.mp3', () => 1, { virtual: true });
 jest.mock('../assets/audio/page-turn-2.wav', () => 2, { virtual: true });
 jest.mock('../assets/audio/page-turn-3.mp3', () => 3, { virtual: true });
 
+jest.mock('expo-av', () => ({
+  Audio: {
+    Sound: {
+      createAsync: jest.fn().mockResolvedValue({ sound: { unloadAsync: jest.fn() } }),
+    },
+    setAudioModeAsync: jest.fn(),
+  },
+}));
+
 import NewProjectScreen from '../app/(app)/projects/new';
 
 describe('New audiobook wizard step 1', () => {
@@ -56,14 +65,20 @@ describe('New audiobook wizard step 1', () => {
     expect(screen.getByText('Zacznijmy od podstaw')).toBeTruthy();
     expect(screen.getByText('Lektor')).toBeTruthy();
     expect(screen.getByText('Wstawka muzyczna')).toBeTruthy();
-    expect(await screen.findByText('Marta')).toBeTruthy();
 
+    // Open voice accordion and select voice
+    await waitFor(() => expect(screen.getByLabelText('Edytuj Lektor')).toBeTruthy());
+    fireEvent.press(screen.getByLabelText('Edytuj Lektor'));
+    expect(await screen.findByText('Marta')).toBeTruthy();
+    fireEvent.press(screen.getByText('Marta'));
+
+    // Open jingle accordion and verify all options are present
+    fireEvent.press(screen.getByLabelText('Edytuj Wstawka muzyczna'));
+    expect(screen.getByText('🎙️  Wstawka głosowa')).toBeTruthy();
     expect(screen.getByText('🔔  Przewracanie strony 1')).toBeTruthy();
     expect(screen.getByText('🔔  Przewracanie strony 2')).toBeTruthy();
-    expect(screen.getByText('🎙️  Wstawka głosowa')).toBeTruthy();
 
     fireEvent.changeText(screen.getByPlaceholderText('np. Pan Tadeusz'), 'Pan Tadeusz');
-    fireEvent.press(screen.getByText('Marta'));
     fireEvent.press(screen.getByLabelText('Dalej'));
 
     await waitFor(() => {
@@ -71,7 +86,7 @@ describe('New audiobook wizard step 1', () => {
         title: 'Pan Tadeusz',
         language: 'pl',
         voiceId: 'marta-voice',
-        interstitialPreset: 'local:page-turn-1',
+        interstitialPreset: 'local:page-turn-3',
       });
     });
     expect(mockGetVoices).toHaveBeenCalledWith('pl');
