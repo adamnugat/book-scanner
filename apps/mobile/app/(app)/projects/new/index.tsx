@@ -275,7 +275,7 @@ export default function NewProjectScreen() {
       <AudioFlowFooterMenu
         active="library"
         bottomInset={insets.bottom}
-        createIcon="›"
+        createIcon="chevron-right"
         createLabel={submitting ? 'Tworzenie...' : 'Dalej'}
         createDisabled={!canSubmit}
         onCreatePress={() => void handleCreate()}

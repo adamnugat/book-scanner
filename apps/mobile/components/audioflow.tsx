@@ -403,7 +403,7 @@ export function AudioFlowFooterMenu({
   onCreatePress,
   onPlayerPress,
   playerDisabled = false,
-  createIcon = '+',
+  createIcon = 'plus' as React.ComponentProps<typeof Feather>['name'],
   createLabel = 'Nowy audiobook',
   createDisabled = false,
   createTestID,
@@ -415,7 +415,7 @@ export function AudioFlowFooterMenu({
   onCreatePress: (event: GestureResponderEvent) => void;
   onPlayerPress?: (event: GestureResponderEvent) => void;
   playerDisabled?: boolean;
-  createIcon?: string;
+  createIcon?: React.ComponentProps<typeof Feather>['name'];
   createLabel?: string;
   createDisabled?: boolean;
   createTestID?: string;
@@ -439,9 +439,11 @@ export function AudioFlowFooterMenu({
             onPress={onLibraryPress}
             style={({ pressed }) => [styles.footerItem, pressed && styles.pressed]}
           >
-            <Text style={[styles.footerIcon, active === 'library' && styles.footerItemActive]}>
-              ▦
-            </Text>
+            <Feather
+              color={active === 'library' ? t.color.text.onDark : t.color.text.onSurfaceSubtle}
+              name="grid"
+              size={20}
+            />
             <Text style={[styles.footerLabel, active === 'library' && styles.footerItemActive]}>
               Biblioteka
             </Text>
@@ -461,7 +463,7 @@ export function AudioFlowFooterMenu({
             createDisabled && styles.footerItemDisabled,
           ]}
         >
-          <Text style={styles.footerCreateText}>{createIcon}</Text>
+          <Feather color={t.color.text.onPearl} name={createIcon} size={28} />
         </Pressable>
 
         {variant === 'full' ? (
@@ -477,9 +479,11 @@ export function AudioFlowFooterMenu({
               playerDisabled && styles.footerItemDisabled,
             ]}
           >
-            <Text style={[styles.footerIcon, active === 'player' && styles.footerItemActive]}>
-              ▶
-            </Text>
+            <Feather
+              color={active === 'player' ? t.color.text.onDark : t.color.text.onSurfaceSubtle}
+              name="headphones"
+              size={20}
+            />
             <Text style={[styles.footerLabel, active === 'player' && styles.footerItemActive]}>
               Odtwarzacz
             </Text>

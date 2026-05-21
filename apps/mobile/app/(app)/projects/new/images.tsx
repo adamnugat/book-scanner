@@ -770,7 +770,7 @@ export default function NewProjectImagesScreen() {
       <AudioFlowFooterMenu
         active="library"
         bottomInset={insets.bottom}
-        createIcon="›"
+        createIcon="chevron-right"
         createLabel={processing ? 'Przetwarzanie...' : 'Dalej'}
         createDisabled={!canContinue}
         createTestID="wizard-continue"
