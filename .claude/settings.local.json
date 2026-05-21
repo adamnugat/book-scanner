@@ -29,7 +29,20 @@
       "Bash(cat /Users/awieczorek/dev/book-scaner/.claude/settings.local.json 2>/dev/null; echo \"---\"; cat /Users/awieczorek/.claude/settings.json 2>/dev/null | head -80)",
       "Read(//Users/awieczorek/.claude/**)",
       "Bash(graphify query *)",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(npx openspec *)",
+      "Bash(command -v node)",
+      "Bash(command -v npm)",
+      "Read(//Users/awieczorek/.local/bin/**)",
+      "Bash(find / -name \"openspec\" -type f)",
+      "Bash(npm --version)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts|js|json\\)$\")",
+      "Bash(/Users/awieczorek/dev/book-scaner/node_modules/.bin/tsc --noEmit)",
+      "Bash(ls /opt/homebrew/bin/node* /usr/local/bin/node* ~/.nvm/versions/node/*/bin/node 2>/dev/null | head -10)",
+      "Read(//opt/homebrew/bin/**)",
+      "Bash(find /opt /usr ~ -name \"node\" -type f -executable 2>/dev/null | grep -v node_modules | head -5)",
+      "Read(//opt/**)",
+      "Bash(pnpm exec *)"
     ]
   }
 }

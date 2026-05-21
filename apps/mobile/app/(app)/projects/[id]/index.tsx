@@ -19,13 +19,13 @@ import {
   AudioFlowPlayerPanel,
   AudioFlowScreen,
   GlassPanel,
-  ProjectToolTile,
   RoundIconButton,
   StatusPill,
   TopAppBar,
   audioFlowStyles,
   audioFlowTokens,
 } from '../../../../components/audioflow';
+import { SectionTile } from '../../../../components/SectionTile';
 import {
   AudioFlowBottomNavigation,
   AudioFlowGlobalMenuButton,
@@ -324,36 +324,29 @@ export default function ProjectDetailScreen() {
               </View>
               <RoundIconButton icon="⋮" label="Opcje projektu" onPress={handleProjectOptions} />
             </View>
-            <View style={styles.toolsGrid}>
-              <ProjectToolTile
+            <View style={styles.toolsList}>
+              <SectionTile
                 accessibilityLabel="Otwórz zdjęcia stron"
-                body="Skanuj, kadruj i porządkuj strony książki."
-                icon="▧"
-                meta="OCR"
-                onPress={() => router.push(`/(app)/projects/${id}/images`)}
                 title="Zdjęcia stron"
+                summary={statusLabel}
+                trailingIcon="chevron-right"
+                onPress={() => router.push(`/(app)/projects/${id}/images`)}
               />
 
-              <ProjectToolTile
+              <SectionTile
                 accessibilityLabel="Otwórz głos i audio"
-                body={
-                  voiceName
-                    ? `Lektor: ${voiceName}`
-                    : 'Wybierz lektora, ton i tempo nagrania.'
-                }
-                icon="≋"
-                meta="AI"
-                onPress={() => router.push(`/(app)/projects/${id}/voice`)}
                 title="Głos i audio"
+                summary={voiceName ?? 'Nie wybrano'}
+                trailingIcon="chevron-right"
+                onPress={() => router.push(`/(app)/projects/${id}/voice`)}
               />
 
-              <ProjectToolTile
+              <SectionTile
                 accessibilityLabel="Otwórz udostępnianie"
-                body="Link i kod QR dla odbiorców."
-                icon="↗"
-                meta="Link"
-                onPress={() => router.push(`/(app)/projects/${id}/sharing`)}
                 title="Udostępnij"
+                summary="Link i kod QR"
+                trailingIcon="chevron-right"
+                onPress={() => router.push(`/(app)/projects/${id}/sharing`)}
               />
             </View>
           </View>
@@ -528,10 +521,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  toolsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: t.spacing.stackMd,
+  toolsList: {
+    flexDirection: 'column',
   },
   advancedPlayerButton: {
     alignItems: 'center',

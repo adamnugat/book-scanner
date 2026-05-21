@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, FlatList, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ProjectResponse } from '@book-scanner/shared';
@@ -10,7 +10,6 @@ import {
   GlassPanel,
   PearlButton,
   ProjectCard,
-  RoundIconButton,
   audioFlowStyles,
   audioFlowTokens,
 } from '../../components/audioflow';
@@ -26,12 +25,6 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'Gotowe',
 };
 
-/** Domyślny pasek postępu przy braku zapisanego stanu odtwarzacza (tylko UI). */
-function dashboardPlaybackProgress(project: ProjectResponse): number {
-  if (project.status === 'completed') return 0.35;
-  if (project.status === 'ready_for_tts') return 0.2;
-  return 0.08;
-}
 
 export default function ProjectsScreen() {
   const { showToast } = useToast();
@@ -68,15 +61,7 @@ export default function ProjectsScreen() {
     [projects],
   );
 
-  const lastPlayed = sortedProjects.length > 0 ? sortedProjects[0] : null;
-  const lastPlayedProgress = lastPlayed ? dashboardPlaybackProgress(lastPlayed) : 0;
-
   const createProject = () => router.push('/(app)/projects/new');
-
-  const openLastPlayedPlayer = () => {
-    if (!lastPlayed) return;
-    router.push(`/(app)/projects/${lastPlayed.id}/player`);
-  };
 
   const handleDeleteProject = useCallback(
     (item: ProjectResponse) => {
@@ -104,8 +89,9 @@ export default function ProjectsScreen() {
     [showToast],
   );
 
-  const renderProject = ({ item }: { item: ProjectResponse }) => (
+  const renderProject = ({ item, index }: { item: ProjectResponse; index: number }) => (
     <ProjectCard
+      cardHeight={index === 0 ? CARD_HEIGHT_FIRST : index === 1 ? CARD_HEIGHT_SECOND : CARD_HEIGHT_REST}
       coverUrl={item.coverUrl}
       meta={`${item.language.toUpperCase()} · ${new Date(item.updatedAt).toLocaleDateString('pl-PL')}`}
       onLongPress={() => handleDeleteProject(item)}
@@ -113,65 +99,25 @@ export default function ProjectsScreen() {
       projectId={item.id}
       statusLabel={STATUS_LABELS[item.status] || item.status}
       statusTone={item.status === 'completed' ? 'done' : 'neutral'}
-      style={isTablet && styles.cardTablet}
+      style={[
+        isTablet && styles.cardTablet,
+        index === 0 && styles.featuredCard,
+        index === 1 && styles.secondCard,
+      ]}
       title={item.title}
     />
   );
 
   const listHeader = (
-    <>
-      <View style={styles.welcome}>
-        <Text style={styles.eyebrow}>Biblioteka audiobooków</Text>
-        <Text style={styles.welcomeHeadline}>Witaj ponownie</Text>
-        <Text style={styles.welcomeCopy}>
-          {projects.length === 0
-            ? 'Dodaj zdjęcia książki i zamień je w pierwszy audiobook.'
-            : `Masz ${projects.length} ${projects.length === 1 ? 'projekt' : 'projekty'} w swojej bibliotece.`}
-        </Text>
-      </View>
-
-      {lastPlayed ? (
-        <>
-          <GlassPanel style={styles.lastPlayedPanel} testID="dashboard-last-played">
-            <View style={styles.lastPlayedProgressTrack}>
-              <View style={[styles.lastPlayedProgressFill, { width: `${lastPlayedProgress * 100}%` }]} />
-            </View>
-            <View style={styles.lastPlayedRow}>
-              <View style={styles.lastPlayedThumb}>
-                {lastPlayed.coverUrl ? (
-                  <Image
-                    resizeMode="cover"
-                    source={{ uri: lastPlayed.coverUrl }}
-                    style={styles.lastPlayedThumbImage}
-                  />
-                ) : null}
-              </View>
-              <View style={styles.lastPlayedTextCol}>
-                <Text style={styles.lastPlayedEyebrow}>Ostatnio odtwarzane</Text>
-                <Text numberOfLines={2} style={styles.lastPlayedTitle}>
-                  {lastPlayed.title}
-                </Text>
-              </View>
-              <RoundIconButton
-                icon="▶"
-                label="Odtwórz ostatni audiobook"
-                onPress={openLastPlayedPlayer}
-              />
-            </View>
-          </GlassPanel>
-
-          <View style={styles.projectsSection}>
-            <Text
-              accessibilityRole="header"
-              nativeID="dashboard-projects-heading"
-              style={styles.projectsSectionTitle}
-            >
-              Twoje Projekty
-            </Text>
-          </View>
-        </>
-      ) : null}
-    </>
+    <View style={styles.welcome}>
+      <Text style={styles.eyebrow}>Biblioteka audiobooków</Text>
+      <Text style={styles.welcomeHeadline}>Witaj ponownie</Text>
+      <Text style={styles.welcomeCopy}>
+        {projects.length === 0
+          ? 'Dodaj zdjęcia książki i zamień je w pierwszy audiobook.'
+          : `Masz ${projects.length} ${projects.length === 1 ? 'projekt' : 'projekty'} w swojej bibliotece.`}
+      </Text>
+    </View>
   );
 
   return (
@@ -228,6 +174,10 @@ export default function ProjectsScreen() {
   );
 }
 
+const CARD_HEIGHT_FIRST = 112;
+const CARD_HEIGHT_SECOND = Math.round(CARD_HEIGHT_FIRST * 0.85); // 95
+const CARD_HEIGHT_REST = Math.round(CARD_HEIGHT_FIRST * 0.7); // 78
+
 const t = audioFlowTokens;
 
 const styles = StyleSheet.create({
@@ -241,6 +191,7 @@ const styles = StyleSheet.create({
   },
   welcome: {
     alignSelf: 'stretch',
+    marginBottom: t.spacing.sectionGap,
     marginTop: t.spacing.stackMd,
     width: '100%',
   },
@@ -261,71 +212,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
-  projectsSection: {
-    gap: t.spacing.stackMd,
-    marginTop: t.spacing.sectionGap,
-  },
-  projectsSectionTitle: {
-    ...audioFlowStyles.headlineMd,
-    marginBottom: t.spacing.stackLg,
-    textShadowColor: 'rgba(255, 255, 255, 0.3)',
-    textShadowRadius: 10,
-    width: '100%',
-  },
-  lastPlayedPanel: {
-    marginTop: t.spacing.sectionGap,
-    overflow: 'hidden',
-    paddingBottom: 12,
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    position: 'relative',
-  },
-  lastPlayedRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 12,
-  },
-  lastPlayedThumb: {
-    backgroundColor: t.color.accent.pearlTint,
-    borderRadius: t.radius.md,
-    height: 48,
-    overflow: 'hidden',
-    width: 48,
-  },
-  lastPlayedThumbImage: {
-    height: '100%',
-    width: '100%',
-  },
-  lastPlayedTextCol: {
-    flex: 1,
-    gap: 2,
-    minWidth: 0,
-  },
-  lastPlayedEyebrow: {
-    ...t.typography.labelSm,
-    color: t.color.text.onSurfaceSubtle,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  lastPlayedTitle: {
-    ...t.typography.labelMd,
-    color: t.color.text.onDark,
-  },
-  lastPlayedProgressTrack: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    bottom: 0,
-    height: 2,
-    left: 0,
-    position: 'absolute',
-    right: 0,
-  },
-  lastPlayedProgressFill: {
-    backgroundColor: t.color.accent.pearl,
-    height: '100%',
+  featuredCard: {
     shadowColor: t.color.accent.pearl,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
+    shadowOpacity: 0.24,
+    shadowRadius: 28,
+  },
+  secondCard: {
+    shadowColor: t.color.accent.pearl,
+    shadowOpacity: 0.10,
+    shadowRadius: 18,
   },
   cardTablet: {
     flex: 1,

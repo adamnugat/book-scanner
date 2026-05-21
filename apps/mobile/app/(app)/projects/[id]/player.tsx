@@ -1,9 +1,26 @@
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAudioPlayer } from '../../../../lib/use-audio-player';
 import { useNetwork } from '../../../../lib/use-network';
-import { AudioFlowScreen } from '../../../../components/audioflow';
+import {
+  AudioFlowPlayerPanel,
+  AudioFlowScreen,
+  GlassPanel,
+  RoundIconButton,
+  TopAppBar,
+  audioFlowStyles,
+  audioFlowTokens,
+} from '../../../../components/audioflow';
+import {
+  AudioFlowGlobalMenuButton,
+  AudioFlowTopChrome,
+} from '../../../../components/audioflow-global-navigation';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
+import { SceneTranscriptBox } from '../../../../components/SceneTranscriptBox';
+
+const t = audioFlowTokens;
 
 const formatTime = (ms: number) => {
   const s = Math.floor(ms / 1000);
@@ -13,6 +30,7 @@ const formatTime = (ms: number) => {
 
 export default function PlayerScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const insets = useSafeAreaInsets();
   const { isOnline } = useNetwork();
 
   const {
@@ -29,6 +47,7 @@ export default function PlayerScreen() {
     downloadProgress,
     handlePlayPause,
     goToSceneIndex,
+    seekBy,
     jumpToScene,
     handleDownloadOffline,
     handleDeleteCache,
@@ -41,11 +60,29 @@ export default function PlayerScreen() {
   const globalProgress = totalDuration > 0 ? (progressBefore + positionMs) / totalDuration : 0;
   const trackProgress = durationMs > 0 ? positionMs / durationMs : 0;
 
+  const headerChrome = (
+    <AudioFlowTopChrome>
+      <TopAppBar
+        left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
+        right={
+          <View style={styles.topBarRight}>
+            <AudioFlowGlobalMenuButton />
+          </View>
+        }
+        title="Odtwarzacz"
+      />
+    </AudioFlowTopChrome>
+  );
+
   if (loading) {
     return (
       <AudioFlowScreen>
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color="#e94560" />
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.shell}>
+          {headerChrome}
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={t.color.accent.pearl} />
+          </View>
         </View>
       </AudioFlowScreen>
     );
@@ -54,217 +91,294 @@ export default function PlayerScreen() {
   if (playlist.length === 0) {
     return (
       <AudioFlowScreen>
-        <View style={styles.centered}>
-          <Text style={styles.emptyText}>Brak audio. Wygeneruj audio ze scen.</Text>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.shell}>
+          {headerChrome}
+          <View style={styles.centered}>
+            <Text style={styles.emptyText}>Brak audio. Wygeneruj audio ze scen.</Text>
+          </View>
         </View>
       </AudioFlowScreen>
     );
   }
 
+  const isScene = currentItem?.type === 'scene';
+  const sceneLabel = isScene ? `Scena ${(currentItem?.sceneOrderIndex ?? 0) + 1}` : 'Wstawka';
+  const transcriptText = isScene ? (currentItem?.sceneText ?? null) : null;
+  const transcriptKey = currentItem?.id ?? 'none';
+
   return (
     <AudioFlowScreen>
-      <FadeZoomContent>
-      <View style={styles.container}>
-      {(isOfflineMode || !isOnline) && (
-        <View style={styles.offlineBanner}>
-          <Text style={styles.offlineBannerText}>
-            {isOfflineMode ? '📴 Odtwarzanie z cache (offline)' : '📴 Brak połączenia'}
-          </Text>
-        </View>
-      )}
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.shell}>
+        {headerChrome}
+        <FadeZoomContent>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={[styles.content, { paddingBottom: t.spacing.stackMd }]}
+          >
+            {(isOfflineMode || !isOnline) && (
+              <GlassPanel style={styles.offlineBanner}>
+                <Text style={styles.offlineBannerText}>
+                  {isOfflineMode ? '📴 Odtwarzanie z cache (offline)' : '📴 Brak połączenia'}
+                </Text>
+              </GlassPanel>
+            )}
 
-      {currentItem && (
-        <View style={styles.nowPlaying}>
-          <Text style={styles.nowPlayingLabel}>
-            {currentItem.type === 'scene'
-              ? `Scena ${(currentItem.sceneOrderIndex ?? 0) + 1}`
-              : 'Wstawka'}
-          </Text>
-          {currentItem.sceneText && (
-            <Text style={styles.sceneText} numberOfLines={3}>
-              {currentItem.sceneText}
-            </Text>
-          )}
-        </View>
-      )}
+            <GlassPanel style={styles.headerPanel}>
+              <Text style={audioFlowStyles.eyebrow}>{sceneLabel}</Text>
+              <View style={styles.sceneProgressSection}>
+                <View style={styles.globalProgressBar}>
+                  <View style={[styles.globalProgressFill, { width: `${trackProgress * 100}%` }]} />
+                </View>
+                <Text style={styles.globalLabel}>
+                  {formatTime(positionMs)} / {formatTime(durationMs)}
+                </Text>
+              </View>
+              <SceneTranscriptBox
+                text={transcriptText}
+                positionMs={positionMs}
+                durationMs={durationMs}
+                isPlaying={isPlaying}
+                resetKey={transcriptKey}
+                style={styles.transcript}
+              />
+            </GlassPanel>
 
-      <View style={styles.progressSection}>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${trackProgress * 100}%` }]} />
-        </View>
-        <View style={styles.timeRow}>
-          <Text style={styles.timeText}>{formatTime(positionMs)}</Text>
-          <Text style={styles.timeText}>{formatTime(durationMs)}</Text>
-        </View>
+            <View style={styles.scenesSection}>
+              <Text style={audioFlowStyles.eyebrow}>Sceny</Text>
+              <View style={styles.scenesList}>
+                {sceneItems.map((item) => {
+                  const isActive =
+                    currentItem?.referenceId === item.referenceId && currentItem?.type === 'scene';
+                  return (
+                    <Pressable
+                      key={item.id}
+                      accessibilityRole="button"
+                      onPress={() => jumpToScene(item.sceneOrderIndex ?? 0)}
+                      style={({ pressed }) => [
+                        styles.trackItem,
+                        isActive && styles.trackItemActive,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <Text style={[styles.trackNum, isActive && styles.trackNumActive]}>
+                        {(item.sceneOrderIndex ?? 0) + 1}
+                      </Text>
+                      <Text
+                        style={[styles.trackText, isActive && styles.trackTextActive]}
+                        numberOfLines={1}
+                      >
+                        {item.sceneText || '(brak tekstu)'}
+                      </Text>
+                      <Text style={styles.trackDuration}>{formatTime(item.durationMs)}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
 
-        <View style={styles.globalProgressBar}>
-          <View style={[styles.globalProgressFill, { width: `${globalProgress * 100}%` }]} />
-        </View>
-        <Text style={styles.globalLabel}>
-          Cały audiobook: {formatTime(progressBefore + positionMs)} / {formatTime(totalDuration)}
-        </Text>
-      </View>
+            {(downloading || isCached || !isOnline) && (
+              <GlassPanel style={styles.offlinePanel}>
+                <Text style={audioFlowStyles.eyebrow}>Offline</Text>
+                {downloading ? (
+                  <View style={styles.downloadProgress}>
+                    <ActivityIndicator size="small" color={t.color.accent.softGreen} />
+                    <Text style={styles.downloadText}>
+                      Pobieranie: {downloadProgress.done}/{downloadProgress.total}
+                    </Text>
+                  </View>
+                ) : isCached ? (
+                  <View style={styles.cachedRow}>
+                    <Text style={styles.cachedText}>
+                      ✓ Offline {cacheSize > 0 ? `(${(cacheSize / 1024 / 1024).toFixed(1)} MB)` : ''}
+                    </Text>
+                    <Pressable onPress={handleDeleteCache}>
+                      <Text style={styles.deleteCacheText}>Usuń cache</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Text style={styles.cachedText}>Audio dostępne tylko online.</Text>
+                )}
+              </GlassPanel>
+            )}
 
-      <View style={styles.controls}>
-        <Pressable style={styles.controlBtn} onPress={() => goToSceneIndex(-1)}>
-          <Text style={styles.controlText}>⏮</Text>
-        </Pressable>
-        <Pressable style={styles.playBtn} onPress={handlePlayPause}>
-          <Text style={styles.playBtnText}>{isPlaying ? '⏸' : '▶'}</Text>
-        </Pressable>
-        <Pressable style={styles.controlBtn} onPress={() => goToSceneIndex(1)}>
-          <Text style={styles.controlText}>⏭</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.offlineSection}>
-        {downloading ? (
-          <View style={styles.downloadProgress}>
-            <ActivityIndicator size="small" color="#06d6a0" />
-            <Text style={styles.downloadText}>
-              Pobieranie: {downloadProgress.done}/{downloadProgress.total}
-            </Text>
-          </View>
-        ) : isCached ? (
-          <View style={styles.cachedRow}>
-            <Text style={styles.cachedText}>
-              ✓ Offline {cacheSize > 0 ? `(${(cacheSize / 1024 / 1024).toFixed(1)} MB)` : ''}
-            </Text>
-            <Pressable onPress={handleDeleteCache}>
-              <Text style={styles.deleteCacheText}>Usuń cache</Text>
-            </Pressable>
-          </View>
-        ) : isOnline ? (
-          <Pressable style={styles.downloadBtn} onPress={handleDownloadOffline}>
-            <Text style={styles.downloadBtnText}>Pobierz offline</Text>
-          </Pressable>
-        ) : null}
-      </View>
-
-      <Text style={styles.trackListTitle}>Sceny</Text>
-      <FlatList
-        data={sceneItems}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => {
-          const isActive =
-            currentItem?.referenceId === item.referenceId && currentItem?.type === 'scene';
-          return (
-            <Pressable
-              style={[styles.trackItem, isActive && styles.trackItemActive]}
-              onPress={() => jumpToScene(item.sceneOrderIndex ?? 0)}
-            >
-              <Text style={[styles.trackNum, isActive && styles.trackNumActive]}>
-                {(item.sceneOrderIndex ?? 0) + 1}
-              </Text>
-              <Text
-                style={[styles.trackText, isActive && styles.trackTextActive]}
-                numberOfLines={1}
+            {isOnline && !isCached && !downloading && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={handleDownloadOffline}
+                style={({ pressed }) => [styles.downloadBtn, pressed && styles.pressed]}
               >
-                {item.sceneText || '(brak tekstu)'}
-              </Text>
-              <Text style={styles.trackDuration}>{formatTime(item.durationMs)}</Text>
-            </Pressable>
-          );
-        }}
-        contentContainerStyle={styles.trackList}
-      />
+                <Feather name="download-cloud" size={16} color={t.color.accent.pearl} />
+                <Text style={styles.downloadBtnText}>Pobierz offline</Text>
+              </Pressable>
+            )}
+          </ScrollView>
+        </FadeZoomContent>
+        <View style={[styles.playerBar, { paddingBottom: insets.bottom }]}>
+          <AudioFlowPlayerPanel
+            progress={globalProgress}
+            currentTime={formatTime(progressBefore + positionMs)}
+            totalTime={formatTime(totalDuration)}
+            isPlaying={isPlaying}
+            onPlayPress={handlePlayPause}
+            onPreviousPress={() => goToSceneIndex(-1)}
+            onNextPress={() => goToSceneIndex(1)}
+            onSkipBack={() => seekBy(-10000)}
+            onSkipForward={() => seekBy(10000)}
+          />
+        </View>
       </View>
-      </FadeZoomContent>
     </AudioFlowScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'transparent' },
+  shell: { flex: 1 },
+  scroll: { flex: 1 },
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: t.spacing.marginMobile,
+    paddingTop: t.spacing.stackMd,
+    gap: t.spacing.stackMd,
+  },
+  topBarRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-end',
+  },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: '#888', fontSize: 16 },
-
-  nowPlaying: { padding: 20, paddingBottom: 8 },
-  nowPlayingLabel: { color: '#e94560', fontSize: 14, fontWeight: '600' },
-  sceneText: { color: '#e0e0e0', fontSize: 15, lineHeight: 22, marginTop: 8 },
-
-  progressSection: { paddingHorizontal: 20, paddingBottom: 8 },
-  progressBar: { height: 6, backgroundColor: '#0f3460', borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#e94560', borderRadius: 3 },
-  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  timeText: { color: '#888', fontSize: 12 },
-  globalProgressBar: {
-    height: 3,
-    backgroundColor: '#0f3460',
-    borderRadius: 2,
-    overflow: 'hidden',
-    marginTop: 12,
+  emptyText: {
+    ...audioFlowStyles.body,
+    color: t.color.text.onSurfaceMuted,
+    fontSize: 16,
   },
-  globalProgressFill: { height: '100%', backgroundColor: '#06d6a0', borderRadius: 2 },
-  globalLabel: { color: '#666', fontSize: 11, textAlign: 'center', marginTop: 4 },
-
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 24,
-    paddingVertical: 16,
-  },
-  controlBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#16213e',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  controlText: { fontSize: 20 },
-  playBtn: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#e94560',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playBtnText: { fontSize: 26, color: '#fff' },
-
-  trackListTitle: {
-    color: '#888',
-    fontSize: 13,
-    fontWeight: '600',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-  },
-  trackList: { padding: 16, paddingTop: 8 },
-  trackItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 4,
-    backgroundColor: '#16213e',
-  },
-  trackItemActive: { backgroundColor: '#0f3460', borderWidth: 1, borderColor: '#e94560' },
-  trackNum: { color: '#888', fontWeight: 'bold', width: 28, fontSize: 14 },
-  trackNumActive: { color: '#e94560' },
-  trackText: { flex: 1, color: '#aaa', fontSize: 13 },
-  trackTextActive: { color: '#e0e0e0' },
-  trackDuration: { color: '#666', fontSize: 12 },
 
   offlineBanner: {
-    backgroundColor: '#f0a50033',
-    paddingVertical: 6,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: t.spacing.stackMd,
     alignItems: 'center',
+    backgroundColor: t.color.surface.glassMuted,
   },
-  offlineBannerText: { color: '#f0a500', fontSize: 13, fontWeight: '600' },
-  offlineSection: { paddingHorizontal: 20, paddingVertical: 8 },
-  downloadBtn: { backgroundColor: '#0f3460', borderRadius: 8, padding: 12, alignItems: 'center' },
-  downloadBtnText: { color: '#06d6a0', fontSize: 14, fontWeight: '600' },
+  offlineBannerText: {
+    ...audioFlowStyles.body,
+    color: t.color.accent.pearl,
+    fontWeight: '600',
+  },
+
+  headerPanel: {
+    gap: t.spacing.stackSm,
+    padding: t.spacing.stackMd,
+    backgroundColor: t.color.surface.glassMuted,
+  },
+  transcript: {
+    marginTop: t.spacing.stackSm,
+  },
+  sceneProgressSection: {
+    gap: t.spacing.stackSm,
+  },
+
+  globalProgressBar: {
+    height: 4,
+    backgroundColor: t.color.surface.glassEdge,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  globalProgressFill: {
+    height: '100%',
+    backgroundColor: t.color.accent.softGreen,
+    borderRadius: 2,
+  },
+  globalLabel: {
+    ...audioFlowStyles.body,
+    color: t.color.text.onSurfaceMuted,
+    fontSize: 12,
+    textAlign: 'center',
+  },
+
+  offlinePanel: {
+    gap: t.spacing.stackSm,
+    padding: t.spacing.stackMd,
+    backgroundColor: t.color.surface.glassMuted,
+  },
+  downloadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: t.color.accent.pearlTint,
+    borderColor: t.color.accent.pearlBorder,
+    borderWidth: 1,
+    borderRadius: t.radius.full,
+    paddingVertical: 12,
+  },
+  downloadBtnText: {
+    color: t.color.accent.pearl,
+    fontSize: 15,
+    fontWeight: '700',
+  },
   downloadProgress: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     justifyContent: 'center',
   },
-  downloadText: { color: '#06d6a0', fontSize: 13 },
-  cachedRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cachedText: { color: '#06d6a0', fontSize: 13 },
-  deleteCacheText: { color: '#e94560', fontSize: 13 },
+  downloadText: {
+    color: t.color.accent.softGreen,
+    fontSize: 13,
+  },
+  cachedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cachedText: {
+    color: t.color.accent.softGreen,
+    fontSize: 13,
+  },
+  deleteCacheText: {
+    color: t.color.accent.danger,
+    fontSize: 13,
+  },
+
+  scenesSection: {
+    gap: t.spacing.stackSm,
+  },
+  scenesList: {
+    gap: t.spacing.stackSm,
+  },
+  trackItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: t.radius.md,
+    backgroundColor: t.color.surface.glassLight,
+    borderWidth: 1,
+    borderColor: t.color.surface.glassEdge,
+  },
+  trackItemActive: {
+    backgroundColor: t.color.accent.pearlTint,
+    borderColor: t.color.accent.pearlBorder,
+  },
+  trackNum: {
+    color: t.color.text.onSurfaceMuted,
+    fontWeight: '700',
+    width: 28,
+    fontSize: 14,
+  },
+  trackNumActive: { color: t.color.accent.pearl },
+  trackText: { flex: 1, color: t.color.text.onSurfaceSubtle, fontSize: 13 },
+  trackTextActive: { color: t.color.text.onDark },
+  trackDuration: { color: t.color.text.onSurfaceMuted, fontSize: 12 },
+
+  playerBar: {
+    paddingHorizontal: t.spacing.marginMobile,
+    paddingTop: t.spacing.stackSm,
+  },
+
+  pressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.97 }],
+  },
 });

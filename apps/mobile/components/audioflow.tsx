@@ -18,116 +18,12 @@ import { BlurView } from 'expo-blur';
 import { Feather } from '@expo/vector-icons';
 
 import { ProjectCoverTexture } from './ProjectCoverTexture';
+import { SectionTile } from './SectionTile';
 
-/**
- * Rodziny z {@link https://fonts.google.com/specimen/Quicksand Quicksand} i
- * {@link https://fonts.google.com/specimen/Varela+Round Varela Round} — jak w
- * `design-system/reference-views/Dashboard.html`. Ładowane w `app/_layout.tsx`.
- */
-export const audioFlowFontFamilies = {
-  quicksandSemiBold: 'Quicksand_600SemiBold',
-  quicksandBold: 'Quicksand_700Bold',
-  varelaRound: 'VarelaRound_400Regular',
-} as const;
+export { audioFlowFontFamilies, audioFlowTokens } from './audioflow-tokens';
+import { audioFlowFontFamilies, audioFlowTokens } from './audioflow-tokens';
 
 const ff = audioFlowFontFamilies;
-
-export const audioFlowTokens = {
-  color: {
-    background: {
-      heroBase: '#6b4c4c',
-      deep1: '#2a1a1d',
-      deep2: '#150b10',
-      roseBloom: 'rgba(204, 153, 153, 0.5)',
-      mauveBloom: 'rgba(179, 128, 128, 0.4)',
-      deepRoseBloom: 'rgba(153, 102, 102, 0.5)',
-    },
-    surface: {
-      glass: 'rgba(45, 30, 30, 0.45)',
-      glassMuted: 'rgba(45, 30, 30, 0.35)',
-      glassLight: 'rgba(255, 255, 255, 0.06)',
-      glassLighter: 'rgba(255, 255, 255, 0.08)',
-      glassHover: 'rgba(255, 255, 255, 0.12)',
-      glassEdge: 'rgba(15, 10, 11, 0.6)',
-      field: 'rgba(20, 12, 14, 0.55)',
-    },
-    accent: {
-      pearl: '#F0EAD6',
-      pearlBright: '#FBFCF8',
-      pearlGlow: 'rgba(240, 234, 214, 0.4)',
-      pearlBorder: 'rgba(240, 234, 214, 0.55)',
-      pearlTint: 'rgba(240, 234, 214, 0.10)',
-      softGreen: '#8ba88e',
-      danger: '#ff8fa3',
-    },
-    text: {
-      onDark: '#FFFFFF',
-      onPearl: '#131316',
-      onSurfaceSubtle: '#d4c0d7',
-      onSurfaceMuted: 'rgba(255, 255, 255, 0.6)',
-    },
-  },
-  spacing: {
-    stackSm: 8,
-    stackMd: 16,
-    stackLg: 32,
-    sectionGap: 48,
-    gutterMobile: 16,
-    marginMobile: 20,
-  },
-  radius: {
-    sm: 4,
-    md: 8,
-    lg: 12,
-    card: 16,
-    panel: 24,
-    full: 9999,
-  },
-  typography: {
-    headlineLg: {
-      fontFamily: ff.quicksandBold,
-      fontSize: 32,
-      letterSpacing: -0.64,
-      lineHeight: 40,
-    },
-    headlineMd: {
-      fontFamily: ff.quicksandSemiBold,
-      fontSize: 24,
-      lineHeight: 32,
-    },
-    bodyLg: {
-      fontFamily: ff.varelaRound,
-      fontSize: 18,
-      fontWeight: '400' as const,
-      lineHeight: 28,
-    },
-    bodyMd: {
-      fontFamily: ff.varelaRound,
-      fontSize: 16,
-      fontWeight: '400' as const,
-      lineHeight: 24,
-    },
-    labelMd: {
-      fontFamily: ff.varelaRound,
-      fontSize: 14,
-      fontWeight: '600' as const,
-      letterSpacing: 0.14,
-      lineHeight: 20,
-    },
-    labelSm: {
-      fontFamily: ff.varelaRound,
-      fontSize: 12,
-      fontWeight: '500' as const,
-      lineHeight: 16,
-    },
-    eyebrow: { letterSpacing: 2.16, textTransform: 'uppercase' as const },
-  },
-  motion: {
-    fastMs: 120,
-    baseMs: 200,
-    pulseMs: 2400,
-  },
-} as const;
 
 export const audioFlowReferenceViews: Record<string, string> = {
   '/(app)': 'Dashboard.html',
@@ -345,30 +241,17 @@ export function SectionAccordion({
   style,
 }: SectionAccordionProps) {
   return (
-    <View style={[styles.accordion, style]}>
-      <View style={styles.accordionHeader}>
-        <Text style={styles.accordionTitle}>{title}</Text>
-        {!isExpanded && (
-          <Text style={styles.accordionSummary} numberOfLines={1}>
-            {selectedSummary}
-          </Text>
-        )}
-        <Pressable
-          accessibilityLabel={`Edytuj ${title}`}
-          accessibilityRole="button"
-          onPress={onEditPress}
-          style={({ pressed }) => [styles.accordionEditBtn, pressed && styles.pressed]}
-        >
-          <Feather name="edit-2" size={18} color={t.color.text.onSurfaceSubtle} />
-        </Pressable>
-      </View>
-      {isExpanded && (
-        <View style={styles.accordionBody}>
-          <Text style={styles.accordionDescription}>{description}</Text>
-          {children}
-        </View>
-      )}
-    </View>
+    <SectionTile
+      title={title}
+      summary={selectedSummary}
+      description={description}
+      expanded={isExpanded}
+      onPress={onEditPress}
+      accessibilityLabel={`Edytuj ${title}`}
+      style={style}
+    >
+      {children}
+    </SectionTile>
   );
 }
 
@@ -414,12 +297,14 @@ export function TopAppBar({
 export function RoundIconButton({
   label,
   icon,
+  featherIcon,
   onPress,
   disabled = false,
   style,
 }: {
   label: string;
-  icon: string;
+  icon?: string;
+  featherIcon?: React.ComponentProps<typeof Feather>['name'];
   onPress?: (event: GestureResponderEvent) => void;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -438,7 +323,11 @@ export function RoundIconButton({
         style,
       ]}
     >
-      <Text style={styles.roundIconText}>{icon}</Text>
+      {featherIcon != null ? (
+        <Feather name={featherIcon} size={18} color={t.color.text.onDark} />
+      ) : (
+        <Text style={styles.roundIconText}>{icon}</Text>
+      )}
     </Pressable>
   );
 }
@@ -686,6 +575,7 @@ export function ProjectCard({
   style,
   coverUrl,
   projectId,
+  cardHeight,
 }: {
   title: string;
   meta: string;
@@ -697,6 +587,7 @@ export function ProjectCard({
   style?: StyleProp<ViewStyle>;
   coverUrl?: string | null;
   projectId?: string;
+  cardHeight?: number;
 }) {
   return (
     <Pressable
@@ -705,7 +596,7 @@ export function ProjectCard({
       onPress={onPress}
       style={({ pressed }) => [styles.projectCard, pressed && styles.pressed, style]}
     >
-      <View style={styles.projectCardHeader}>
+      <View style={[styles.projectCardHeader, cardHeight != null && { minHeight: cardHeight }]}>
         <View style={styles.projectCover}>
           {coverUrl ? (
             <Image resizeMode="cover" source={{ uri: coverUrl }} style={styles.projectCoverImage} />
@@ -780,7 +671,7 @@ export function AudioFlowPlayerPanel({
       <View style={styles.playerControls}>
         <RoundIconButton
           label="Poprzedni rozdział"
-          icon="‹‹"
+          featherIcon="skip-back"
           onPress={onPreviousPress ?? onPlayPress}
         />
         {onSkipBack != null && (
@@ -788,11 +679,12 @@ export function AudioFlowPlayerPanel({
             accessibilityLabel="-10s"
             accessibilityRole="button"
             onPress={onSkipBack}
-            style={({ pressed }) => [styles.roundIconButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.skipButton, pressed && styles.pressed]}
           >
-            <Text style={styles.roundIconText}>
-              {'«'}<Text style={styles.skipNumber}>{'10'}</Text>
-            </Text>
+            <View style={styles.skipIconWrap}>
+              <Feather name="rotate-ccw" size={18} color={t.color.text.onDark} />
+              <Text style={styles.skipNumber}>10</Text>
+            </View>
           </Pressable>
         )}
         <Pressable
@@ -801,21 +693,26 @@ export function AudioFlowPlayerPanel({
           onPress={onPlayPress}
           style={({ pressed }) => [styles.playerPlayButton, pressed && styles.pressed]}
         >
-          <Text style={styles.playerPlayIcon}>{isPlaying ? '⏸' : '▶'}</Text>
+          <Feather name={isPlaying ? 'pause' : 'play'} size={28} color={t.color.text.onPearl} />
         </Pressable>
         {onSkipForward != null && (
           <Pressable
             accessibilityLabel="+10s"
             accessibilityRole="button"
             onPress={onSkipForward}
-            style={({ pressed }) => [styles.roundIconButton, pressed && styles.pressed]}
+            style={({ pressed }) => [styles.skipButton, pressed && styles.pressed]}
           >
-            <Text style={styles.roundIconText}>
-              <Text style={styles.skipNumber}>{'10'}</Text>{'»'}
-            </Text>
+            <View style={styles.skipIconWrap}>
+              <Feather name="rotate-cw" size={18} color={t.color.text.onDark} />
+              <Text style={styles.skipNumber}>10</Text>
+            </View>
           </Pressable>
         )}
-        <RoundIconButton label="Następny rozdział" icon="››" onPress={onNextPress ?? onPlayPress} />
+        <RoundIconButton
+          label="Następny rozdział"
+          featherIcon="skip-forward"
+          onPress={onNextPress ?? onPlayPress}
+        />
       </View>
     </GlassPanel>
   );
@@ -1086,14 +983,31 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 40,
   },
+  skipButton: {
+    alignItems: 'center',
+    backgroundColor: t.color.surface.glassLighter,
+    borderColor: t.color.surface.glassEdge,
+    borderRadius: t.radius.full,
+    borderWidth: 1,
+    height: 52,
+    justifyContent: 'center',
+    width: 52,
+  },
   roundIconText: {
     color: t.color.text.onDark,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 22,
   },
+  skipIconWrap: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 2,
+  },
   skipNumber: {
+    color: t.color.text.onDark,
     fontSize: 11,
+    fontWeight: '700',
   },
   appHeader: {
     alignItems: 'center',
@@ -1443,13 +1357,6 @@ const styles = StyleSheet.create({
     shadowRadius: 24,
     width: 64,
   },
-  playerPlayIcon: {
-    color: t.color.text.onPearl,
-    fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 32,
-    marginLeft: 3,
-  },
   toolTile: {
     overflow: 'hidden',
     borderColor: t.color.surface.glassEdge,
@@ -1501,36 +1408,5 @@ const styles = StyleSheet.create({
     ...t.typography.labelSm,
     lineHeight: 17,
     marginTop: 4,
-  },
-  accordion: {
-    marginBottom: 16,
-  },
-  accordionHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    paddingVertical: 4,
-  },
-  accordionTitle: {
-    ...t.typography.headlineMd,
-    color: t.color.text.onDark,
-  },
-  accordionSummary: {
-    color: t.color.text.onSurfaceSubtle,
-    ...t.typography.labelMd,
-    flex: 1,
-    marginLeft: 10,
-    textAlign: 'right',
-  },
-  accordionEditBtn: {
-    marginLeft: 8,
-    padding: 8,
-  },
-  accordionBody: {
-    marginTop: 10,
-  },
-  accordionDescription: {
-    ...t.typography.bodyMd,
-    color: t.color.text.onSurfaceSubtle,
-    marginBottom: 14,
   },
 });
