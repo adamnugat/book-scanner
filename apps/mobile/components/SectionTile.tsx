@@ -85,20 +85,21 @@ const styles = StyleSheet.create({
     borderColor: t.color.surface.glassEdge,
     borderRadius: t.radius.panel,
     borderWidth: 1,
-    marginBottom: 16,
+    marginBottom: 8,
     overflow: 'hidden',
   },
   header: {
     alignItems: 'center',
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 10,
   },
   pressed: {
     opacity: 0.7,
   },
   title: {
     ...t.typography.headlineMd,
+    fontSize: 18,
     color: t.color.text.onDark,
   },
   summary: {
