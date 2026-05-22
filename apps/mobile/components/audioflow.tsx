@@ -324,7 +324,7 @@ export function RoundIconButton({
       ]}
     >
       {featherIcon != null ? (
-        <Feather name={featherIcon} size={18} color={t.color.text.onDark} />
+        <Feather name={featherIcon} size={26} color={t.color.text.onDark} />
       ) : (
         <Text style={styles.roundIconText}>{icon}</Text>
       )}
@@ -408,6 +408,12 @@ export function AudioFlowFooterMenu({
   createDisabled = false,
   createTestID,
   variant = 'full',
+  leftIcon = 'grid' as React.ComponentProps<typeof Feather>['name'],
+  leftLabel = 'Biblioteka',
+  leftDisabled = false,
+  rightIcon = 'headphones' as React.ComponentProps<typeof Feather>['name'],
+  rightLabel = 'Odtwarzacz',
+  rightDisabled,
 }: {
   active?: 'library' | 'player';
   bottomInset?: number;
@@ -420,7 +426,14 @@ export function AudioFlowFooterMenu({
   createDisabled?: boolean;
   createTestID?: string;
   variant?: 'full' | 'create-only';
+  leftIcon?: React.ComponentProps<typeof Feather>['name'];
+  leftLabel?: string;
+  leftDisabled?: boolean;
+  rightIcon?: React.ComponentProps<typeof Feather>['name'];
+  rightLabel?: string;
+  rightDisabled?: boolean;
 }) {
+  const resolvedRightDisabled = rightDisabled ?? playerDisabled;
   return (
     <View style={[styles.footerWrap, { paddingBottom: Math.max(bottomInset, 8) }]}>
       <View style={[styles.footerMenu, variant === 'create-only' && styles.footerMenuCreateOnly]}>
@@ -434,18 +447,24 @@ export function AudioFlowFooterMenu({
         )}
         {variant === 'full' ? (
           <Pressable
-            accessibilityLabel="Biblioteka"
+            accessibilityLabel={leftLabel}
             accessibilityRole="button"
+            accessibilityState={{ disabled: leftDisabled }}
+            disabled={leftDisabled}
             onPress={onLibraryPress}
-            style={({ pressed }) => [styles.footerItem, pressed && styles.pressed]}
+            style={({ pressed }) => [
+              styles.footerItem,
+              pressed && !leftDisabled && styles.pressed,
+              leftDisabled && styles.footerItemDisabled,
+            ]}
           >
             <Feather
               color={active === 'library' ? t.color.text.onDark : t.color.text.onSurfaceSubtle}
-              name="grid"
+              name={leftIcon}
               size={20}
             />
             <Text style={[styles.footerLabel, active === 'library' && styles.footerItemActive]}>
-              Biblioteka
+              {leftLabel}
             </Text>
           </Pressable>
         ) : null}
@@ -468,24 +487,24 @@ export function AudioFlowFooterMenu({
 
         {variant === 'full' ? (
           <Pressable
-            accessibilityLabel="Odtwarzacz"
+            accessibilityLabel={rightLabel}
             accessibilityRole="button"
-            accessibilityState={{ disabled: playerDisabled }}
-            disabled={playerDisabled}
+            accessibilityState={{ disabled: resolvedRightDisabled }}
+            disabled={resolvedRightDisabled}
             onPress={onPlayerPress}
             style={({ pressed }) => [
               styles.footerItem,
-              pressed && !playerDisabled && styles.pressed,
-              playerDisabled && styles.footerItemDisabled,
+              pressed && !resolvedRightDisabled && styles.pressed,
+              resolvedRightDisabled && styles.footerItemDisabled,
             ]}
           >
             <Feather
               color={active === 'player' ? t.color.text.onDark : t.color.text.onSurfaceSubtle}
-              name="headphones"
+              name={rightIcon}
               size={20}
             />
             <Text style={[styles.footerLabel, active === 'player' && styles.footerItemActive]}>
-              Odtwarzacz
+              {rightLabel}
             </Text>
           </Pressable>
         ) : null}
@@ -983,9 +1002,9 @@ const styles = StyleSheet.create({
     borderColor: t.color.surface.glassEdge,
     borderRadius: t.radius.full,
     borderWidth: 1,
-    height: 40,
+    height: 48,
     justifyContent: 'center',
-    width: 40,
+    width: 48,
   },
   skipButton: {
     alignItems: 'center',

@@ -42,7 +42,16 @@
       "Read(//opt/homebrew/bin/**)",
       "Bash(find /opt /usr ~ -name \"node\" -type f -executable 2>/dev/null | grep -v node_modules | head -5)",
       "Read(//opt/**)",
-      "Bash(pnpm exec *)"
+      "Bash(pnpm exec *)",
+      "Bash(npm list *)",
+      "Read(//Users/awieczorek/.npm/bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(node_modules/.bin/eslint apps/mobile/app/\\\\\\(app\\\\\\)/projects/\\\\[id\\\\]/images.tsx apps/mobile/components/audioflow.tsx)",
+      "Bash(which node *)",
+      "Read(//Users/awieczorek/.nvm/versions/**)",
+      "Read(//Users/awieczorek/.volta/bin/**)",
+      "Bash(/usr/local/bin/node node_modules/.bin/eslint apps/mobile/app/\\\\\\(app\\\\\\)/projects/\\\\[id\\\\]/images.tsx apps/mobile/components/audioflow.tsx)",
+      "Bash(/usr/local/bin/node ../../node_modules/typescript/bin/tsc --noEmit)"
     ]
   }
 }

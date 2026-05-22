@@ -11,12 +11,14 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useFocusEffect, router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../../../lib/api';
 import { uploadFileFromImagePickerAsset } from '../../../../lib/image-upload';
 import { useToast } from '../../../../components/Toast';
 import { PageImagePreview } from '../../../../components/PageImagePreview';
 import {
   AudioFlowScreen,
+  AudioFlowFooterMenu,
   audioFlowTokens,
   GlassPanel,
   PearlButton,
@@ -35,12 +37,14 @@ interface FileProgress {
 export default function ProjectImagesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { showToast } = useToast();
+  const insets = useSafeAreaInsets();
   const [images, setImages] = useState<PageImageResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [fileProgress, setFileProgress] = useState<FileProgress[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [pendingAssets, setPendingAssets] = useState<ImagePicker.ImagePickerAsset[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
   const dropRef = useRef<View>(null);
   const progressResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -75,6 +79,7 @@ export default function ProjectImagesScreen() {
     });
     if (!result.canceled) {
       setPendingAssets(result.assets);
+      setHasChanges(true);
     }
   };
 
@@ -87,6 +92,7 @@ export default function ProjectImagesScreen() {
     const result = await ImagePicker.launchCameraAsync({ quality: 0.9 });
     if (!result.canceled) {
       setPendingAssets(result.assets);
+      setHasChanges(true);
     }
   };
 
@@ -138,6 +144,13 @@ export default function ProjectImagesScreen() {
     await uploadAssets(pendingAssets);
   };
 
+  const handleSaveChanges = async () => {
+    if (pendingAssets.length > 0) {
+      await uploadAssets(pendingAssets);
+    }
+    setHasChanges(false);
+  };
+
   const handleWebDrop = (e: { preventDefault: () => void; dataTransfer?: { files: FileList } }) => {
     e.preventDefault();
     setIsDragOver(false);
@@ -157,6 +170,7 @@ export default function ProjectImagesScreen() {
       fileSize: f.size,
     }));
     setPendingAssets(assets);
+    setHasChanges(true);
   };
 
   const handleDelete = (image: PageImageResponse) => {
@@ -169,6 +183,7 @@ export default function ProjectImagesScreen() {
           try {
             await api.deleteImage(id, image.id);
             setImages((prev) => prev.filter((i) => i.id !== image.id));
+            setHasChanges(true);
           } catch {
             Alert.alert('Błąd', 'Nie udało się usunąć zdjęcia');
           }
@@ -188,6 +203,7 @@ export default function ProjectImagesScreen() {
         id,
         newOrder.map((i) => i.id),
       );
+      setHasChanges(true);
     } catch {
       setImages(images);
     }
@@ -366,21 +382,22 @@ export default function ProjectImagesScreen() {
             </View>
           )}
 
-          <View style={styles.bottomBar}>
-            <GhostButton label="Galeria" onPress={pickFromGallery} style={styles.bottomBtn} />
-            {Platform.OS !== 'web' && (
-              <GhostButton label="Aparat" onPress={takePhoto} style={styles.bottomBtn} />
-            )}
-            {images.length > 0 && (
-              <PearlButton
-                label="Dalej →"
-                onPress={() => router.push(`/(app)/projects/${id}/text-regions`)}
-                style={styles.bottomBtn}
-              />
-            )}
-          </View>
         </View>
       </FadeZoomContent>
+      <AudioFlowFooterMenu
+        bottomInset={insets.bottom}
+        leftIcon="image"
+        leftLabel="Galeria"
+        onLibraryPress={pickFromGallery}
+        createIcon="check"
+        createLabel="Zapisz zmiany"
+        createDisabled={!hasChanges}
+        onCreatePress={handleSaveChanges}
+        rightIcon="camera"
+        rightLabel="Aparat"
+        rightDisabled={Platform.OS === 'web'}
+        onPlayerPress={takePhoto}
+      />
     </AudioFlowScreen>
   );
 }
@@ -526,17 +543,4 @@ const styles = StyleSheet.create({
     marginTop: t.spacing.stackSm,
   },
   pendingActionBtn: { flex: 1 },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    padding: t.spacing.gutterMobile,
-    gap: 12,
-    backgroundColor: t.color.surface.glassMuted,
-    borderTopWidth: 1,
-    borderTopColor: t.color.surface.glassEdge,
-  },
-  bottomBtn: { flex: 1 },
 });

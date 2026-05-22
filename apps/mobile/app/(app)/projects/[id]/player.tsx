@@ -63,7 +63,7 @@ export default function PlayerScreen() {
   const headerChrome = (
     <AudioFlowTopChrome>
       <TopAppBar
-        left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
+        left={<RoundIconButton label="Wróć" featherIcon="chevron-left" onPress={() => router.back()} />}
         right={
           <View style={styles.topBarRight}>
             <AudioFlowGlobalMenuButton />

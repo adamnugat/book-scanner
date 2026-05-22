@@ -85,7 +85,7 @@ export function AudioFlowGlobalMenuButton() {
 
   return (
     <>
-      <RoundIconButton icon="☰" label="Menu" onPress={() => setOpen(true)} />
+      <RoundIconButton featherIcon="menu" label="Menu" onPress={() => setOpen(true)} />
       <NavigationMenuSheet onClose={() => setOpen(false)} visible={open} />
     </>
   );
@@ -152,8 +152,7 @@ export function AudioFlowStackHeader({ navigation, route, options, back }: Nativ
         left={
           showBack ? (
             <RoundIconButton
-              accessibilityLabel="Wstecz"
-              icon="‹"
+              featherIcon="chevron-left"
               label="Wstecz"
               onPress={() => navigation.goBack()}
             />

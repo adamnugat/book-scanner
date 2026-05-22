@@ -161,7 +161,7 @@ export default function ProjectDetailScreen() {
         <View style={styles.shell}>
           <AudioFlowTopChrome>
             <TopAppBar
-              left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
+              left={<RoundIconButton label="Wróć" featherIcon="chevron-left" onPress={() => router.back()} />}
               right={
                 <View style={styles.topBarRight}>
                   <AudioFlowGlobalMenuButton />
@@ -203,7 +203,7 @@ export default function ProjectDetailScreen() {
       <View style={styles.shell}>
         <AudioFlowTopChrome>
           <TopAppBar
-            left={<RoundIconButton label="Wróć" icon="‹" onPress={() => router.back()} />}
+            left={<RoundIconButton label="Wróć" featherIcon="chevron-left" onPress={() => router.back()} />}
             right={
               <View style={styles.topBarRight}>
                 <AudioFlowGlobalMenuButton />
