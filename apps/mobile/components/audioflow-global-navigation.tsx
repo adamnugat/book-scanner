@@ -10,8 +10,6 @@ import {
   AudioFlowFooterMenu,
   AudioFlowLogo,
   GhostButton,
-  GlassPanel,
-  PearlButton,
   RoundIconButton,
   TopAppBar,
   audioFlowTokens,
@@ -64,18 +62,16 @@ function NavigationMenuSheet({ visible, onClose }: { visible: boolean; onClose: 
         </BlurView>
         <View pointerEvents="box-none" style={StyleSheet.absoluteFillObject}>
           <View style={styles.menuForeground}>
-            <View onStartShouldSetResponder={() => true}>
-              <GlassPanel accessibilityRole="none" style={styles.menuSheet}>
-                <Text style={[t.typography.labelMd, styles.menuHeading]}>Menu</Text>
-                <PearlButton label="Cennik" onPress={goPricing} style={styles.menuButton} />
-                <GhostButton
-                  label="Wyloguj"
-                  onPress={() => void doLogout()}
-                  style={styles.menuButton}
-                  textStyle={styles.logoutText}
-                  testID="audioflow-global-menu-logout"
-                />
-              </GlassPanel>
+            <View onStartShouldSetResponder={() => true} style={styles.menuSheet}>
+              <Text style={[t.typography.labelMd, styles.menuHeading]}>Menu</Text>
+              <GhostButton label="Cennik" onPress={goPricing} style={styles.menuButton} />
+              <GhostButton
+                label="Wyloguj"
+                onPress={() => void doLogout()}
+                style={styles.menuButton}
+                textStyle={styles.logoutText}
+                testID="audioflow-global-menu-logout"
+              />
             </View>
           </View>
         </View>
@@ -118,7 +114,10 @@ export function AudioFlowTopChrome({
   const insets = useSafeAreaInsets();
 
   return (
-    <View accessibilityRole="toolbar" style={[styles.chrome, { paddingTop: insets.top + 8 }]}>
+    <View
+      accessibilityRole="toolbar"
+      style={[styles.chrome, { paddingTop: insets.top + 8, backgroundColor }]}
+    >
       <View style={[styles.chromeBleed, { backgroundColor }]}>{children}</View>
     </View>
   );
@@ -196,17 +195,18 @@ const styles = StyleSheet.create({
   },
   menuForeground: {
     alignItems: 'center',
-    paddingHorizontal: t.spacing.marginMobile,
     paddingTop: 120,
   },
   menuSheet: {
     gap: t.spacing.stackMd,
-    maxWidth: 360,
     padding: t.spacing.stackLg,
-    width: '100%',
+    width: '90%',
   },
   menuHeading: {
     color: t.color.text.onDark,
+    fontSize: 28,
+    fontWeight: '100',
+    lineHeight: 36,
     textAlign: 'center',
   },
   menuButton: {
