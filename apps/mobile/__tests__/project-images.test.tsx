@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import { Image } from 'react-native';
 
 const mockGetImages = jest.fn();
+const mockGetTextRegions = jest.fn();
 const mockUploadImages = jest.fn();
 const mockDeleteImage = jest.fn();
 const mockReorderImages = jest.fn();
@@ -11,9 +12,14 @@ const mockLaunchCameraAsync = jest.fn();
 const mockRequestCameraPermissionsAsync = jest.fn();
 const mockShowToast = jest.fn();
 const mockManipulateAsync = jest.fn();
+const mockRouterPush = jest.fn();
 
 jest.mock('expo-router', () => ({
-  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
+  router: {
+    push: (...args: unknown[]) => mockRouterPush(...args),
+    replace: jest.fn(),
+    back: jest.fn(),
+  },
   useFocusEffect: (callback: () => void) => {
     const react = require('react');
     react.useEffect(() => {
@@ -41,6 +47,7 @@ jest.mock(
 jest.mock('../lib/api', () => ({
   api: {
     getImages: (...args: unknown[]) => mockGetImages(...args),
+    getTextRegions: (...args: unknown[]) => mockGetTextRegions(...args),
     uploadImages: (...args: unknown[]) => mockUploadImages(...args),
     deleteImage: (...args: unknown[]) => mockDeleteImage(...args),
     reorderImages: (...args: unknown[]) => mockReorderImages(...args),
@@ -94,6 +101,7 @@ describe('ProjectImagesScreen page photos', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetImages.mockResolvedValue(existingImages);
+    mockGetTextRegions.mockResolvedValue([]);
     mockUploadImages.mockResolvedValue([
       {
         ...existingImages[0],
@@ -223,6 +231,26 @@ describe('ProjectImagesScreen page photos', () => {
 
     expect(screen.queryByText('Podgląd zdjęć (1)')).toBeNull();
     expect(mockUploadImages).not.toHaveBeenCalled();
+  });
+
+  it('opens the OCR region editor for a selected image', async () => {
+    render(<ProjectImagesScreen />);
+
+    const cropButton = await screen.findByLabelText('Wybierz obszary OCR dla page1.jpg');
+    fireEvent.press(cropButton);
+
+    expect(mockRouterPush).toHaveBeenCalledWith(
+      '/(app)/projects/proj-1/text-regions?pageImageId=img-1',
+    );
+  });
+
+  it('renders reorder and delete buttons with stable accessibility labels', async () => {
+    render(<ProjectImagesScreen />);
+
+    await screen.findByText('page1.jpg');
+    expect(screen.getByLabelText('Przenieś page1.jpg wyżej')).toBeTruthy();
+    expect(screen.getByLabelText('Przenieś page1.jpg niżej')).toBeTruthy();
+    expect(screen.getByLabelText('Usuń page1.jpg')).toBeTruthy();
   });
 
   it('shows an image error state when a page preview cannot load', async () => {

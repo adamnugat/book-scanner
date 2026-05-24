@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -52,7 +52,7 @@ function pointFromEvent(event: GestureResponderEvent): Point {
 }
 
 export default function TextRegionsScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, pageImageId } = useLocalSearchParams<{ id: string; pageImageId?: string }>();
   const [images, setImages] = useState<PageImageResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -62,6 +62,7 @@ export default function TextRegionsScreen() {
   const [previewLayout, setPreviewLayout] = useState<Size>(EMPTY_LAYOUT);
   const [dragStart, setDragStart] = useState<Point | null>(null);
   const [dragRect, setDragRect] = useState<Rect | null>(null);
+  const autoOpenedRef = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -73,13 +74,30 @@ export default function TextRegionsScreen() {
           ]);
           setImages(imageData);
           setRegions(regionData.map(toDraft));
+          if (pageImageId && !autoOpenedRef.current) {
+            const target = imageData.find((image) => image.id === pageImageId);
+            if (target) {
+              autoOpenedRef.current = true;
+              setEditingImage(target);
+              setEditorRegions(
+                regionData
+                  .filter((region) => region.pageImageId === target.id)
+                  .map(toDraft)
+                  .sort((a, b) => a.orderIndex - b.orderIndex)
+                  .map((region, index) => ({ ...region, orderIndex: index })),
+              );
+              setPreviewLayout(EMPTY_LAYOUT);
+              setDragStart(null);
+              setDragRect(null);
+            }
+          }
         } catch {
           Alert.alert('Błąd', 'Nie udało się pobrać zdjęć lub regionów OCR');
         } finally {
           setLoading(false);
         }
       })();
-    }, [id]),
+    }, [id, pageImageId]),
   );
 
   const openEditor = (image: PageImageResponse) => {
@@ -216,132 +234,132 @@ export default function TextRegionsScreen() {
   return (
     <AudioFlowScreen>
       <FadeZoomContent>
-      <View style={styles.container}>
-      <Text style={styles.title}>Zaznacz regiony tekstu</Text>
-      <Text style={styles.subtitle}>Opcjonalne - pomiń jeśli OCR ma skanować całe strony</Text>
+        <View style={styles.container}>
+          <Text style={styles.title}>Zaznacz regiony tekstu</Text>
+          <Text style={styles.subtitle}>Opcjonalne - pomiń jeśli OCR ma skanować całe strony</Text>
 
-      <FlatList
-        data={images}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item, index }) => {
-          const imgRegions = regions.filter((region) => region.pageImageId === item.id);
-          return (
-            <View style={styles.imageCard}>
-              <View style={styles.imageHeader}>
-                <PageImagePreview
-                  thumbnailUrl={item.thumbnailUrl}
-                  imageUrl={item.imageUrl}
-                  style={styles.thumb}
-                  resizeMode="contain"
-                />
-                <View style={styles.imageInfo}>
-                  <Text style={styles.imageName}>Strona {index + 1}</Text>
-                  <Text style={styles.regionCount}>Regiony: {imgRegions.length}</Text>
-                </View>
-                <Pressable style={styles.editRegionBtn} onPress={() => openEditor(item)}>
-                  <Text style={styles.editRegionText}>Edytuj regiony</Text>
-                </Pressable>
-              </View>
-            </View>
-          );
-        }}
-      />
-
-      <Modal visible={Boolean(editingImage)} animationType="slide" onRequestClose={closeEditor}>
-        {editingImage && (
-          <View style={styles.editorContainer}>
-            <Text style={styles.editorTitle}>
-              Strona {editingImage.orderIndex + 1} - regiony OCR
-            </Text>
-            <Text style={styles.editorHint}>
-              Przeciągnij palcem po zdjęciu, aby dodać prostokątny region.
-            </Text>
-
-            <View
-              style={styles.editorPreview}
-              onLayout={onPreviewLayout}
-              onStartShouldSetResponder={() => true}
-              onMoveShouldSetResponder={() => true}
-              onResponderGrant={beginDrag}
-              onResponderMove={updateDrag}
-              onResponderRelease={finishDrag}
-              onResponderTerminate={() => {
-                setDragStart(null);
-                setDragRect(null);
-              }}
-            >
-              <PageImagePreview
-                thumbnailUrl={editingImage.thumbnailUrl}
-                imageUrl={editingImage.imageUrl}
-                style={styles.editorImage}
-                resizeMode="contain"
-              />
-              {previewLayout.width > 0 && editorRegions.map(renderRegionOverlay)}
-              {dragRect && (
-                <View
-                  style={[
-                    styles.dragOverlay,
-                    {
-                      left: dragRect.x,
-                      top: dragRect.y,
-                      width: dragRect.width,
-                      height: dragRect.height,
-                    },
-                  ]}
-                />
-              )}
-            </View>
-
-            <Text style={styles.editorCount}>Regiony: {editorRegions.length}</Text>
-            {editorRegions.length === 0 ? (
-              <Text style={styles.emptyRegions}>Brak regionów - OCR odczyta całą stronę.</Text>
-            ) : (
-              <FlatList
-                data={editorRegions}
-                keyExtractor={(item) => item.key}
-                style={styles.editorRegionList}
-                renderItem={({ item, index }) => (
-                  <View style={styles.editorRegionRow}>
-                    <Text style={styles.editorRegionName}>Region {index + 1}</Text>
-                    <Pressable
-                      style={styles.deleteRegionBtn}
-                      onPress={() => removeEditorRegion(item.key)}
-                    >
-                      <Text style={styles.deleteRegionText}>Usuń region {index + 1}</Text>
+          <FlatList
+            data={images}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            renderItem={({ item, index }) => {
+              const imgRegions = regions.filter((region) => region.pageImageId === item.id);
+              return (
+                <View style={styles.imageCard}>
+                  <View style={styles.imageHeader}>
+                    <PageImagePreview
+                      thumbnailUrl={item.thumbnailUrl}
+                      imageUrl={item.imageUrl}
+                      style={styles.thumb}
+                      resizeMode="contain"
+                    />
+                    <View style={styles.imageInfo}>
+                      <Text style={styles.imageName}>Strona {index + 1}</Text>
+                      <Text style={styles.regionCount}>Regiony: {imgRegions.length}</Text>
+                    </View>
+                    <Pressable style={styles.editRegionBtn} onPress={() => openEditor(item)}>
+                      <Text style={styles.editRegionText}>Edytuj regiony</Text>
                     </Pressable>
                   </View>
+                </View>
+              );
+            }}
+          />
+
+          <Modal visible={Boolean(editingImage)} animationType="slide" onRequestClose={closeEditor}>
+            {editingImage && (
+              <View style={styles.editorContainer}>
+                <Text style={styles.editorTitle}>
+                  Strona {editingImage.orderIndex + 1} - regiony OCR
+                </Text>
+                <Text style={styles.editorHint}>
+                  Przeciągnij palcem po zdjęciu, aby dodać prostokątny region.
+                </Text>
+
+                <View
+                  style={styles.editorPreview}
+                  onLayout={onPreviewLayout}
+                  onStartShouldSetResponder={() => true}
+                  onMoveShouldSetResponder={() => true}
+                  onResponderGrant={beginDrag}
+                  onResponderMove={updateDrag}
+                  onResponderRelease={finishDrag}
+                  onResponderTerminate={() => {
+                    setDragStart(null);
+                    setDragRect(null);
+                  }}
+                >
+                  <PageImagePreview
+                    thumbnailUrl={editingImage.thumbnailUrl}
+                    imageUrl={editingImage.imageUrl}
+                    style={styles.editorImage}
+                    resizeMode="contain"
+                  />
+                  {previewLayout.width > 0 && editorRegions.map(renderRegionOverlay)}
+                  {dragRect && (
+                    <View
+                      style={[
+                        styles.dragOverlay,
+                        {
+                          left: dragRect.x,
+                          top: dragRect.y,
+                          width: dragRect.width,
+                          height: dragRect.height,
+                        },
+                      ]}
+                    />
+                  )}
+                </View>
+
+                <Text style={styles.editorCount}>Regiony: {editorRegions.length}</Text>
+                {editorRegions.length === 0 ? (
+                  <Text style={styles.emptyRegions}>Brak regionów - OCR odczyta całą stronę.</Text>
+                ) : (
+                  <FlatList
+                    data={editorRegions}
+                    keyExtractor={(item) => item.key}
+                    style={styles.editorRegionList}
+                    renderItem={({ item, index }) => (
+                      <View style={styles.editorRegionRow}>
+                        <Text style={styles.editorRegionName}>Region {index + 1}</Text>
+                        <Pressable
+                          style={styles.deleteRegionBtn}
+                          onPress={() => removeEditorRegion(item.key)}
+                        >
+                          <Text style={styles.deleteRegionText}>Usuń region {index + 1}</Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  />
                 )}
-              />
+
+                <View style={styles.editorActions}>
+                  <Pressable style={styles.cancelEditorBtn} onPress={closeEditor}>
+                    <Text style={styles.cancelEditorText}>Anuluj</Text>
+                  </Pressable>
+                  <Pressable style={styles.saveEditorBtn} onPress={saveEditor}>
+                    <Text style={styles.saveEditorText}>Zapisz stronę</Text>
+                  </Pressable>
+                </View>
+              </View>
             )}
+          </Modal>
 
-            <View style={styles.editorActions}>
-              <Pressable style={styles.cancelEditorBtn} onPress={closeEditor}>
-                <Text style={styles.cancelEditorText}>Anuluj</Text>
-              </Pressable>
-              <Pressable style={styles.saveEditorBtn} onPress={saveEditor}>
-                <Text style={styles.saveEditorText}>Zapisz stronę</Text>
-              </Pressable>
-            </View>
+          <View style={styles.bottomBar}>
+            <Pressable style={styles.skipBtn} onPress={handleSave} disabled={saving}>
+              <Text style={styles.skipBtnText}>Pomiń</Text>
+            </Pressable>
+            <Pressable style={styles.saveBtn} onPress={handleSave} disabled={saving}>
+              {saving ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveBtnText}>
+                  {regions.length > 0 ? 'Zapisz i dalej' : 'Dalej →'}
+                </Text>
+              )}
+            </Pressable>
           </View>
-        )}
-      </Modal>
-
-      <View style={styles.bottomBar}>
-        <Pressable style={styles.skipBtn} onPress={handleSave} disabled={saving}>
-          <Text style={styles.skipBtnText}>Pomiń</Text>
-        </Pressable>
-        <Pressable style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-          {saving ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.saveBtnText}>
-              {regions.length > 0 ? 'Zapisz i dalej' : 'Dalej →'}
-            </Text>
-          )}
-        </Pressable>
-      </View>
-      </View>
+        </View>
       </FadeZoomContent>
     </AudioFlowScreen>
   );

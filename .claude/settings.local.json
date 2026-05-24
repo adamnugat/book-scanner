@@ -51,7 +51,12 @@
       "Read(//Users/awieczorek/.nvm/versions/**)",
       "Read(//Users/awieczorek/.volta/bin/**)",
       "Bash(/usr/local/bin/node node_modules/.bin/eslint apps/mobile/app/\\\\\\(app\\\\\\)/projects/\\\\[id\\\\]/images.tsx apps/mobile/components/audioflow.tsx)",
-      "Bash(/usr/local/bin/node ../../node_modules/typescript/bin/tsc --noEmit)"
+      "Bash(/usr/local/bin/node ../../node_modules/typescript/bin/tsc --noEmit)",
+      "Bash(grep -E \"\\\\.tsx?$\")",
+      "Bash(find /Users/awieczorek -maxdepth 4 -name \"node\" -type f 2>/dev/null | head -3; echo ---; find /Users/awieczorek -maxdepth 5 -name \"jest.config*\" -path \"*/apps/mobile/*\" 2>/dev/null | head -3)",
+      "Read(//Users/awieczorek/**)",
+      "Bash(command -v fnm asdf nvm volta)",
+      "Bash(git stash *)"
     ]
   }
 }

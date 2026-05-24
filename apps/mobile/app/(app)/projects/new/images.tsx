@@ -18,6 +18,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { api } from '../../../../lib/api';
 import { uploadFileFromImagePickerAsset } from '../../../../lib/image-upload';
 import { PageImagePreview } from '../../../../components/PageImagePreview';
+import { PageImageCard } from '../../../../components/PageImageCard';
 import {
   AudioFlowFooterMenu,
   AudioFlowScreen,
@@ -155,34 +156,30 @@ function ProcessingTimeline({ currentStep }: { currentStep: 'uploading' | 'ocr' 
 
         return (
           <View key={step.id}>
-            <View
-              style={timelineStyles.row}
-              accessible
-              accessibilityLabel={stateLabel}
-            >
+            <View style={timelineStyles.row} accessible accessibilityLabel={stateLabel}>
               <View style={timelineStyles.iconWrap}>
                 {isDone && (
                   <Text style={[timelineStyles.icon, { color: t.color.accent.pearl }]}>✓</Text>
                 )}
-                {isActive && (
-                  <ActivityIndicator size="small" color={t.color.accent.pearlBright} />
-                )}
+                {isActive && <ActivityIndicator size="small" color={t.color.accent.pearlBright} />}
                 {isPending && (
-                  <Text style={[timelineStyles.icon, { color: t.color.text.onSurfaceMuted }]}>○</Text>
+                  <Text style={[timelineStyles.icon, { color: t.color.text.onSurfaceMuted }]}>
+                    ○
+                  </Text>
                 )}
               </View>
               <Text
                 style={[
                   timelineStyles.label,
-                  isPending ? { color: t.color.text.onSurfaceMuted } : { color: t.color.text.onDark },
+                  isPending
+                    ? { color: t.color.text.onSurfaceMuted }
+                    : { color: t.color.text.onDark },
                 ]}
               >
                 {step.label}
               </Text>
             </View>
-            {index < PROCESSING_STEPS.length - 1 && (
-              <View style={timelineStyles.connector} />
-            )}
+            {index < PROCESSING_STEPS.length - 1 && <View style={timelineStyles.connector} />}
           </View>
         );
       })}
@@ -522,63 +519,20 @@ export default function NewProjectImagesScreen() {
       const uploadedIndex = images.findIndex((img) => img.id === item.image.id);
       const imgName = item.image.originalFilename || `Strona ${item.image.orderIndex + 1}`;
       return (
-        <View style={styles.photoCard}>
-          <Text style={styles.photoIndex}>{item.image.orderIndex + 1}</Text>
-          <PageImagePreview
-            imageUrl={item.image.imageUrl}
-            thumbnailUrl={item.image.thumbnailUrl}
-            style={styles.photoThumb}
-          />
-          <View style={styles.photoInfo}>
-            <Text style={styles.photoName} numberOfLines={1}>
-              {imgName}
-            </Text>
-            <View style={styles.photoActions}>
-              <Pressable
-                accessibilityLabel={`Wybierz obszary OCR dla ${imgName}`}
-                accessibilityRole="button"
-                style={styles.smallButton}
-                onPress={() => openRegionEditor(editingInfo)}
-              >
-                <Text style={styles.smallButtonText}>⊡</Text>
-                {imageRegions.length > 0 && (
-                  <Text style={styles.regionBadge}>{imageRegions.length}</Text>
-                )}
-              </Pressable>
-              <Pressable
-                accessibilityLabel={`Przenieś ${imgName} wyżej`}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: uploadedIndex === 0 }}
-                style={[styles.smallButton, uploadedIndex === 0 && styles.smallButtonDisabled]}
-                onPress={() => moveUploadedImage(uploadedIndex, -1)}
-                disabled={uploadedIndex === 0}
-              >
-                <Text style={styles.smallButtonText}>↑</Text>
-              </Pressable>
-              <Pressable
-                accessibilityLabel={`Przenieś ${imgName} niżej`}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: uploadedIndex === images.length - 1 }}
-                style={[
-                  styles.smallButton,
-                  uploadedIndex === images.length - 1 && styles.smallButtonDisabled,
-                ]}
-                onPress={() => moveUploadedImage(uploadedIndex, 1)}
-                disabled={uploadedIndex === images.length - 1}
-              >
-                <Text style={styles.smallButtonText}>↓</Text>
-              </Pressable>
-              <Pressable
-                accessibilityLabel={`Usuń ${imgName}`}
-                accessibilityRole="button"
-                style={styles.deleteButton}
-                onPress={() => deleteUploadedImage(item.image.id)}
-              >
-                <Text style={styles.deleteText}>✕</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
+        <PageImageCard
+          imageId={item.image.id}
+          imageUrl={item.image.imageUrl}
+          thumbnailUrl={item.image.thumbnailUrl}
+          displayName={imgName}
+          pageNumber={item.image.orderIndex + 1}
+          index={uploadedIndex}
+          total={images.length}
+          regionCount={imageRegions.length}
+          onSelectRegions={() => openRegionEditor(editingInfo)}
+          onMoveUp={(idx) => moveUploadedImage(idx, -1)}
+          onMoveDown={(idx) => moveUploadedImage(idx, 1)}
+          onDelete={() => deleteUploadedImage(item.image.id)}
+        />
       );
     }
 
@@ -591,59 +545,19 @@ export default function NewProjectImagesScreen() {
     };
 
     return (
-      <View style={styles.photoCard}>
-        <Text style={styles.photoIndex}>{images.length + item.index + 1}</Text>
-        <PageImagePreview imageUrl={item.asset.uri} style={styles.photoThumb} />
-        <View style={styles.photoInfo}>
-          <Text style={styles.photoName} numberOfLines={1}>
-            {pendingName}
-          </Text>
-          <View style={styles.photoActions}>
-            <Pressable
-              accessibilityLabel={`Wybierz obszary OCR dla ${pendingName}`}
-              accessibilityRole="button"
-              style={styles.smallButton}
-              onPress={() => openRegionEditor(editingInfo)}
-            >
-              <Text style={styles.smallButtonText}>⊡</Text>
-              {pendingRegions.length > 0 && (
-                <Text style={styles.regionBadge}>{pendingRegions.length}</Text>
-              )}
-            </Pressable>
-            <Pressable
-              accessibilityLabel={`Przenieś ${pendingName} wyżej`}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: item.index === 0 }}
-              style={[styles.smallButton, item.index === 0 && styles.smallButtonDisabled]}
-              onPress={() => movePendingAsset(item.index, -1)}
-              disabled={item.index === 0}
-            >
-              <Text style={styles.smallButtonText}>↑</Text>
-            </Pressable>
-            <Pressable
-              accessibilityLabel={`Przenieś ${pendingName} niżej`}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: item.index === pendingAssets.length - 1 }}
-              style={[
-                styles.smallButton,
-                item.index === pendingAssets.length - 1 && styles.smallButtonDisabled,
-              ]}
-              onPress={() => movePendingAsset(item.index, 1)}
-              disabled={item.index === pendingAssets.length - 1}
-            >
-              <Text style={styles.smallButtonText}>↓</Text>
-            </Pressable>
-            <Pressable
-              accessibilityLabel={`Usuń ${pendingName}`}
-              accessibilityRole="button"
-              style={styles.deleteButton}
-              onPress={() => removePendingAsset(item.index)}
-            >
-              <Text style={styles.deleteText}>✕</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+      <PageImageCard
+        imageId={item.asset.uri}
+        imageUrl={item.asset.uri}
+        displayName={pendingName}
+        pageNumber={images.length + item.index + 1}
+        index={item.index}
+        total={pendingAssets.length}
+        regionCount={pendingRegions.length}
+        onSelectRegions={() => openRegionEditor(editingInfo)}
+        onMoveUp={(idx) => movePendingAsset(idx, -1)}
+        onMoveDown={(idx) => movePendingAsset(idx, 1)}
+        onDelete={() => removePendingAsset(item.index)}
+      />
     );
   };
 
@@ -668,103 +582,103 @@ export default function NewProjectImagesScreen() {
   return (
     <AudioFlowScreen>
       <FadeZoomContent>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
-      >
-        <View style={styles.header}>
-          <Text style={styles.stepLabel}>Krok 2 z 3</Text>
-          <Text style={styles.title}>Dodaj zdjęcia stron książki</Text>
-          <Text style={styles.subtitle}>
-            Wybierz strony z galerii albo zeskanuj je aparatem. Kolejność zdjęć odpowiada kolejności
-            rozdziałów.
-          </Text>
-        </View>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
+        >
+          <View style={styles.header}>
+            <Text style={styles.stepLabel}>Krok 2 z 3</Text>
+            <Text style={styles.title}>Dodaj zdjęcia stron książki</Text>
+            <Text style={styles.subtitle}>
+              Wybierz strony z galerii albo zeskanuj je aparatem. Kolejność zdjęć odpowiada
+              kolejności rozdziałów.
+            </Text>
+          </View>
 
-        <View style={styles.sourceSection}>
-          <Text style={styles.sourceLabel}>Źródło zdjęć</Text>
-          <View style={styles.addRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Galeria"
-              style={styles.addButton}
-              onPress={pickFromGallery}
-            >
-              <View style={styles.sourceIcon}>
-                <Text style={styles.sourceIconText}>▧</Text>
-              </View>
-              <Text style={styles.addButtonText}>Galeria</Text>
-              <Text style={styles.addButtonSubtext}>Wybierz z urządzenia</Text>
-            </Pressable>
-            {Platform.OS !== 'web' && (
+          <View style={styles.sourceSection}>
+            <Text style={styles.sourceLabel}>Źródło zdjęć</Text>
+            <View style={styles.addRow}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Aparat"
+                accessibilityLabel="Galeria"
                 style={styles.addButton}
-                onPress={takePhoto}
+                onPress={pickFromGallery}
               >
                 <View style={styles.sourceIcon}>
-                  <Text style={styles.sourceIconText}>◉</Text>
+                  <Text style={styles.sourceIconText}>▧</Text>
                 </View>
-                <Text style={styles.addButtonText}>Aparat</Text>
-                <Text style={styles.addButtonSubtext}>Zrób zdjęcie strony</Text>
+                <Text style={styles.addButtonText}>Galeria</Text>
+                <Text style={styles.addButtonSubtext}>Wybierz z urządzenia</Text>
               </Pressable>
-            )}
+              {Platform.OS !== 'web' && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Aparat"
+                  style={styles.addButton}
+                  onPress={takePhoto}
+                >
+                  <View style={styles.sourceIcon}>
+                    <Text style={styles.sourceIconText}>◉</Text>
+                  </View>
+                  <Text style={styles.addButtonText}>Aparat</Text>
+                  <Text style={styles.addButtonSubtext}>Zrób zdjęcie strony</Text>
+                </Pressable>
+              )}
+            </View>
           </View>
-        </View>
 
-        {imageCount === 0 ? (
-          <GlassPanel style={styles.emptyHint}>
-            <Text style={styles.emptyHintIcon}>i</Text>
-            <Text style={styles.emptyHintText}>
-              Dodaj co najmniej 1 zdjęcie, aby przejść dalej.
-            </Text>
-          </GlassPanel>
-        ) : null}
-
-        <View style={styles.modeGrid}>
-          <View style={styles.modeHeader}>
-            <Text style={styles.sourceLabel}>Tryb kreatora</Text>
-            <Text style={styles.modeMeta}>Dotyczy całego projektu</Text>
-          </View>
-          <PickerCard
-            selected={mode === 'auto'}
-            title="Kreator automatyczny"
-            body={`${countLabel}. AudioFlow przygotuje OCR i narrację bez dodatkowych kroków.`}
-            meta="Domyślne"
-            onPress={() => setMode('auto')}
-          />
-
-          {mode === 'auto' && (
-            <View style={styles.autoSummary}>
-              <Text style={styles.autoTitle}>{countLabel}</Text>
-              <Text style={styles.autoBody}>
-                Wykryjemy strony, odczytamy tekst i wygenerujemy osobny plik audio dla każdej z
-                nich.
+          {imageCount === 0 ? (
+            <GlassPanel style={styles.emptyHint}>
+              <Text style={styles.emptyHintIcon}>i</Text>
+              <Text style={styles.emptyHintText}>
+                Dodaj co najmniej 1 zdjęcie, aby przejść dalej.
               </Text>
+            </GlassPanel>
+          ) : null}
+
+          <View style={styles.modeGrid}>
+            <View style={styles.modeHeader}>
+              <Text style={styles.sourceLabel}>Tryb kreatora</Text>
+              <Text style={styles.modeMeta}>Dotyczy całego projektu</Text>
+            </View>
+            <PickerCard
+              selected={mode === 'auto'}
+              title="Kreator automatyczny"
+              body={`${countLabel}. AudioFlow przygotuje OCR i narrację bez dodatkowych kroków.`}
+              meta="Domyślne"
+              onPress={() => setMode('auto')}
+            />
+
+            {mode === 'auto' && (
+              <View style={styles.autoSummary}>
+                <Text style={styles.autoTitle}>{countLabel}</Text>
+                <Text style={styles.autoBody}>
+                  Wykryjemy strony, odczytamy tekst i wygenerujemy osobny plik audio dla każdej z
+                  nich.
+                </Text>
+              </View>
+            )}
+
+            <PickerCard
+              selected={mode === 'advanced'}
+              title="Kreator zaawansowany"
+              body="Ręcznie sprawdzisz kolejność, usuniesz strony i przygotujesz edycję obszarów."
+              onPress={() => setMode('advanced')}
+            />
+          </View>
+
+          {mode === 'advanced' && (
+            <View style={styles.photoList}>
+              {orderedPreviewItems.length === 0 ? (
+                <Text style={styles.emptyText}>Dodaj zdjęcia, aby zobaczyć listę stron.</Text>
+              ) : (
+                orderedPreviewItems.map((item) => (
+                  <View key={item.key}>{renderAdvancedItem({ item })}</View>
+                ))
+              )}
             </View>
           )}
-
-          <PickerCard
-            selected={mode === 'advanced'}
-            title="Kreator zaawansowany"
-            body="Ręcznie sprawdzisz kolejność, usuniesz strony i przygotujesz edycję obszarów."
-            onPress={() => setMode('advanced')}
-          />
-        </View>
-
-        {mode === 'advanced' && (
-          <View style={styles.photoList}>
-            {orderedPreviewItems.length === 0 ? (
-              <Text style={styles.emptyText}>Dodaj zdjęcia, aby zobaczyć listę stron.</Text>
-            ) : (
-              orderedPreviewItems.map((item) => (
-                <View key={item.key}>{renderAdvancedItem({ item })}</View>
-              ))
-            )}
-          </View>
-        )}
-      </ScrollView>
+        </ScrollView>
       </FadeZoomContent>
 
       <AudioFlowFooterMenu
@@ -958,69 +872,6 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     marginTop: 22,
     textAlign: 'center',
-  },
-  photoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: audioFlowTokens.color.surface.glass,
-    borderRadius: audioFlowTokens.radius.card,
-    borderWidth: 1,
-    borderColor: audioFlowTokens.color.surface.glassEdge,
-    padding: 12,
-    marginBottom: 10,
-  },
-  photoIndex: {
-    color: audioFlowTokens.color.accent.pearl,
-    fontSize: 16,
-    fontWeight: '900',
-    textAlign: 'center',
-    width: 28,
-  },
-  photoThumb: { width: 58, height: 78, borderRadius: 10, marginHorizontal: 10 },
-  photoInfo: { flex: 1 },
-  photoName: {
-    color: audioFlowTokens.color.text.onDark,
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 5,
-  },
-  inlineAction: { color: audioFlowTokens.color.accent.pearl, fontSize: 13, fontWeight: '800' },
-
-  photoActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  smallButton: {
-    backgroundColor: audioFlowTokens.color.surface.glassLight,
-    borderColor: audioFlowTokens.color.surface.glassEdge,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  smallButtonDisabled: { opacity: 0.35 },
-  smallButtonText: { color: audioFlowTokens.color.text.onDark, fontSize: 14, fontWeight: '900' },
-  deleteButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  deleteText: {
-    color: audioFlowTokens.color.accent.danger,
-    fontSize: 15,
-    fontWeight: '900',
-  },
-  regionBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    backgroundColor: audioFlowTokens.color.accent.pearl,
-    borderRadius: 8,
-    minWidth: 16,
-    paddingHorizontal: 3,
-    fontSize: 10,
-    fontWeight: '900',
-    color: '#101320',
-    textAlign: 'center',
-    overflow: 'hidden',
   },
   editorContainer: {
     flex: 1,

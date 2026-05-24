@@ -16,6 +16,7 @@ import { api } from '../../../../lib/api';
 import { uploadFileFromImagePickerAsset } from '../../../../lib/image-upload';
 import { useToast } from '../../../../components/Toast';
 import { PageImagePreview } from '../../../../components/PageImagePreview';
+import { PageImageCard } from '../../../../components/PageImageCard';
 import {
   AudioFlowScreen,
   AudioFlowFooterMenu,
@@ -39,6 +40,7 @@ export default function ProjectImagesScreen() {
   const { showToast } = useToast();
   const insets = useSafeAreaInsets();
   const [images, setImages] = useState<PageImageResponse[]>([]);
+  const [regionCounts, setRegionCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [fileProgress, setFileProgress] = useState<FileProgress[]>([]);
@@ -56,8 +58,16 @@ export default function ProjectImagesScreen() {
 
   const loadImages = useCallback(async () => {
     try {
-      const data = await api.getImages(id);
+      const [data, regionData] = await Promise.all([
+        api.getImages(id),
+        api.getTextRegions(id).catch(() => []),
+      ]);
       setImages(data);
+      const counts: Record<string, number> = {};
+      for (const region of regionData) {
+        counts[region.pageImageId] = (counts[region.pageImageId] ?? 0) + 1;
+      }
+      setRegionCounts(counts);
     } catch {
       Alert.alert('Błąd', 'Nie udało się pobrać zdjęć');
     } finally {
@@ -192,6 +202,10 @@ export default function ProjectImagesScreen() {
     ]);
   };
 
+  const openRegionEditor = (imageId: string) => {
+    router.push(`/(app)/projects/${id}/text-regions?pageImageId=${imageId}`);
+  };
+
   const moveImage = async (index: number, direction: -1 | 1) => {
     const newIndex = index + direction;
     if (newIndex < 0 || newIndex >= images.length) return;
@@ -209,46 +223,25 @@ export default function ProjectImagesScreen() {
     }
   };
 
-  const renderImage = ({ item, index }: { item: PageImageResponse; index: number }) => (
-    <GlassPanel style={styles.card}>
-      <View style={styles.cardRow}>
-        <Text style={styles.pageNum}>{index + 1}</Text>
-        <PageImagePreview
-          thumbnailUrl={item.thumbnailUrl}
-          imageUrl={item.imageUrl}
-          style={styles.thumb}
-          resizeMode="contain"
-        />
-        <View style={styles.cardInfo}>
-          <Text style={styles.filename} numberOfLines={1}>
-            {item.originalFilename || 'Strona'}
-          </Text>
-          <Text style={styles.meta}>
-            {item.fileSize ? `${(item.fileSize / 1024).toFixed(0)} KB` : ''}
-          </Text>
-        </View>
-      </View>
-      <View style={styles.cardActions}>
-        <Pressable
-          style={[styles.moveBtn, index === 0 && styles.moveBtnDisabled]}
-          onPress={() => moveImage(index, -1)}
-          disabled={index === 0}
-        >
-          <Text style={styles.moveBtnText}>↑</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.moveBtn, index === images.length - 1 && styles.moveBtnDisabled]}
-          onPress={() => moveImage(index, 1)}
-          disabled={index === images.length - 1}
-        >
-          <Text style={styles.moveBtnText}>↓</Text>
-        </Pressable>
-        <Pressable style={styles.deleteBtn} onPress={() => handleDelete(item)}>
-          <Text style={styles.deleteBtnText}>Usuń</Text>
-        </Pressable>
-      </View>
-    </GlassPanel>
-  );
+  const renderImage = ({ item, index }: { item: PageImageResponse; index: number }) => {
+    const displayName = item.originalFilename || `Strona ${index + 1}`;
+    return (
+      <PageImageCard
+        imageId={item.id}
+        imageUrl={item.imageUrl}
+        thumbnailUrl={item.thumbnailUrl}
+        displayName={displayName}
+        pageNumber={index + 1}
+        index={index}
+        total={images.length}
+        regionCount={regionCounts[item.id] ?? 0}
+        onSelectRegions={openRegionEditor}
+        onMoveUp={(idx) => moveImage(idx, -1)}
+        onMoveDown={(idx) => moveImage(idx, 1)}
+        onDelete={() => handleDelete(item)}
+      />
+    );
+  };
 
   if (loading) {
     return (
@@ -381,7 +374,6 @@ export default function ProjectImagesScreen() {
               )}
             </View>
           )}
-
         </View>
       </FadeZoomContent>
       <AudioFlowFooterMenu
@@ -406,54 +398,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: t.spacing.gutterMobile, paddingBottom: 100 },
-  card: {
-    borderRadius: t.radius.card,
-    padding: 12,
-    marginBottom: t.spacing.stackSm,
-  },
-  cardRow: { flexDirection: 'row', alignItems: 'center' },
-  pageNum: {
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  emptyText: {
     color: t.color.text.onSurfaceMuted,
     fontSize: 16,
-    fontWeight: 'bold',
-    width: 28,
-    textAlign: 'center',
-  },
-  thumb: {
-    width: 60,
-    height: 80,
-    borderRadius: t.radius.md,
-    backgroundColor: t.color.surface.glassMuted,
-    marginHorizontal: 10,
-  },
-  cardInfo: { flex: 1 },
-  filename: { color: t.color.text.onDark, fontSize: 14, fontFamily: 'VarelaRound_400Regular' },
-  meta: {
-    color: t.color.text.onSurfaceMuted,
-    fontSize: 12,
     fontFamily: 'VarelaRound_400Regular',
-    marginTop: 2,
   },
-  cardActions: {
-    flexDirection: 'row',
-    gap: t.spacing.stackSm,
-    marginTop: t.spacing.stackSm,
-    justifyContent: 'flex-end',
-  },
-  moveBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: t.radius.md,
-    backgroundColor: t.color.surface.glassLight,
-    borderWidth: 1,
-    borderColor: t.color.surface.glassEdge,
-  },
-  moveBtnDisabled: { opacity: 0.3 },
-  moveBtnText: { color: t.color.text.onDark, fontSize: 16 },
-  deleteBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: t.radius.md },
-  deleteBtnText: { color: t.color.accent.danger, fontSize: 14, fontFamily: 'VarelaRound_400Regular' },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: { color: t.color.text.onSurfaceMuted, fontSize: 16, fontFamily: 'VarelaRound_400Regular' },
   uploadOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.6)',
