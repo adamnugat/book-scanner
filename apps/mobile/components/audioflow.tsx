@@ -414,6 +414,7 @@ export function AudioFlowFooterMenu({
   rightIcon = 'headphones' as React.ComponentProps<typeof Feather>['name'],
   rightLabel = 'Odtwarzacz',
   rightDisabled,
+  hideRight = false,
 }: {
   active?: 'library' | 'player';
   bottomInset?: number;
@@ -432,6 +433,7 @@ export function AudioFlowFooterMenu({
   rightIcon?: React.ComponentProps<typeof Feather>['name'];
   rightLabel?: string;
   rightDisabled?: boolean;
+  hideRight?: boolean;
 }) {
   const resolvedRightDisabled = rightDisabled ?? playerDisabled;
   return (
@@ -485,7 +487,8 @@ export function AudioFlowFooterMenu({
           <Feather color={t.color.text.onPearl} name={createIcon} size={28} />
         </Pressable>
 
-        {variant === 'full' ? (
+        {variant === 'full' && hideRight ? <View style={styles.footerItem} /> : null}
+        {variant === 'full' && !hideRight ? (
           <Pressable
             accessibilityLabel={rightLabel}
             accessibilityRole="button"

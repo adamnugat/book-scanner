@@ -203,7 +203,7 @@ export default function ProjectImagesScreen() {
   };
 
   const openRegionEditor = (imageId: string) => {
-    router.push(`/(app)/projects/${id}/text-regions?pageImageId=${imageId}`);
+    router.push(`/(app)/projects/${id}/text-regions/${imageId}`);
   };
 
   const moveImage = async (index: number, direction: -1 | 1) => {

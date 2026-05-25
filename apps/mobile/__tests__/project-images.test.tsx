@@ -239,9 +239,7 @@ describe('ProjectImagesScreen page photos', () => {
     const cropButton = await screen.findByLabelText('Wybierz obszary OCR dla page1.jpg');
     fireEvent.press(cropButton);
 
-    expect(mockRouterPush).toHaveBeenCalledWith(
-      '/(app)/projects/proj-1/text-regions?pageImageId=img-1',
-    );
+    expect(mockRouterPush).toHaveBeenCalledWith('/(app)/projects/proj-1/text-regions/img-1');
   });
 
   it('renders reorder and delete buttons with stable accessibility labels', async () => {

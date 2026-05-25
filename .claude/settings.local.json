@@ -56,7 +56,13 @@
       "Bash(find /Users/awieczorek -maxdepth 4 -name \"node\" -type f 2>/dev/null | head -3; echo ---; find /Users/awieczorek -maxdepth 5 -name \"jest.config*\" -path \"*/apps/mobile/*\" 2>/dev/null | head -3)",
       "Read(//Users/awieczorek/**)",
       "Bash(command -v fnm asdf nvm volta)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(/opt/homebrew/bin/node --experimental-strip-types --no-warnings -e ' *)",
+      "Bash(mkdir -p \"/Users/awieczorek/dev/book-scaner/apps/mobile/app/\\(app\\)/projects/[id]/text-regions\" && ls \"/Users/awieczorek/dev/book-scaner/apps/mobile/app/\\(app\\)/projects/[id]/\")",
+      "Bash(rm /Users/awieczorek/dev/book-scaner/apps/mobile/app/\\\\\\(app\\\\\\)/projects/\\\\[id\\\\]/text-regions.tsx && ls \"/Users/awieczorek/dev/book-scaner/apps/mobile/app/\\(app\\)/projects/[id]/\" | grep text-regions)"
+    ],
+    "additionalDirectories": [
+      "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/[id]"
     ]
   }
 }

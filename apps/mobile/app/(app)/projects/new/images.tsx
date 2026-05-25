@@ -2,22 +2,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  type GestureResponderEvent,
-  type LayoutChangeEvent,
 } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '../../../../lib/api';
 import { uploadFileFromImagePickerAsset } from '../../../../lib/image-upload';
-import { PageImagePreview } from '../../../../components/PageImagePreview';
 import { PageImageCard } from '../../../../components/PageImageCard';
 import {
   AudioFlowFooterMenu,
@@ -29,12 +25,10 @@ import {
   audioFlowTokens,
 } from '../../../../components/audioflow';
 import {
-  createNormalizedRegion,
-  denormalizeRegion,
-  type Point,
-  type Rect,
-  type Size,
-} from '../../../../lib/text-region-geometry';
+  OcrRegionEditor,
+  type EditorRegion,
+  type OcrEditorTarget,
+} from '../../../../components/OcrRegionEditor';
 import type {
   AudioTrackResponse,
   PageImageResponse,
@@ -67,8 +61,6 @@ interface RegionDraft {
 type EditingItem =
   | { kind: 'uploaded'; image: PageImageResponse }
   | { kind: 'pending'; asset: ImagePicker.ImagePickerAsset; pendingKey: string };
-
-const EMPTY_LAYOUT: Size = { width: 0, height: 0 };
 
 const AUDIO_READY_POLL_INTERVAL_MS = 1500;
 const AUDIO_READY_MAX_ATTEMPTS = 40;
@@ -201,10 +193,6 @@ export default function NewProjectImagesScreen() {
   const [processingStep, setProcessingStep] = useState<'uploading' | 'ocr' | 'audio' | null>(null);
   const [regions, setRegions] = useState<RegionDraft[]>([]);
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
-  const [editorRegions, setEditorRegions] = useState<RegionDraft[]>([]);
-  const [previewLayout, setPreviewLayout] = useState<Size>(EMPTY_LAYOUT);
-  const [dragStart, setDragStart] = useState<Point | null>(null);
-  const [dragRect, setDragRect] = useState<Rect | null>(null);
 
   const imageCount = pendingAssets.length + images.length;
   const countLabel = imageCount === 1 ? 'Dodano 1 zdjęcie' : `Dodano ${imageCount} zdjęć`;
@@ -402,85 +390,67 @@ export default function NewProjectImagesScreen() {
 
   const openRegionEditor = (item: EditingItem) => {
     setEditingItem(item);
-    const matchKey = item.kind === 'uploaded' ? item.image.id : item.pendingKey;
-    setEditorRegions(
-      regions
-        .filter((r) =>
-          item.kind === 'uploaded' ? r.pageImageId === matchKey : r.pendingUri === matchKey,
-        )
-        .sort((a, b) => a.orderIndex - b.orderIndex)
-        .map((r, index) => ({ ...r, orderIndex: index })),
-    );
-    setPreviewLayout(EMPTY_LAYOUT);
-    setDragStart(null);
-    setDragRect(null);
   };
 
   const closeRegionEditor = () => {
     setEditingItem(null);
-    setEditorRegions([]);
-    setDragStart(null);
-    setDragRect(null);
   };
 
-  const saveRegionEditor = () => {
+  const saveRegionEditor = (editorRegions: EditorRegion[]) => {
     if (!editingItem) return;
+    const isUploaded = editingItem.kind === 'uploaded';
+    const matchPageImageId = isUploaded ? editingItem.image.id : '';
+    const matchPendingUri = isUploaded ? undefined : editingItem.pendingKey;
+
     setRegions((prev) => {
-      const filtered =
-        editingItem.kind === 'uploaded'
-          ? prev.filter((r) => r.pageImageId !== editingItem.image.id)
-          : prev.filter((r) => r.pendingUri !== editingItem.pendingKey);
-      return [...filtered, ...editorRegions.map((r, index) => ({ ...r, orderIndex: index }))];
+      const filtered = isUploaded
+        ? prev.filter((r) => r.pageImageId !== editingItem.image.id)
+        : prev.filter((r) => r.pendingUri !== editingItem.pendingKey);
+      const merged = editorRegions.map<RegionDraft>((r, index) => ({
+        key: r.key,
+        pageImageId: matchPageImageId,
+        pendingUri: matchPendingUri,
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height,
+        orderIndex: index,
+      }));
+      return [...filtered, ...merged];
     });
     closeRegionEditor();
   };
 
-  const removeEditorRegion = (key: string) => {
-    setEditorRegions((prev) =>
-      prev.filter((r) => r.key !== key).map((r, index) => ({ ...r, orderIndex: index })),
-    );
+  const buildEditorTarget = (item: EditingItem): OcrEditorTarget =>
+    item.kind === 'uploaded'
+      ? {
+          kind: 'uploaded',
+          id: item.image.id,
+          imageUrl: item.image.imageUrl,
+          thumbnailUrl: item.image.thumbnailUrl,
+        }
+      : { kind: 'pending', uri: item.pendingKey };
+
+  const buildEditorInitialRegions = (item: EditingItem): EditorRegion[] => {
+    const matchKey = item.kind === 'uploaded' ? item.image.id : item.pendingKey;
+    return regions
+      .filter((r) =>
+        item.kind === 'uploaded' ? r.pageImageId === matchKey : r.pendingUri === matchKey,
+      )
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map((r, index) => ({
+        key: r.key,
+        orderIndex: index,
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height,
+      }));
   };
 
-  const onPreviewLayout = (event: LayoutChangeEvent) => {
-    setPreviewLayout({
-      width: event.nativeEvent.layout.width,
-      height: event.nativeEvent.layout.height,
-    });
-  };
-
-  const beginDrag = (event: GestureResponderEvent) => {
-    setDragStart({ x: event.nativeEvent.locationX, y: event.nativeEvent.locationY });
-    setDragRect(null);
-  };
-
-  const updateDrag = (event: GestureResponderEvent) => {
-    if (!dragStart || previewLayout.width <= 0 || previewLayout.height <= 0) return;
-    const point = { x: event.nativeEvent.locationX, y: event.nativeEvent.locationY };
-    const normalized = createNormalizedRegion(dragStart, point, previewLayout, 1);
-    setDragRect(normalized ? denormalizeRegion(normalized, previewLayout) : null);
-  };
-
-  const finishDrag = (event: GestureResponderEvent) => {
-    if (!editingItem || !dragStart) return;
-    const point = { x: event.nativeEvent.locationX, y: event.nativeEvent.locationY };
-    const normalized = createNormalizedRegion(dragStart, point, previewLayout);
-    setDragStart(null);
-    setDragRect(null);
-    if (!normalized) return;
-
-    const isUploaded = editingItem.kind === 'uploaded';
-    const baseKey = isUploaded ? editingItem.image.id : editingItem.pendingKey;
-
-    setEditorRegions((prev) => [
-      ...prev,
-      {
-        key: `${baseKey}-${Date.now()}-${prev.length}`,
-        pageImageId: isUploaded ? editingItem.image.id : '',
-        pendingUri: isUploaded ? undefined : editingItem.pendingKey,
-        ...normalized,
-        orderIndex: prev.length,
-      },
-    ]);
+  const buildEditorPageLabel = (item: EditingItem): string => {
+    if (item.kind === 'uploaded') return `Strona ${item.image.orderIndex + 1}`;
+    return item.asset.fileName ?? 'Nowe zdjęcie';
   };
 
   const handleContinue = () => {
@@ -495,21 +465,6 @@ export default function NewProjectImagesScreen() {
     }
 
     void runAdvancedFlow();
-  };
-
-  const renderRegionOverlay = (region: RegionDraft, index: number) => {
-    const rect = denormalizeRegion(region, previewLayout);
-    return (
-      <View
-        key={region.key}
-        style={[
-          styles.regionOverlay,
-          { left: rect.x, top: rect.y, width: rect.width, height: rect.height },
-        ]}
-      >
-        <Text style={styles.regionNumber}>{index + 1}</Text>
-      </View>
-    );
   };
 
   const renderAdvancedItem = ({ item }: { item: (typeof orderedPreviewItems)[number] }) => {
@@ -581,6 +536,7 @@ export default function NewProjectImagesScreen() {
 
   return (
     <AudioFlowScreen>
+      <Stack.Screen options={{ headerShown: !editingItem }} />
       <FadeZoomContent>
         <ScrollView
           style={styles.container}
@@ -701,92 +657,20 @@ export default function NewProjectImagesScreen() {
         </View>
       )}
 
-      <Modal
-        visible={Boolean(editingItem)}
-        animationType="slide"
-        onRequestClose={closeRegionEditor}
-      >
-        {editingItem && (
-          <View style={styles.editorContainer}>
-            <Text style={styles.editorTitle}>
-              {editingItem.kind === 'uploaded'
-                ? `Strona ${editingItem.image.orderIndex + 1} — regiony OCR`
-                : `${editingItem.asset.fileName ?? 'Zdjęcie'} — regiony OCR`}
-            </Text>
-            <Text style={styles.editorHint}>
-              Przeciągnij palcem po zdjęciu, aby dodać prostokątny region.
-            </Text>
-
-            <View
-              style={styles.editorPreview}
-              onLayout={onPreviewLayout}
-              onStartShouldSetResponder={() => true}
-              onMoveShouldSetResponder={() => true}
-              onResponderGrant={beginDrag}
-              onResponderMove={updateDrag}
-              onResponderRelease={finishDrag}
-              onResponderTerminate={() => {
-                setDragStart(null);
-                setDragRect(null);
-              }}
-            >
-              <PageImagePreview
-                thumbnailUrl={
-                  editingItem.kind === 'uploaded' ? editingItem.image.thumbnailUrl : null
-                }
-                imageUrl={
-                  editingItem.kind === 'uploaded'
-                    ? editingItem.image.imageUrl
-                    : editingItem.asset.uri
-                }
-                style={styles.editorImage}
-                resizeMode="contain"
-              />
-              {previewLayout.width > 0 && editorRegions.map(renderRegionOverlay)}
-              {dragRect && (
-                <View
-                  style={[
-                    styles.dragOverlay,
-                    {
-                      left: dragRect.x,
-                      top: dragRect.y,
-                      width: dragRect.width,
-                      height: dragRect.height,
-                    },
-                  ]}
-                />
-              )}
-            </View>
-
-            <Text style={styles.editorCount}>
-              {editorRegions.length === 0
-                ? 'Brak regionów — OCR odczyta całą stronę.'
-                : `Regiony: ${editorRegions.length}`}
-            </Text>
-
-            {editorRegions.map((region, index) => (
-              <View key={region.key} style={styles.editorRegionRow}>
-                <Text style={styles.editorRegionName}>Region {index + 1}</Text>
-                <Pressable
-                  style={styles.deleteRegionBtn}
-                  onPress={() => removeEditorRegion(region.key)}
-                >
-                  <Text style={styles.deleteRegionText}>Usuń</Text>
-                </Pressable>
-              </View>
-            ))}
-
-            <View style={styles.editorActions}>
-              <Pressable style={styles.cancelEditorBtn} onPress={closeRegionEditor}>
-                <Text style={styles.cancelEditorText}>Anuluj</Text>
-              </Pressable>
-              <Pressable style={styles.saveEditorBtn} onPress={saveRegionEditor}>
-                <Text style={styles.saveEditorText}>Zapisz</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-      </Modal>
+      {editingItem && (
+        <View style={StyleSheet.absoluteFill}>
+          <OcrRegionEditor
+            key={
+              editingItem.kind === 'uploaded' ? editingItem.image.id : editingItem.pendingKey
+            }
+            target={buildEditorTarget(editingItem)}
+            initialRegions={buildEditorInitialRegions(editingItem)}
+            pageLabel={buildEditorPageLabel(editingItem)}
+            onCancel={closeRegionEditor}
+            onSave={saveRegionEditor}
+          />
+        </View>
+      )}
     </AudioFlowScreen>
   );
 }
@@ -873,64 +757,6 @@ const styles = StyleSheet.create({
     marginTop: 22,
     textAlign: 'center',
   },
-  editorContainer: {
-    flex: 1,
-    backgroundColor: '#101320',
-    padding: 16,
-    paddingTop: 48,
-  },
-  editorTitle: { color: '#fff', fontSize: 20, fontWeight: '900', marginBottom: 4 },
-  editorHint: { color: '#94a3b8', fontSize: 13, marginBottom: 14 },
-  editorPreview: {
-    height: 380,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: '#0f3460',
-    borderWidth: 1,
-    borderColor: '#334155',
-    marginBottom: 12,
-  },
-  editorImage: { width: '100%', height: '100%' },
-  regionOverlay: {
-    position: 'absolute',
-    borderWidth: 2,
-    borderColor: '#06d6a0',
-    backgroundColor: 'rgba(6, 214, 160, 0.16)',
-  },
-  regionNumber: {
-    minWidth: 24,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    backgroundColor: '#06d6a0',
-    color: '#1a1a2e',
-    fontSize: 13,
-    fontWeight: '800',
-    textAlign: 'center',
-  },
-  dragOverlay: {
-    position: 'absolute',
-    borderWidth: 2,
-    borderColor: '#e94560',
-    backgroundColor: 'rgba(233, 69, 96, 0.14)',
-  },
-  editorCount: { color: '#94a3b8', fontSize: 14, marginBottom: 8 },
-  editorRegionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#1e2d4a',
-  },
-  editorRegionName: { color: '#e0e0e0', fontSize: 14 },
-  deleteRegionBtn: { paddingVertical: 4, paddingHorizontal: 8 },
-  deleteRegionText: { color: '#e94560', fontSize: 13, fontWeight: '600' },
-  editorActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 'auto',
-    paddingTop: 16,
-  },
   processingOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(19, 19, 22, 0.94)',
@@ -943,21 +769,4 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     minWidth: 260,
   },
-  cancelEditorBtn: {
-    flex: 1,
-    borderRadius: 10,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  cancelEditorText: { color: '#cbd5e1', fontSize: 15, fontWeight: '600' },
-  saveEditorBtn: {
-    flex: 2,
-    borderRadius: 10,
-    padding: 14,
-    alignItems: 'center',
-    backgroundColor: '#06d6a0',
-  },
-  saveEditorText: { color: '#1a1a2e', fontSize: 15, fontWeight: '800' },
 });

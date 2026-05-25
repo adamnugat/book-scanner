@@ -2,13 +2,18 @@ import { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
+import { Feather } from '@expo/vector-icons';
 
 import {
   AudioFlowFooterMenu,
   AudioFlowScreen,
 } from '../../../components/audioflow';
 import { FadeZoomContent } from '../../../components/FadeZoomContent';
+import { audioFlowTokens } from '../../../components/audioflow-tokens';
 import { api } from '../../../lib/api';
+
+const t = audioFlowTokens;
 
 interface Plan {
   type: string;
@@ -27,10 +32,10 @@ interface Usage {
   periodMonth: string;
 }
 
-const PLAN_COLORS: Record<string, string> = {
-  free: '#888',
-  premium: '#f0a500',
-  max: '#e94560',
+const PLAN_ACCENT: Record<string, string> = {
+  free: t.color.text.onSurfaceSubtle,
+  premium: t.color.accent.pearl,
+  max: t.color.accent.danger,
 };
 
 export default function PricingScreen() {
@@ -60,7 +65,7 @@ export default function PricingScreen() {
       <AudioFlowScreen>
         <FadeZoomContent>
           <View style={styles.centered}>
-            <ActivityIndicator size="large" color="#e94560" />
+            <ActivityIndicator size="large" color={t.color.accent.danger} />
           </View>
         </FadeZoomContent>
 
@@ -78,61 +83,70 @@ export default function PricingScreen() {
   return (
     <AudioFlowScreen>
       <FadeZoomContent>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={[styles.content, { paddingBottom: footerPadding }]}
-      >
-        {usage && (
-          <View style={styles.usageCard}>
-            <Text style={styles.usageTitle}>Twoje wykorzystanie</Text>
-            <Text style={styles.currentPlan}>
-              Plan:{' '}
-              <Text style={{ color: PLAN_COLORS[usage.plan] || '#888', fontWeight: 'bold' }}>
-                {usage.plan.toUpperCase()}
-              </Text>
-            </Text>
-            <View style={styles.usageRow}>
-              <UsageBar label="Strony" used={usage.pagesUsed} limit={usage.pagesLimit} />
-              <UsageBar label="Projekty" used={usage.projectsUsed} limit={usage.projectsLimit} />
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[styles.content, { paddingBottom: footerPadding }]}
+        >
+          {usage && (
+            <View style={styles.card}>
+              <BlurView intensity={10} tint="dark" style={StyleSheet.absoluteFill} />
+              <Text style={styles.cardTitle}>Twoje wykorzystanie</Text>
+              <View style={styles.currentPlanRow}>
+                <Text style={styles.currentPlanLabel}>Aktywny plan</Text>
+                <Text style={[styles.currentPlanValue, { color: PLAN_ACCENT[usage.plan] ?? t.color.text.onSurfaceSubtle }]}>
+                  {usage.plan.toUpperCase()}
+                </Text>
+              </View>
+              <View style={styles.barsRow}>
+                <UsageBar label="Strony" used={usage.pagesUsed} limit={usage.pagesLimit} />
+                <UsageBar label="Projekty" used={usage.projectsUsed} limit={usage.projectsLimit} />
+              </View>
+              <Text style={styles.period}>Okres: {usage.periodMonth}</Text>
             </View>
-            <Text style={styles.period}>Okres: {usage.periodMonth}</Text>
-          </View>
-        )}
+          )}
 
-        <Text style={styles.sectionTitle}>Pakiety</Text>
+          <Text style={styles.sectionLabel}>Pakiety</Text>
 
-        {plans.map((plan) => {
-          const isActive = usage?.plan === plan.type;
-          return (
-            <View key={plan.type} style={[styles.planCard, isActive && styles.planCardActive]}>
-              <View style={styles.planHeader}>
-                <Text style={[styles.planName, { color: PLAN_COLORS[plan.type] || '#e0e0e0' }]}>
-                  {plan.name}
-                </Text>
-                <Text style={styles.planPrice}>
-                  {plan.price === 0 ? 'Za darmo' : `${plan.price} zł/msc`}
-                </Text>
-              </View>
-              <View style={styles.planLimits}>
-                <Text style={styles.limitText}>Projekty: {plan.limits.maxActiveProjects}</Text>
-                <Text style={styles.limitText}>Strony/msc: {plan.limits.maxPagesPerMonth}</Text>
-              </View>
-              <View style={styles.features}>
-                {plan.features.map((f, i) => (
-                  <Text key={i} style={styles.featureText}>
-                    • {f}
+          {plans.map((plan) => {
+            const isActive = usage?.plan === plan.type;
+            const accent = PLAN_ACCENT[plan.type] ?? t.color.text.onSurfaceSubtle;
+            return (
+              <View key={plan.type} style={[styles.card, isActive && { borderColor: accent, borderWidth: 2 }]}>
+                <BlurView intensity={10} tint="dark" style={StyleSheet.absoluteFill} />
+
+                <View style={styles.planHeader}>
+                  <View style={styles.planNameRow}>
+                    <Text style={[styles.planName, { color: accent }]}>{plan.name}</Text>
+                    {isActive && (
+                      <View style={[styles.activeBadge, { backgroundColor: `${accent}22` }]}>
+                        <Text style={[styles.activeBadgeText, { color: accent }]}>Aktywny</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.planPrice}>
+                    {plan.price === 0 ? 'Za darmo' : `${plan.price} zł/msc`}
                   </Text>
-                ))}
-              </View>
-              {isActive && (
-                <View style={styles.activeBadge}>
-                  <Text style={styles.activeBadgeText}>Aktywny</Text>
                 </View>
-              )}
-            </View>
-          );
-        })}
-      </ScrollView>
+
+                <View style={styles.limitsRow}>
+                  <LimitChip icon="layers" label={`${plan.limits.maxActiveProjects} projektów`} />
+                  <LimitChip icon="file-text" label={`${plan.limits.maxPagesPerMonth} stron/msc`} />
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.features}>
+                  {plan.features.map((f, i) => (
+                    <View key={i} style={styles.featureRow}>
+                      <Feather name="check" size={14} color={t.color.accent.softGreen} />
+                      <Text style={styles.featureText}>{f}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
       </FadeZoomContent>
 
       <AudioFlowFooterMenu
@@ -146,77 +160,165 @@ export default function PricingScreen() {
   );
 }
 
+function LimitChip({ icon, label }: { icon: React.ComponentProps<typeof Feather>['name']; label: string }) {
+  return (
+    <View style={styles.limitChip}>
+      <Feather name={icon} size={12} color={t.color.text.onSurfaceSubtle} />
+      <Text style={styles.limitChipText}>{label}</Text>
+    </View>
+  );
+}
+
 function UsageBar({ label, used, limit }: { label: string; used: number; limit: number }) {
   const pct = limit > 0 ? Math.min(used / limit, 1) : 0;
-  const color = pct >= 0.9 ? '#e94560' : pct >= 0.7 ? '#f0a500' : '#06d6a0';
+  const fillColor =
+    pct >= 0.9 ? t.color.accent.danger :
+    pct >= 0.7 ? t.color.accent.pearl :
+    t.color.accent.softGreen;
   return (
     <View style={styles.usageBarContainer}>
       <Text style={styles.usageBarLabel}>{label}</Text>
       <View style={styles.usageBarBg}>
-        <View style={[styles.usageBarFill, { width: `${pct * 100}%`, backgroundColor: color }]} />
+        <View style={[styles.usageBarFill, { width: `${pct * 100}%`, backgroundColor: fillColor }]} />
       </View>
-      <Text style={styles.usageBarValue}>
-        {used} / {limit}
-      </Text>
+      <Text style={styles.usageBarValue}>{used} / {limit}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
-  content: { padding: 20 },
+  content: { padding: t.spacing.marginMobile, gap: t.spacing.stackSm },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
-  usageCard: {
-    backgroundColor: '#16213e',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+  card: {
+    backgroundColor: t.color.surface.glass,
+    borderColor: t.color.surface.glassEdge,
+    borderRadius: t.radius.card,
     borderWidth: 1,
-    borderColor: '#0f3460',
+    overflow: 'hidden',
+    padding: t.spacing.stackMd,
   },
-  usageTitle: { color: '#e0e0e0', fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  currentPlan: { color: '#888', fontSize: 14, marginBottom: 12 },
-  usageRow: { flexDirection: 'row', gap: 16 },
-  period: { color: '#666', fontSize: 12, marginTop: 8 },
+
+  cardTitle: {
+    ...t.typography.headlineMd,
+    fontSize: 18,
+    color: t.color.text.onDark,
+    marginBottom: t.spacing.stackSm,
+  },
+  currentPlanRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  currentPlanLabel: {
+    ...t.typography.labelMd,
+    color: t.color.text.onSurfaceSubtle,
+  },
+  currentPlanValue: {
+    ...t.typography.labelMd,
+    fontWeight: '700',
+  },
+  barsRow: { flexDirection: 'row', gap: t.spacing.stackMd },
+  period: {
+    ...t.typography.labelSm,
+    color: t.color.text.onSurfaceMuted,
+    marginTop: t.spacing.stackSm,
+  },
 
   usageBarContainer: { flex: 1 },
-  usageBarLabel: { color: '#888', fontSize: 12, marginBottom: 4 },
-  usageBarBg: { height: 8, backgroundColor: '#0f3460', borderRadius: 4, overflow: 'hidden' },
-  usageBarFill: { height: '100%', borderRadius: 4 },
-  usageBarValue: { color: '#e0e0e0', fontSize: 13, marginTop: 4 },
-
-  sectionTitle: { color: '#e0e0e0', fontSize: 20, fontWeight: 'bold', marginBottom: 16 },
-
-  planCard: {
-    backgroundColor: '#16213e',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#0f3460',
+  usageBarLabel: {
+    ...t.typography.labelSm,
+    color: t.color.text.onSurfaceSubtle,
+    marginBottom: 4,
   },
-  planCardActive: { borderColor: '#e94560', borderWidth: 2 },
+  usageBarBg: {
+    height: 6,
+    backgroundColor: t.color.surface.glassLight,
+    borderRadius: t.radius.full,
+    overflow: 'hidden',
+  },
+  usageBarFill: { height: '100%', borderRadius: t.radius.full },
+  usageBarValue: {
+    ...t.typography.labelSm,
+    color: t.color.text.onSurfaceMuted,
+    marginTop: 4,
+  },
+
+  sectionLabel: {
+    ...t.typography.headlineMd,
+    fontSize: 20,
+    color: t.color.text.onDark,
+    marginTop: t.spacing.stackSm,
+    marginBottom: 4,
+  },
+
+  planNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.spacing.stackSm,
+    flexShrink: 1,
+  },
+  activeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: t.radius.lg,
+  },
+  activeBadgeText: {
+    ...t.typography.labelSm,
+    fontWeight: '700',
+  },
+
   planHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: t.spacing.stackSm,
   },
-  planName: { fontSize: 20, fontWeight: 'bold' },
-  planPrice: { color: '#e0e0e0', fontSize: 16, fontWeight: '600' },
-  planLimits: { flexDirection: 'row', gap: 16, marginBottom: 8 },
-  limitText: { color: '#888', fontSize: 13 },
-  features: { marginTop: 4 },
-  featureText: { color: '#aaa', fontSize: 13, lineHeight: 22 },
-  activeBadge: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    backgroundColor: '#e9456033',
-    paddingHorizontal: 10,
+  planName: {
+    ...t.typography.headlineMd,
+    fontSize: 22,
+  },
+  planPrice: {
+    ...t.typography.labelMd,
+    color: t.color.text.onDark,
+    fontWeight: '700',
+  },
+
+  limitsRow: {
+    flexDirection: 'row',
+    gap: t.spacing.stackSm,
+    marginBottom: t.spacing.stackSm,
+  },
+  limitChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: t.color.surface.glassLight,
+    borderRadius: t.radius.md,
+    paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
   },
-  activeBadgeText: { color: '#e94560', fontSize: 11, fontWeight: '600' },
+  limitChipText: {
+    ...t.typography.labelSm,
+    color: t.color.text.onSurfaceSubtle,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: t.color.surface.glassEdge,
+    marginBottom: t.spacing.stackSm,
+  },
+
+  features: { gap: 6 },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  featureText: {
+    ...t.typography.labelMd,
+    color: t.color.text.onSurfaceSubtle,
+  },
 });

@@ -25,7 +25,10 @@ export default function AppLayout() {
       <Stack.Screen name="projects/[id]/index" options={{ title: 'Projekt' }} />
       <Stack.Screen name="projects/[id]/edit" options={{ title: 'Edycja projektu' }} />
       <Stack.Screen name="projects/[id]/images" options={{ title: 'Zdjęcia stron' }} />
-      <Stack.Screen name="projects/[id]/text-regions" options={{ title: 'Regiony tekstu' }} />
+      <Stack.Screen
+        name="projects/[id]/text-regions/[pageImageId]"
+        options={{ headerShown: false, title: 'Regiony OCR' }}
+      />
       <Stack.Screen name="projects/[id]/scenes" options={{ title: 'Sceny – OCR' }} />
       <Stack.Screen name="projects/[id]/scenes/[sceneId]" options={{ title: 'Edycja sceny' }} />
       <Stack.Screen name="projects/[id]/voice" options={{ title: 'Głos lektora' }} />

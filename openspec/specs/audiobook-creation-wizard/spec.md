@@ -1,122 +1,82 @@
-# Audiobook Creation Wizard
+## ADDED Requirements
 
-## Overview
+### Requirement: Wizard advanced mode uses the unified OCR region editor
 
-Proces dodawania audiobooka musi być prosty, liniowy i zoptymalizowany pod kątem zużycia danych oraz limitów zewnętrznych API (Google Vision). Użytkownik powinien móc stworzyć audiobooka za pomocą kilku kliknięć (Tryb Automatyczny) lub mieć pełną kontrolę nad procesem (Tryb Zaawansowany).
+In the audiobook creation wizard's advanced mode, opening region editing for a page (either an uploaded image or a locally pending asset) SHALL render the shared `OcrRegionEditor` component. The wizard MUST NOT keep its own duplicate region-editor modal or styling.
 
-## Acceptance Criteria
+#### Scenario: Advanced mode opens region editor
 
-### AC-1: Krok 1 - Podstawy Projektu
-- [ ] Ekran `projects/new/index.tsx` zawiera formularz z polami: Tytuł, Język, Głos lektora, Wstawka (interstitial preset).
-- [ ] Głosy lektorów i presety wstawek są pobierane z backendu.
-- [ ] Po zatwierdzeniu formularza, projekt jest tworzony w bazie danych, a użytkownik przechodzi do Kroku 2.
+- **WHEN** the user is in advanced mode and opens region editing for a page card
+- **THEN** the wizard MUST mount the shared `OcrRegionEditor` component (the same one used by the project page-images screen)
 
-### AC-2: Krok 2 - Dodawanie Zdjęć i Wybór Trybu
-- [ ] Ekran `projects/new/images.tsx` pozwala na dodanie zdjęć z aparatu lub galerii.
-- [ ] Po dodaniu zdjęć pojawia się wybór trybu: "Automatyczny" (domyślny) lub "Zaawansowany".
-- [ ] W trybie "Automatyczny" wyświetlana jest tylko informacja o liczbie dodanych zdjęć i przycisk "Utwórz audiobooka".
-- [ ] W trybie "Zaawansowany" wyświetlana jest lista zdjęć z możliwością zmiany kolejności, usuwania i edycji obszarów (istniejąca logika).
+#### Scenario: Cancel returns to wizard step 2
 
-### AC-3: Optymalizacja Uploadu Zdjęć (Frontend)
-- [ ] Każde zdjęcie (niezależnie od formatu) przed wysłaniem na serwer jest skalowane do maksymalnej szerokości 1600px.
-- [ ] Zdjęcia są kompresowane do formatu JPEG z wysoką jakością (np. 95%), aby zachować ostrość tekstu dla OCR przy jednoczesnym zmniejszeniu wagi pliku.
+- **WHEN** the user cancels region editing inside the wizard
+- **THEN** the wizard MUST return the user to step 2 (add-photos step) with previously chosen mode, photos, and region drafts intact
 
-### AC-4: Smart Batching OCR (Backend)
-- [ ] Backend udostępnia endpoint `POST /projects/:id/process-ocr-batch`.
-- [ ] Endpoint dzieli zdjęcia na paczki po maksymalnie 5 sztuk.
-- [ ] Endpoint dodatkowo pilnuje bezpiecznego rozmiaru payloadu na podstawie faktycznego rozmiaru pobranych plików, aby nie zbliżać się do limitu 10MB na zapytanie.
-- [ ] Paczki są wysyłane do Google Vision API równolegle lub sekwencyjnie, nie przekraczając limitów (max 16 zdjęć i 10MB na zapytanie).
-- [ ] Wyniki OCR są zapisywane w bazie danych dla odpowiednich stron/obszarów.
-- [ ] Dla przepływu automatycznego endpoint umożliwia oznaczenie rozpoznanych scen jako `ready_for_audio`, aby TTS mógł wystartować bez ręcznej korekty.
+#### Scenario: Save persists draft regions in wizard memory
 
-### AC-5: Przepływ Trybu Automatycznego
-- [ ] Po kliknięciu "Utwórz audiobooka" w trybie automatycznym, aplikacja w tle:
-  1. Wysyła zoptymalizowane zdjęcia na serwer.
-  2. Wywołuje `process-ocr-batch`.
-  3. Wywołuje `generate-audio` (TTS).
-- [ ] Podczas tego procesu użytkownik widzi ekran ładowania/postępu.
-- [ ] Po zakończeniu użytkownik jest przekierowywany bezpośrednio do odtwarzacza (`projects/[id]/player`).
+- **WHEN** the user saves region edits inside the wizard
+- **THEN** the wizard MUST merge the returned regions into its in-memory `regions` draft, keyed by the page image id (uploaded) or pending URI (not yet uploaded), and return to step 2
+- **AND** the page card MUST reflect the updated region count
 
-### AC-6: Przepływ Trybu Zaawansowanego
-- [ ] Po kliknięciu "Dalej" w trybie zaawansowanym, aplikacja:
-  1. Wysyła zdjęcia i wywołuje `process-ocr-batch`.
-  2. Przekierowuje użytkownika do Kroku 3 (`projects/new/review.tsx`).
-- [ ] Krok 3 pozwala na podgląd każdego zdjęcia i edycję rozpoznanego tekstu.
-- [ ] Po zatwierdzeniu Kroku 3, aplikacja wywołuje `generate-audio` i przekierowuje do odtwarzacza.
+## MODIFIED Requirements (from creator-workflow-enhancements)
 
-## Formal requirements — AudioFlow UI (mobile)
+### Requirement: Tryb automatyczny — sekwencyjny OCR → TTS
 
-### Requirement: AudioFlow styling for project setup step
+W trybie automatycznym system SHALL zagwarantować zakończenie OCR przed wywołaniem TTS.
 
-The audiobook creation wizard SHALL render the project setup step using the AudioFlow mobile design system while presenting local bundled jingle presets as selectable options, and without fetching interstitial presets from the backend API. Sekcje Język, Lektor i Wstawka muzyczna SHALL być wyświetlane jako accordiony zgodne z komponentem `SectionAccordion`.
+#### Scenario: Submit w trybie automatycznym
 
-#### Scenario: User opens project setup step
+- **WHEN** użytkownik kliknie przycisk submit w trybie automatycznym
+- **THEN** system MUST kolejno: (1) wgrać zdjęcia, (2) uruchomić OCR, (3) czekać na zakończenie OCR dla wszystkich scen, (4) uruchomić TTS, (5) czekać na wygenerowanie audio, (6) przekierować do odtwarzacza
 
-- **WHEN** the user navigates to `projects/new/index`
-- **THEN** the screen presents the AudioFlow burgundy ambient background, glass surfaces, glow headline treatment, and pearl-accented primary action based on `design-system/reference-views/New Project.html`
+#### Scenario: Timeout oczekiwania na OCR
 
-#### Scenario: User configures project basics
+- **WHEN** OCR nie zakończy się w ciągu 90 sekund
+- **THEN** system MUST przerwać oczekiwanie i wyświetlić komunikat błędu z możliwością ponowienia
 
-- **WHEN** the user enters a title and selects language, voice, and jingle preset
-- **THEN** the jingle picker SHALL display options from `LOCAL_JINGLES` with `local:page-turn-3` (Wstawka głosowa) as the first and default selected option
-- **AND** each option SHALL display its `icon` emoji alongside the label — `🔔` for page-turn-1 and page-turn-2, `🎙️` for page-turn-3
-- **AND** the screen SHALL preserve the existing validation, voice API loading states, selected values, and project creation request behavior
+#### Scenario: Ekran ładowania podczas procesu automatycznego
 
-#### Scenario: Icon differentiates jingle types
+- **WHEN** trwa którykolwiek z kroków przepływu automatycznego
+- **THEN** system MUST wyświetlać ekran ładowania/postępu uniemożliwiający interakcję
 
-- **WHEN** the user views the jingle picker
-- **THEN** `local:page-turn-1` and `local:page-turn-2` SHALL display a sound icon (`🔔`) and `local:page-turn-3` SHALL display a voice/microphone icon (`🎙️`)
+### Requirement: Tryb zaawansowany — karta zdjęcia z ikoną usunięcia i przyciskiem obszarów
 
-#### Scenario: Jingle preset sent to backend
+W trybie zaawansowanym, lista zdjęć SHALL prezentować przy każdym zdjęciu: uchwyt do zmiany kolejności, ikonę usunięcia (nie tekst) oraz przycisk wyboru obszarów OCR.
 
-- **WHEN** the user submits the project creation form with a local jingle selected
-- **THEN** the `interstitialPreset` field in the create-project request SHALL be the `name` value from `LOCAL_JINGLES` (e.g. `'local:page-turn-3'` for Wstawka głosowa)
+#### Scenario: Karta zdjęcia w trybie zaawansowanym
 
-#### Scenario: Options fail to load
+- **WHEN** użytkownik jest w Kroku 2 w trybie zaawansowanym
+- **THEN** każda karta zdjęcia MUST zawierać: miniaturę zdjęcia, uchwyt reorder, ikonę usunięcia (kosz) oraz przycisk/ikonę wyboru obszarów OCR
 
-- **WHEN** voice loading fails (note: jingle options are local and cannot fail to load)
-- **THEN** the screen SHALL preserve the existing error feedback behavior while presenting the error state within the AudioFlow visual language
+#### Scenario: Usunięcie zdjęcia ikoną
 
-#### Scenario: Language section displayed as accordion
+- **WHEN** użytkownik kliknie ikonę kosza przy zdjęciu
+- **THEN** system MUST usunąć to zdjęcie z listy (zachowanie identyczne jak dotychczasowy przycisk tekstowy)
 
-- **WHEN** the user is on the project setup step
-- **THEN** sekcja „Język" SHALL być wyświetlana jako `SectionAccordion` z domyślnie wybraną pierwszą opcją (Polski)
-- **AND** wybór języka (pill buttons wewnątrz `GlassPanel`) SHALL zostać zastąpiony listą `PickerCard` wewnątrz accordionu
+### Requirement: Tryb zaawansowany — Krok 2 submit uruchamia OCR i przenosi do Kroku 3
 
-#### Scenario: Voice section displayed as accordion
+#### Scenario: Submit w trybie zaawansowanym
 
-- **WHEN** głosy lektora zostaną załadowane
-- **THEN** sekcja „Lektor" SHALL być wyświetlana jako `SectionAccordion` z domyślnie wybraną pierwszą opcją z API
-- **AND** collapsed state SHALL pokazywać nazwę aktualnie wybranego głosu jako `selectedSummary`
+- **WHEN** użytkownik kliknie submit w Kroku 2 w trybie zaawansowanym
+- **THEN** system MUST wgrać zdjęcia, uruchomić OCR, a następnie przekierować do Kroku 3 (`projects/new/review`)
 
-#### Scenario: Jingle section displayed as accordion
+### Requirement: Tryb zaawansowany — Krok 3 korekta OCR i submit TTS
 
-- **WHEN** the user views the project setup step
-- **THEN** sekcja „Wstawka muzyczna" SHALL być wyświetlana jako `SectionAccordion` z „Wstawką głosową" jako domyślnie wybraną opcją
-- **AND** collapsed state SHALL pokazywać label aktualnie wybranego jingle jako `selectedSummary`
+W Kroku 3 system SHALL wyświetlić wyniki OCR dla każdego zdjęcia w edytowalnym `textarea` i po zatwierdzeniu uruchomić TTS.
 
-#### Scenario: Default selections on first render
+#### Scenario: Wyświetlenie wyników OCR w Kroku 3
 
-- **WHEN** ekran `projects/new/index` renderuje się po raz pierwszy
-- **THEN** wszystkie trzy sekcje SHALL być zwinięte
-- **AND** Język SHALL mieć wybrany „Polski", Lektor SHALL mieć wybrany pierwszy głos z API, Wstawka muzyczna SHALL mieć wybraną „Wstawkę głosową"
+- **WHEN** użytkownik trafia do Kroku 3 po OCR
+- **THEN** system MUST wyświetlić dla każdego zdjęcia edytowalny `textarea` z rozpoznanym tekstem
 
-### Requirement: Wizard accessibility and testability
+#### Scenario: Ręczna korekta tekstu OCR
 
-The redesigned wizard screens SHALL keep core actions accessible and testable after the visual refactor.
+- **WHEN** użytkownik edytuje tekst w `textarea` dla wybranej sceny
+- **THEN** system MUST zachować edytowane wartości lokalnie do czasu zatwierdzenia
 
-#### Scenario: Primary actions are disabled
+#### Scenario: Submit w Kroku 3 — TTS i zakończenie kreatora
 
-- **WHEN** required wizard input is missing or processing is active
-- **THEN** the corresponding primary action SHALL expose a disabled state visually and functionally
-
-#### Scenario: Automated tests query actions
-
-- **WHEN** mobile tests render the redesigned wizard screens
-- **THEN** core actions for creating the project, adding photos, selecting mode, and continuing the flow remain discoverable by text, role, or accessibility label
-
-#### Scenario: Processing overlay is accessible
-
-- **WHEN** the automatic mode processing overlay is visible
-- **THEN** each step in the 3-step timeline SHALL have an accessible label indicating its state (completed, active, or pending)
-- **AND** the overlay SHALL not block gesture-based navigation that could trigger unintended side effects
+- **WHEN** użytkownik kliknie submit w Kroku 3
+- **THEN** system MUST zapisać poprawione teksty, uruchomić TTS i po wygenerowaniu audio przekierować do odtwarzacza

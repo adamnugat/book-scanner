@@ -1,5 +1,12 @@
 {
-  "permissions": { "defaultMode": "bypassPermissions" },
+  "permissions": {
+    "defaultMode": "auto",
+    "allow": [
+      "Bash(openspec instructions *)",
+      "Bash(openspec status *)",
+      "Bash(graphify query *)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
