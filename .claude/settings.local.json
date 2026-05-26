@@ -64,5 +64,8 @@
     "additionalDirectories": [
       "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/[id]"
     ]
+  },
+  "enabledPlugins": {
+    "understand-anything@understand-anything": true
   }
 }

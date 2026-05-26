@@ -96,6 +96,45 @@ book-scanner/
 | `npm run db:studio` | Prisma Studio (GUI bazy) |
 | `npm run db:seed` | Seed danych |
 
+## Eksploracja kodu — Knowledge Graph Dashboard
+
+Projekt zawiera knowledge graph wygenerowany przez skill `understand-anything`. Dashboard pozwala wizualnie przeglądać architekturę, zależności między plikami i klastry komponentów.
+
+### Warunek wstępny
+
+Jeśli `.understand-anything/knowledge-graph.json` nie istnieje, najpierw wygeneruj graph:
+
+```
+/understand
+```
+
+### Uruchomienie dashboardu
+
+W Claude Code wpisz:
+
+```
+/understand-dashboard
+```
+
+Skill automatycznie:
+1. Zainstaluje zależności dashboardu
+2. Uruchomi serwer Vite w tle
+3. Poda URL z tokenem dostępu, np.:
+
+```
+http://127.0.0.1:5173?token=<TOKEN>
+```
+
+> Token jest wymagany — bez niego dashboard wyświetli ekran blokady. Skopiuj pełny URL z `?token=` do przeglądarki.
+
+### Aktualizacja grafu po zmianach kodu
+
+```bash
+graphify update .
+```
+
+Operacja AST-only (bez kosztu API), wystarczy uruchomić po modyfikacji plików.
+
 ## Stos technologiczny
 
 - **Frontend**: Expo SDK 52, React Native, expo-router
