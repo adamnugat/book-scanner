@@ -9,12 +9,9 @@ const baseProps = {
   thumbnailUrl: null,
   displayName: 'page-1.jpg',
   pageNumber: 1,
-  index: 0,
-  total: 3,
   regionCount: 0,
   onSelectRegions: jest.fn(),
-  onMoveUp: jest.fn(),
-  onMoveDown: jest.fn(),
+  onCorrectOcr: jest.fn(),
   onDelete: jest.fn(),
 };
 
@@ -23,60 +20,96 @@ describe('PageImageCard', () => {
     jest.clearAllMocks();
   });
 
-  it('renders four action buttons with stable labels', () => {
-    render(<PageImageCard {...baseProps} index={1} />);
+  it('renders the three columns: drag handle with ordinal, status icons, edit + delete', () => {
+    render(<PageImageCard {...baseProps} pageNumber={2} areaSelectionEnabled />);
 
-    expect(screen.getByLabelText('Wybierz obszary OCR dla page-1.jpg')).toBeTruthy();
-    expect(screen.getByLabelText('Przenieś page-1.jpg wyżej')).toBeTruthy();
-    expect(screen.getByLabelText('Przenieś page-1.jpg niżej')).toBeTruthy();
+    expect(screen.getByLabelText('Przeciągnij page-1.jpg, pozycja 2')).toBeTruthy();
+    expect(screen.getByText('2')).toBeTruthy(); // ordinal in handle
+    expect(screen.getByLabelText('Obszary OCR dla page-1.jpg')).toBeTruthy();
+    expect(screen.getByLabelText('Korekta OCR dla page-1.jpg')).toBeTruthy();
+    expect(screen.getByLabelText('Audio dla page-1.jpg')).toBeTruthy();
+    expect(screen.getByLabelText('Edytuj etapy page-1.jpg')).toBeTruthy();
     expect(screen.getByLabelText('Usuń page-1.jpg')).toBeTruthy();
   });
 
-  it('disables move-up on the first item', () => {
-    render(<PageImageCard {...baseProps} index={0} />);
+  it('does not render reorder arrows', () => {
+    render(<PageImageCard {...baseProps} />);
 
-    expect(
-      screen.getByLabelText('Przenieś page-1.jpg wyżej').props.accessibilityState,
-    ).toMatchObject({ disabled: true });
-    expect(
-      screen.getByLabelText('Przenieś page-1.jpg niżej').props.accessibilityState,
-    ).toMatchObject({ disabled: false });
-  });
-
-  it('disables move-down on the last item', () => {
-    render(<PageImageCard {...baseProps} index={2} total={3} />);
-
-    expect(
-      screen.getByLabelText('Przenieś page-1.jpg wyżej').props.accessibilityState,
-    ).toMatchObject({ disabled: false });
-    expect(
-      screen.getByLabelText('Przenieś page-1.jpg niżej').props.accessibilityState,
-    ).toMatchObject({ disabled: true });
-  });
-
-  it('invokes callbacks on press', () => {
-    render(<PageImageCard {...baseProps} index={1} />);
-
-    fireEvent.press(screen.getByLabelText('Wybierz obszary OCR dla page-1.jpg'));
-    fireEvent.press(screen.getByLabelText('Przenieś page-1.jpg wyżej'));
-    fireEvent.press(screen.getByLabelText('Przenieś page-1.jpg niżej'));
-    fireEvent.press(screen.getByLabelText('Usuń page-1.jpg'));
-
-    expect(baseProps.onSelectRegions).toHaveBeenCalledWith('img-1');
-    expect(baseProps.onMoveUp).toHaveBeenCalledWith(1);
-    expect(baseProps.onMoveDown).toHaveBeenCalledWith(1);
-    expect(baseProps.onDelete).toHaveBeenCalledWith('img-1');
+    expect(screen.queryByLabelText('Przenieś page-1.jpg wyżej')).toBeNull();
+    expect(screen.queryByLabelText('Przenieś page-1.jpg niżej')).toBeNull();
   });
 
   it('shows region count badge when regionCount > 0', () => {
-    render(<PageImageCard {...baseProps} index={1} regionCount={3} />);
+    render(<PageImageCard {...baseProps} regionCount={3} areaSelectionEnabled />);
 
     expect(screen.getByText('3')).toBeTruthy();
   });
 
-  it('hides region count badge when regionCount is 0', () => {
-    render(<PageImageCard {...baseProps} index={1} regionCount={0} />);
+  it('greys the region icon with "A" when area selection is disabled', () => {
+    render(<PageImageCard {...baseProps} areaSelectionEnabled={false} />);
 
-    expect(screen.queryByText('0')).toBeNull();
+    const regionIcon = screen.getByLabelText('Obszary OCR dla page-1.jpg');
+    expect(regionIcon.props.accessibilityState).toMatchObject({ disabled: true });
+    expect(screen.getAllByText('A').length).toBeGreaterThan(0);
+  });
+
+  it('greys the OCR icon with "A" when OCR correction is disabled', () => {
+    render(<PageImageCard {...baseProps} ocrCorrectionEnabled={false} />);
+
+    const ocrIcon = screen.getByLabelText('Korekta OCR dla page-1.jpg');
+    expect(ocrIcon.props.accessibilityState).toMatchObject({ disabled: true });
+  });
+
+  it('opens region selection when the region icon is pressed and enabled', () => {
+    render(<PageImageCard {...baseProps} areaSelectionEnabled regionCount={0} />);
+
+    fireEvent.press(screen.getByLabelText('Obszary OCR dla page-1.jpg'));
+    expect(baseProps.onSelectRegions).toHaveBeenCalledWith('img-1');
+  });
+
+  it('opens OCR correction when correction is enabled and OCR is done', () => {
+    render(<PageImageCard {...baseProps} ocrCorrectionEnabled ocrDone />);
+
+    fireEvent.press(screen.getByLabelText('Korekta OCR dla page-1.jpg'));
+    expect(baseProps.onCorrectOcr).toHaveBeenCalledWith('img-1');
+  });
+
+  it('keeps the region icon editable after regions are selected (re-entry always works)', () => {
+    render(<PageImageCard {...baseProps} areaSelectionEnabled regionCount={2} />);
+
+    const regionIcon = screen.getByLabelText('Obszary OCR dla page-1.jpg');
+    expect(regionIcon.props.accessibilityState).toMatchObject({ disabled: false });
+
+    fireEvent.press(regionIcon);
+    expect(baseProps.onSelectRegions).toHaveBeenCalledWith('img-1');
+  });
+
+  it('edit button re-unlocks the OCR correction stage before OCR has run', () => {
+    render(<PageImageCard {...baseProps} ocrCorrectionEnabled ocrDone={false} />);
+
+    const ocrIcon = screen.getByLabelText('Korekta OCR dla page-1.jpg');
+    expect(ocrIcon.props.accessibilityState).toMatchObject({ disabled: true });
+
+    fireEvent.press(screen.getByLabelText('Edytuj etapy page-1.jpg'));
+
+    expect(
+      screen.getByLabelText('Korekta OCR dla page-1.jpg').props.accessibilityState,
+    ).toMatchObject({ disabled: false });
+  });
+
+  it('marks the audio icon active when audio is assigned', () => {
+    render(<PageImageCard {...baseProps} hasAudio />);
+
+    // audio icon is informational (not pressable)
+    expect(screen.getByLabelText('Audio dla page-1.jpg').props.accessibilityState).toMatchObject({
+      disabled: true,
+    });
+  });
+
+  it('invokes delete on trash press', () => {
+    render(<PageImageCard {...baseProps} />);
+
+    fireEvent.press(screen.getByLabelText('Usuń page-1.jpg'));
+    expect(baseProps.onDelete).toHaveBeenCalledWith('img-1');
   });
 });

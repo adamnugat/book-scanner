@@ -11,7 +11,9 @@ const ocrMocks = vi.hoisted(() => ({
 vi.mock('../src/lib/db', () => ({
   prisma: {
     subscriptionPlan: {
-      findFirst: vi.fn().mockResolvedValue({ planType: 'max', pagesLimit: 1500, projectsLimit: 50 }),
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({ planType: 'max', pagesLimit: 1500, projectsLimit: 50 }),
     },
     usageTracking: {
       findUnique: vi.fn().mockResolvedValue({ pagesUsed: 0 }),
@@ -79,7 +81,9 @@ const img2 = {
   fileSize: 6000,
   mimeType: 'image/jpeg',
   createdAt: now,
-  textRegions: [{ id: 'tr-1', pageImageId: 'img-2', x: 0.1, y: 0.2, width: 0.7, height: 0.6, orderIndex: 0 }],
+  textRegions: [
+    { id: 'tr-1', pageImageId: 'img-2', x: 0.1, y: 0.2, width: 0.7, height: 0.6, orderIndex: 0 },
+  ],
 };
 
 const scene1 = {
@@ -198,5 +202,138 @@ describe('POST /projects/:projectId/process-ocr-batch', () => {
 
     expect(res.status).toBe(403);
     expect(ocrMocks.recognizeTextBatch).not.toHaveBeenCalled();
+  });
+
+  it('does not reprocess scenes already ready_for_audio (incremental mode)', async () => {
+    const readyScene = {
+      ...scene1,
+      status: 'ready_for_audio',
+      ocrText: 'Already done',
+    };
+    db.project.findUnique.mockResolvedValue(projectA);
+    db.project.update.mockResolvedValue(projectA);
+    db.pageImage.findMany.mockResolvedValue([img1]);
+    db.scene.findMany
+      .mockResolvedValueOnce([readyScene])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([readyScene]);
+    db.scene.count.mockResolvedValue(0);
+    ocrMocks.recognizeTextBatch.mockResolvedValue([]);
+
+    const res = await request(app)
+      .post('/projects/proj-1/process-ocr-batch')
+      .set('Authorization', `Bearer ${tokenA}`);
+
+    expect(res.status).toBe(200);
+    expect(ocrMocks.recognizeTextBatch).toHaveBeenCalledWith([], 'pl');
+    expect(db.scene.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'scene-1' } }),
+    );
+    expect(db.scene.create).not.toHaveBeenCalled();
+  });
+
+  it('does not reprocess scenes already ocr_done (incremental mode)', async () => {
+    const doneScene = {
+      ...scene1,
+      status: 'ocr_done',
+      ocrText: 'Already recognized',
+    };
+    db.project.findUnique.mockResolvedValue(projectA);
+    db.project.update.mockResolvedValue(projectA);
+    db.pageImage.findMany.mockResolvedValue([img1]);
+    db.scene.findMany
+      .mockResolvedValueOnce([doneScene])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([doneScene]);
+    db.scene.count.mockResolvedValue(0);
+    ocrMocks.recognizeTextBatch.mockResolvedValue([]);
+
+    const res = await request(app)
+      .post('/projects/proj-1/process-ocr-batch')
+      .set('Authorization', `Bearer ${tokenA}`);
+
+    expect(res.status).toBe(200);
+    expect(ocrMocks.recognizeTextBatch).toHaveBeenCalledWith([], 'pl');
+    expect(db.scene.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'scene-1' } }),
+    );
+  });
+
+  it('reprocesses scenes in ocr_error status (incremental mode)', async () => {
+    const errorScene = {
+      ...scene1,
+      status: 'ocr_error',
+      ocrText: 'ERROR: previous attempt failed',
+    };
+    db.project.findUnique.mockResolvedValue(projectA);
+    db.project.update.mockResolvedValue(projectA);
+    db.pageImage.findMany.mockResolvedValue([img1]);
+    db.scene.findMany
+      .mockResolvedValueOnce([errorScene])
+      .mockResolvedValueOnce([{ ...errorScene, pageImage: img1 }])
+      .mockResolvedValueOnce([{ ...errorScene, status: 'ocr_done', ocrText: 'Retry success' }]);
+    db.scene.update
+      .mockResolvedValueOnce({ ...errorScene, status: 'ocr_processing' })
+      .mockResolvedValueOnce({ ...errorScene, status: 'ocr_done', ocrText: 'Retry success' });
+    db.scene.count.mockResolvedValue(0);
+    ocrMocks.recognizeTextBatch.mockResolvedValue([{ text: 'Retry success' }]);
+
+    const res = await request(app)
+      .post('/projects/proj-1/process-ocr-batch')
+      .set('Authorization', `Bearer ${tokenA}`);
+
+    expect(res.status).toBe(200);
+    expect(ocrMocks.recognizeTextBatch).toHaveBeenCalledWith(
+      [{ storagePath: 'projects/proj-1/pages/1.jpg', regions: undefined }],
+      'pl',
+    );
+    expect(db.scene.update).toHaveBeenCalledWith({
+      where: { id: 'scene-1' },
+      data: { ocrText: 'Retry success', status: 'ocr_done' },
+    });
+  });
+
+  it('creates a Scene for a new PageImage without one (incremental mode)', async () => {
+    const existingDoneScene = {
+      ...scene1,
+      status: 'ocr_done',
+      ocrText: 'Old page',
+    };
+    db.project.findUnique.mockResolvedValue(projectA);
+    db.project.update.mockResolvedValue(projectA);
+    db.pageImage.findMany.mockResolvedValue([img1, img2]);
+    db.scene.findMany
+      .mockResolvedValueOnce([existingDoneScene])
+      .mockResolvedValueOnce([{ ...scene2, pageImage: img2 }])
+      .mockResolvedValueOnce([
+        existingDoneScene,
+        { ...scene2, status: 'ocr_done', ocrText: 'New page' },
+      ]);
+    db.scene.create.mockResolvedValueOnce(scene2);
+    db.scene.update
+      .mockResolvedValueOnce({ ...scene2, status: 'ocr_processing' })
+      .mockResolvedValueOnce({ ...scene2, status: 'ocr_done', ocrText: 'New page' });
+    db.scene.count.mockResolvedValue(0);
+    ocrMocks.recognizeTextBatch.mockResolvedValue([{ text: 'New page' }]);
+
+    const res = await request(app)
+      .post('/projects/proj-1/process-ocr-batch')
+      .set('Authorization', `Bearer ${tokenA}`);
+
+    expect(res.status).toBe(200);
+    expect(db.scene.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        projectId: 'proj-1',
+        pageImageId: 'img-2',
+        status: 'queued',
+      }),
+    });
+    expect(db.scene.update).toHaveBeenCalledWith({
+      where: { id: 'scene-2' },
+      data: { ocrText: 'New page', status: 'ocr_done' },
+    });
+    expect(db.scene.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'scene-1' } }),
+    );
   });
 });

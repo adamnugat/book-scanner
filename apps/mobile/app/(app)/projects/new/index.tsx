@@ -143,7 +143,7 @@ export default function NewProjectScreen() {
         voiceId: selectedVoiceId,
         interstitialPreset: selectedPresetName,
       });
-      router.replace(`/(app)/projects/new/images?projectId=${project.id}`);
+      router.replace(`/(app)/projects/${project.id}/images`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Nie udało się stworzyć projektu';
       Alert.alert('Błąd', message);
@@ -167,7 +167,7 @@ export default function NewProjectScreen() {
           contentContainerStyle={[styles.content, { paddingBottom: 24 + footerPadding }]}
         >
           <View style={styles.hero}>
-            <Text style={styles.stepLabel}>Krok 1 z 3</Text>
+            <Text style={styles.stepLabel}>Krok 1 z 2</Text>
             <Text style={styles.heading}>Zacznijmy od podstaw</Text>
             <Text style={styles.subheading}>
               Nadaj audiobookowi tytuł, wybierz język narracji i brzmienie, które poprowadzi
@@ -225,9 +225,7 @@ export default function NewProjectScreen() {
                 onEditPress={() => handleEditPress('voice')}
               >
                 {voices.length === 0 ? (
-                  <Text style={styles.emptyText}>
-                    Brak dostępnych głosów dla wybranego języka.
-                  </Text>
+                  <Text style={styles.emptyText}>Brak dostępnych głosów dla wybranego języka.</Text>
                 ) : (
                   voices.map((voice) => {
                     const selected = selectedVoiceId === voice.elevenlabsVoiceId;

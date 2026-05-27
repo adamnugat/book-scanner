@@ -54,7 +54,11 @@ async function refreshAccessToken(): Promise<boolean> {
   return refreshInFlight;
 }
 
-async function apiFetch<T>(path: string, options: RequestInit = {}, didRefresh = false): Promise<T> {
+async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+  didRefresh = false,
+): Promise<T> {
   const token = await tokenStorage.getAccessToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -234,10 +238,20 @@ export const api = {
     >(`/projects/${projectId}/scenes/${sceneId}`);
   },
 
-  updateScene(projectId: string, sceneId: string, data: { editedText?: string | null; status?: string }) {
+  updateScene(
+    projectId: string,
+    sceneId: string,
+    data: { editedText?: string | null; status?: string },
+  ) {
     return apiFetch<SceneResponse>(`/projects/${projectId}/scenes/${sceneId}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  },
+
+  resetScene(projectId: string, sceneId: string) {
+    return apiFetch<SceneResponse>(`/projects/${projectId}/scenes/${sceneId}/reset`, {
+      method: 'POST',
     });
   },
 
@@ -261,9 +275,12 @@ export const api = {
   },
 
   buildPlaylist(projectId: string) {
-    return apiFetch<{ message: string; itemCount: number }>(`/projects/${projectId}/build-playlist`, {
-      method: 'POST',
-    });
+    return apiFetch<{ message: string; itemCount: number }>(
+      `/projects/${projectId}/build-playlist`,
+      {
+        method: 'POST',
+      },
+    );
   },
 
   getPlaylist(projectId: string) {
@@ -271,16 +288,25 @@ export const api = {
   },
 
   shareProject(projectId: string, email: string) {
-    return apiFetch<{ id: string; sharedWithEmail: string; role: string }>(`/projects/${projectId}/share`, {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
+    return apiFetch<{ id: string; sharedWithEmail: string; role: string }>(
+      `/projects/${projectId}/share`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      },
+    );
   },
 
   getShares(projectId: string) {
-    return apiFetch<{ id: string; sharedWithUserId: string; sharedWithEmail: string; role: string; createdAt: string }[]>(
-      `/projects/${projectId}/shares`,
-    );
+    return apiFetch<
+      {
+        id: string;
+        sharedWithUserId: string;
+        sharedWithEmail: string;
+        role: string;
+        createdAt: string;
+      }[]
+    >(`/projects/${projectId}/shares`);
   },
 
   revokeShare(projectId: string, userId: string) {
@@ -299,11 +325,21 @@ export const api = {
   },
 
   getQr(projectId: string) {
-    return apiFetch<{ id: string; deepLinkUrl: string; qrImageUrl: string }>(`/projects/${projectId}/qr`);
+    return apiFetch<{ id: string; deepLinkUrl: string; qrImageUrl: string }>(
+      `/projects/${projectId}/qr`,
+    );
   },
 
   getPricing() {
-    return apiFetch<{ type: string; name: string; price: number; limits: { maxActiveProjects: number; maxPagesPerMonth: number }; features: string[] }[]>('/pricing');
+    return apiFetch<
+      {
+        type: string;
+        name: string;
+        price: number;
+        limits: { maxActiveProjects: number; maxPagesPerMonth: number };
+        features: string[];
+      }[]
+    >('/pricing');
   },
 
   getMyPlan() {

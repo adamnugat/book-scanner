@@ -3,7 +3,7 @@ import request from 'supertest';
 import { app } from '../src/app';
 import { prisma } from '../src/lib/db';
 import { signAccessToken, signAssetToken } from '../src/lib/jwt';
-import { downloadFileWithMetadata, uploadFile } from '../src/lib/storage';
+import { deleteFile, downloadFileWithMetadata, uploadFile } from '../src/lib/storage';
 
 vi.mock('../src/lib/db', () => ({
   prisma: {
@@ -25,6 +25,7 @@ vi.mock('../src/lib/db', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
+    scene: { updateMany: vi.fn() },
     $transaction: vi.fn(),
   },
 }));
@@ -54,6 +55,7 @@ vi.mock('sharp', () => {
 
 const db = vi.mocked(prisma);
 const storageUploadFile = vi.mocked(uploadFile);
+const storageDeleteFile = vi.mocked(deleteFile);
 const storageDownloadFileWithMetadata = vi.mocked(downloadFileWithMetadata);
 const tokenA = signAccessToken({ userId: 'user-a', email: 'a@test.com' });
 const tokenB = signAccessToken({ userId: 'user-b', email: 'b@test.com' });
@@ -328,12 +330,37 @@ describe('Image endpoints', () => {
       expect(res.body[0].id).toBe('img-2');
       expect(res.body[0].orderIndex).toBe(0);
     });
+
+    it('syncs scene order with page order (no OCR/TTS re-run)', async () => {
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.$transaction.mockResolvedValue([]);
+      db.pageImage.findMany.mockResolvedValue([
+        { ...img2, orderIndex: 0 },
+        { ...img1, orderIndex: 1 },
+      ]);
+
+      const res = await request(app)
+        .put('/projects/proj-1/images/reorder')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({ imageIds: ['img-2', 'img-1'] });
+
+      expect(res.status).toBe(200);
+      // scene order updated to match the new page positions
+      expect(db.scene.updateMany).toHaveBeenCalledWith({
+        where: { projectId: 'proj-1', pageImageId: 'img-2' },
+        data: { orderIndex: 0 },
+      });
+      expect(db.scene.updateMany).toHaveBeenCalledWith({
+        where: { projectId: 'proj-1', pageImageId: 'img-1' },
+        data: { orderIndex: 1 },
+      });
+    });
   });
 
   describe('DELETE /projects/:projectId/images/:imageId', () => {
     it('T-3.6: deletes image from DB and storage', async () => {
       db.project.findUnique.mockResolvedValue(projectA);
-      db.pageImage.findUnique.mockResolvedValue(img1);
+      db.pageImage.findUnique.mockResolvedValue({ ...img1, scene: null });
       db.pageImage.delete.mockResolvedValue(img1);
 
       const res = await request(app)
@@ -343,6 +370,70 @@ describe('Image endpoints', () => {
       expect(res.status).toBe(200);
       expect(res.body.message).toContain('deleted');
       expect(db.pageImage.delete).toHaveBeenCalledWith({ where: { id: 'img-1' } });
+    });
+
+    it('deletes audio track storage when image has linked AudioTrack', async () => {
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.pageImage.findUnique.mockResolvedValue({
+        ...img1,
+        scene: {
+          id: 'scene-1',
+          audioTrack: {
+            id: 'track-1',
+            storagePath: 'projects/proj-1/audio/track-1.mp3',
+          },
+        },
+      });
+      db.pageImage.delete.mockResolvedValue(img1);
+
+      const res = await request(app)
+        .delete('/projects/proj-1/images/img-1')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(res.status).toBe(200);
+      expect(storageDeleteFile).toHaveBeenCalledWith('projects/proj-1/audio/track-1.mp3');
+      expect(storageDeleteFile).toHaveBeenCalledWith('projects/proj-1/pages/1.jpg');
+      expect(storageDeleteFile).toHaveBeenCalledWith('projects/proj-1/thumbs/1.webp');
+      expect(db.pageImage.delete).toHaveBeenCalledWith({ where: { id: 'img-1' } });
+    });
+
+    it('skips audio deletion when image has no scene', async () => {
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.pageImage.findUnique.mockResolvedValue({ ...img1, scene: null });
+      db.pageImage.delete.mockResolvedValue(img1);
+
+      const res = await request(app)
+        .delete('/projects/proj-1/images/img-1')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(res.status).toBe(200);
+      expect(storageDeleteFile).not.toHaveBeenCalledWith(expect.stringContaining('/audio/'));
+    });
+
+    it('still deletes DB record when audio storage cleanup throws', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.pageImage.findUnique.mockResolvedValue({
+        ...img1,
+        scene: {
+          id: 'scene-1',
+          audioTrack: {
+            id: 'track-1',
+            storagePath: 'projects/proj-1/audio/track-1.mp3',
+          },
+        },
+      });
+      db.pageImage.delete.mockResolvedValue(img1);
+      storageDeleteFile.mockImplementationOnce(() => Promise.reject(new Error('S3 down')));
+
+      const res = await request(app)
+        .delete('/projects/proj-1/images/img-1')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toContain('deleted');
+      expect(db.pageImage.delete).toHaveBeenCalledWith({ where: { id: 'img-1' } });
+      warnSpy.mockRestore();
     });
 
     it('returns 404 for non-existent image', async () => {

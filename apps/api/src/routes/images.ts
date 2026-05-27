@@ -194,7 +194,16 @@ imagesRouter.put('/reorder', requireAuth, requireProjectOwner, async (req, res) 
     }),
   );
 
-  await prisma.$transaction(updates);
+  // Keep scene order (and therefore playback/playlist order) in sync with page order.
+  // Reordering pages must NOT re-run OCR/TTS — only the ordering changes.
+  const sceneUpdates = imageIds.map((id, index) =>
+    prisma.scene.updateMany({
+      where: { projectId, pageImageId: id },
+      data: { orderIndex: index },
+    }),
+  );
+
+  await prisma.$transaction([...updates, ...sceneUpdates]);
 
   const images = await prisma.pageImage.findMany({
     where: { projectId },
@@ -308,7 +317,10 @@ imagesRouter.get('/:imageId/thumbnail', async (req, res) => {
 imagesRouter.delete('/:imageId', requireAuth, requireProjectOwner, async (req, res) => {
   const projectId = requireRouteParam(req, 'projectId');
   const imageId = requireRouteParam(req, 'imageId');
-  const image = await prisma.pageImage.findUnique({ where: { id: imageId } });
+  const image = await prisma.pageImage.findUnique({
+    where: { id: imageId },
+    include: { scene: { include: { audioTrack: true } } },
+  });
 
   if (!image) {
     res.status(404).json({ error: 'Not Found', message: 'Image not found', statusCode: 404 });
@@ -322,6 +334,15 @@ imagesRouter.delete('/:imageId', requireAuth, requireProjectOwner, async (req, r
       statusCode: 400,
     });
     return;
+  }
+
+  const audioStoragePath = image.scene?.audioTrack?.storagePath;
+  if (audioStoragePath) {
+    try {
+      await deleteFile(audioStoragePath);
+    } catch (err) {
+      console.warn('Failed to delete audio track storage on image delete', err);
+    }
   }
 
   try {

@@ -1,11 +1,16 @@
 import { Router } from 'express';
 import { URLSearchParams } from 'url';
-import type { SceneResponse, SaveTextRegionsRequest, TextRegionResponse } from '@book-scanner/shared';
+import type {
+  SceneResponse,
+  SaveTextRegionsRequest,
+  TextRegionResponse,
+} from '@book-scanner/shared';
 import { prisma } from '../lib/db';
 import { recognizeText } from '../lib/ocr';
 import { requireAuth } from '../middleware/auth';
 import { requireProjectOwner } from '../middleware/project-owner';
 import { checkPageLimit, incrementPageUsage } from '../lib/limits';
+import { deleteFile } from '../lib/storage';
 import { signAssetToken } from '../lib/jwt';
 import { requireRouteParam } from '../lib/route-params';
 
@@ -137,9 +142,8 @@ scenesRouter.post('/process-ocr', requireProjectOwner, async (req, res) => {
     return;
   }
 
-  const lastScene = existingScenes.length > 0
-    ? Math.max(...existingScenes.map((s) => s.orderIndex))
-    : -1;
+  const lastScene =
+    existingScenes.length > 0 ? Math.max(...existingScenes.map((s) => s.orderIndex)) : -1;
 
   const scenes = [];
   for (let i = 0; i < newImages.length; i++) {
@@ -185,14 +189,15 @@ async function processOcrInBackground(projectId: string, language: string) {
         data: { status: 'ocr_processing' },
       });
 
-      const regions = scene.pageImage.textRegions.length > 0
-        ? scene.pageImage.textRegions.map((r) => ({
-            x: r.x,
-            y: r.y,
-            width: r.width,
-            height: r.height,
-          }))
-        : undefined;
+      const regions =
+        scene.pageImage.textRegions.length > 0
+          ? scene.pageImage.textRegions.map((r) => ({
+              x: r.x,
+              y: r.y,
+              width: r.width,
+              height: r.height,
+            }))
+          : undefined;
 
       const result = await recognizeText(scene.pageImage.storagePath, language, regions);
 
@@ -299,9 +304,54 @@ scenesRouter.put('/:sceneId', requireProjectOwner, async (req, res) => {
     data.status = status;
   }
 
+  // Editing the text invalidates any previously generated audio: drop the track (S3 + row)
+  // so the scene must be re-synthesised. Re-queue it for audio unless caller set another status.
+  if (editedText !== undefined) {
+    const audioTrack = await prisma.audioTrack.findUnique({ where: { sceneId } });
+    if (audioTrack) {
+      try {
+        await deleteFile(audioTrack.storagePath);
+      } catch (err) {
+        console.warn('Failed to delete audio track storage on OCR correction', err);
+      }
+      await prisma.audioTrack.delete({ where: { id: audioTrack.id } });
+      if (data.status === undefined) data.status = 'ready_for_audio';
+    }
+  }
+
   const updated = await prisma.scene.update({
     where: { id: sceneId },
     data,
+  });
+
+  res.json(toSceneResponse(updated));
+});
+
+// Reset a scene's OCR + TTS so it can be reprocessed (e.g. after its OCR regions changed):
+// drop generated audio (S3 + row), clear recognised/edited text, re-queue for OCR.
+scenesRouter.post('/:sceneId/reset', requireProjectOwner, async (req, res) => {
+  const projectId = requireRouteParam(req, 'projectId');
+  const sceneId = requireRouteParam(req, 'sceneId');
+  const scene = await prisma.scene.findUnique({ where: { id: sceneId } });
+
+  if (!scene || scene.projectId !== projectId) {
+    res.status(404).json({ error: 'Not Found', message: 'Scene not found', statusCode: 404 });
+    return;
+  }
+
+  const audioTrack = await prisma.audioTrack.findUnique({ where: { sceneId } });
+  if (audioTrack) {
+    try {
+      await deleteFile(audioTrack.storagePath);
+    } catch (err) {
+      console.warn('Failed to delete audio track storage on scene reset', err);
+    }
+    await prisma.audioTrack.delete({ where: { id: audioTrack.id } });
+  }
+
+  const updated = await prisma.scene.update({
+    where: { id: sceneId },
+    data: { ocrText: null, editedText: null, status: 'queued' },
   });
 
   res.json(toSceneResponse(updated));
@@ -321,8 +371,13 @@ scenesRouter.post('/text-regions', requireProjectOwner, async (req, res) => {
   }
 
   for (const r of regions) {
-    if (!r.pageImageId || typeof r.x !== 'number' || typeof r.y !== 'number' ||
-        typeof r.width !== 'number' || typeof r.height !== 'number') {
+    if (
+      !r.pageImageId ||
+      typeof r.x !== 'number' ||
+      typeof r.y !== 'number' ||
+      typeof r.width !== 'number' ||
+      typeof r.height !== 'number'
+    ) {
       res.status(400).json({
         error: 'Validation failed',
         message: 'Each region must have pageImageId, x, y, width, height',

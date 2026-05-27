@@ -37,7 +37,7 @@ describe('AudioFlow mobile design system', () => {
 
   it('documents reference view mapping for current and future mobile routes', () => {
     expect(audioFlowReferenceViews['/(app)/projects/new/index']).toBe('New Project.html');
-    expect(audioFlowReferenceViews['/(app)/projects/new/images']).toBe('Add Photos.html');
+    expect(audioFlowReferenceViews['/(app)/projects/[id]/images']).toBe('Add Photos.html');
     expect(audioFlowReferenceViews['/(app)']).toBe('Dashboard.html');
   });
 

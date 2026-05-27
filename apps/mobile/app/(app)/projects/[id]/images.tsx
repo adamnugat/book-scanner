@@ -4,29 +4,38 @@ import {
   Text,
   Pressable,
   FlatList,
+  Modal,
   StyleSheet,
   ActivityIndicator,
   Alert,
   Platform,
+  type GestureResponderHandlers,
 } from 'react-native';
-import { useLocalSearchParams, useFocusEffect, router } from 'expo-router';
+import { useLocalSearchParams, useFocusEffect, useNavigation, router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DraggableImageList } from '../../../../components/DraggableImageList';
+import { Feather } from '@expo/vector-icons';
 import { api } from '../../../../lib/api';
 import { uploadFileFromImagePickerAsset } from '../../../../lib/image-upload';
 import { useToast } from '../../../../components/Toast';
-import { PageImagePreview } from '../../../../components/PageImagePreview';
 import { PageImageCard } from '../../../../components/PageImageCard';
+import { OcrRegionEditor, type EditorRegion } from '../../../../components/OcrRegionEditor';
+import { OcrCorrectionModal } from '../../../../components/OcrCorrectionModal';
 import {
   AudioFlowScreen,
   AudioFlowFooterMenu,
   audioFlowTokens,
   GlassPanel,
-  PearlButton,
-  GhostButton,
 } from '../../../../components/audioflow';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
-import type { PageImageResponse } from '@book-scanner/shared';
+import type {
+  PageImageResponse,
+  SceneResponse,
+  AudioTrackResponse,
+  TextRegionResponse,
+  TextRegionInput,
+} from '@book-scanner/shared';
 
 const t = audioFlowTokens;
 
@@ -35,18 +44,45 @@ interface FileProgress {
   status: 'pending' | 'uploading' | 'done' | 'error';
 }
 
+type SubmitPhase = 'idle' | 'uploading' | 'ocr' | 'tts' | 'done';
+
+const OCR_DONE_STATUSES = [
+  'ocr_done',
+  'needs_review',
+  'ready_for_audio',
+  'audio_generating',
+  'audio_done',
+];
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export default function ProjectImagesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const navigation = useNavigation();
   const { showToast } = useToast();
   const insets = useSafeAreaInsets();
   const [images, setImages] = useState<PageImageResponse[]>([]);
-  const [regionCounts, setRegionCounts] = useState<Record<string, number>>({});
+  const [allRegions, setAllRegions] = useState<TextRegionResponse[]>([]);
+  const [scenes, setScenes] = useState<SceneResponse[]>([]);
+  const [audioTracks, setAudioTracks] = useState<AudioTrackResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
+  const [submitPhase, setSubmitPhase] = useState<SubmitPhase>('idle');
   const [fileProgress, setFileProgress] = useState<FileProgress[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [pendingAssets, setPendingAssets] = useState<ImagePicker.ImagePickerAsset[]>([]);
-  const [hasChanges, setHasChanges] = useState(false);
+
+  // General settings (default off, reset on focus)
+  const [areaSelectionEnabled, setAreaSelectionEnabled] = useState(false);
+  const [ocrCorrectionEnabled, setOcrCorrectionEnabled] = useState(false);
+  const [correctionPending, setCorrectionPending] = useState(false);
+  // Pages were reordered since the last submit — playback/playlist order needs rebuilding.
+  const [orderDirty, setOrderDirty] = useState(false);
+
+  // Modal hosts
+  const [regionTargetId, setRegionTargetId] = useState<string | null>(null);
+  const [correctionImageId, setCorrectionImageId] = useState<string | null>(null);
+  const [regionSaving, setRegionSaving] = useState(false);
+  const [correctionSaving, setCorrectionSaving] = useState(false);
+
   const dropRef = useRef<View>(null);
   const progressResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -56,18 +92,41 @@ export default function ProjectImagesScreen() {
     };
   }, []);
 
+  // Dynamic title: "Dodaj zdjęcia" when empty, "Edytuj zdjęcia" once images exist.
+  const hasAny = images.length > 0 || pendingAssets.length > 0;
+  useEffect(() => {
+    navigation.setOptions({ title: hasAny ? 'Edytuj zdjęcia' : 'Dodaj zdjęcia' });
+  }, [navigation, hasAny]);
+
+  const regionCounts: Record<string, number> = {};
+  for (const region of allRegions) {
+    regionCounts[region.pageImageId] = (regionCounts[region.pageImageId] ?? 0) + 1;
+  }
+  const sceneByImage: Record<string, SceneResponse> = {};
+  for (const scene of scenes) sceneByImage[scene.pageImageId] = scene;
+  const audioBySceneId = new Set(audioTracks.map((track) => track.sceneId));
+
+  const imageHasAudio = (imageId: string) => {
+    const scene = sceneByImage[imageId];
+    return !!scene && (scene.status === 'audio_done' || audioBySceneId.has(scene.id));
+  };
+  // Submit is meaningful whenever something still needs OCR/TTS — derived from persisted
+  // data so it survives leaving and re-entering the screen (not a transient flag).
+  const hasProcessableWork =
+    pendingAssets.length > 0 || images.some((img) => !imageHasAudio(img.id));
+
   const loadImages = useCallback(async () => {
     try {
-      const [data, regionData] = await Promise.all([
+      const [data, regionData, sceneData, trackData] = await Promise.all([
         api.getImages(id),
-        api.getTextRegions(id).catch(() => []),
+        api.getTextRegions(id).catch(() => [] as TextRegionResponse[]),
+        api.getScenes(id).catch(() => [] as SceneResponse[]),
+        api.getAudioTracks(id).catch(() => [] as AudioTrackResponse[]),
       ]);
       setImages(data);
-      const counts: Record<string, number> = {};
-      for (const region of regionData) {
-        counts[region.pageImageId] = (counts[region.pageImageId] ?? 0) + 1;
-      }
-      setRegionCounts(counts);
+      setAllRegions(regionData);
+      setScenes(sceneData);
+      setAudioTracks(trackData);
     } catch {
       Alert.alert('Błąd', 'Nie udało się pobrać zdjęć');
     } finally {
@@ -77,9 +136,29 @@ export default function ProjectImagesScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      setSubmitPhase('idle');
+      setCorrectionPending(false);
+      setOrderDirty(false);
       loadImages();
     }, [loadImages]),
   );
+
+  const refreshScenes = useCallback(async () => {
+    const [sceneData, trackData] = await Promise.all([
+      api.getScenes(id).catch(() => [] as SceneResponse[]),
+      api.getAudioTracks(id).catch(() => [] as AudioTrackResponse[]),
+    ]);
+    setScenes(sceneData);
+    setAudioTracks(trackData);
+    return sceneData;
+  }, [id]);
+
+  // Upload immediately so photos land in the editable list (no intermediate preview step).
+  const addPhotos = async (assets: ImagePicker.ImagePickerAsset[]) => {
+    if (submitPhase !== 'idle' || assets.length === 0) return;
+    await uploadAssets(assets);
+    setSubmitPhase('idle');
+  };
 
   const pickFromGallery = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -87,10 +166,7 @@ export default function ProjectImagesScreen() {
       allowsMultipleSelection: true,
       quality: 0.9,
     });
-    if (!result.canceled) {
-      setPendingAssets(result.assets);
-      setHasChanges(true);
-    }
+    if (!result.canceled) await addPhotos(result.assets);
   };
 
   const takePhoto = async () => {
@@ -100,10 +176,7 @@ export default function ProjectImagesScreen() {
       return;
     }
     const result = await ImagePicker.launchCameraAsync({ quality: 0.9 });
-    if (!result.canceled) {
-      setPendingAssets(result.assets);
-      setHasChanges(true);
-    }
+    if (!result.canceled) await addPhotos(result.assets);
   };
 
   const uploadAssets = async (assets: ImagePicker.ImagePickerAsset[]) => {
@@ -113,7 +186,7 @@ export default function ProjectImagesScreen() {
         status: 'pending',
       })),
     );
-    setUploading(true);
+    setSubmitPhase('uploading');
 
     const allNewImages: PageImageResponse[] = [];
     const failedAssets: ImagePicker.ImagePickerAsset[] = [];
@@ -132,7 +205,6 @@ export default function ProjectImagesScreen() {
 
     setImages((prev) => [...prev, ...allNewImages]);
     setPendingAssets(failedAssets);
-    setUploading(false);
 
     const errCount = allNewImages.length < assets.length ? assets.length - allNewImages.length : 0;
     if (errCount > 0) {
@@ -143,22 +215,81 @@ export default function ProjectImagesScreen() {
 
     if (progressResetTimer.current) clearTimeout(progressResetTimer.current);
     progressResetTimer.current = setTimeout(() => setFileProgress([]), 2000);
+
+    return { uploaded: allNewImages, failed: failedAssets };
   };
 
-  const removePendingAsset = (index: number) => {
-    setPendingAssets((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const confirmPendingUpload = async () => {
-    if (pendingAssets.length === 0) return;
-    await uploadAssets(pendingAssets);
-  };
-
-  const handleSaveChanges = async () => {
-    if (pendingAssets.length > 0) {
-      await uploadAssets(pendingAssets);
+  // --- Submit orchestration: OCR -> (optional correction stop) -> TTS -> playlist -> details
+  const waitForPhase = async (
+    isComplete: (s: SceneResponse[]) => boolean,
+    timeoutMsg: string,
+  ): Promise<SceneResponse[]> => {
+    for (let attempt = 0; attempt < 40; attempt++) {
+      const current = await refreshScenes();
+      if (current.length > 0 && isComplete(current)) return current;
+      await delay(1500);
     }
-    setHasChanges(false);
+    throw new Error(timeoutMsg);
+  };
+
+  const handleSubmit = async () => {
+    if (submitPhase !== 'idle') return;
+    try {
+      if (pendingAssets.length > 0) {
+        const { failed } = await uploadAssets(pendingAssets);
+        if (failed.length > 0) throw new Error(`Nie udało się wysłać ${failed.length} plików`);
+      }
+
+      // OCR: idempotent — only un-processed scenes run. markReadyForAudio unless correction stops us.
+      setSubmitPhase('ocr');
+      await api.processOcrBatch(id, { markReadyForAudio: !ocrCorrectionEnabled });
+      let current = await waitForPhase(
+        (s) => s.every((sc) => !['queued', 'ocr_processing'].includes(sc.status)),
+        'Przekroczono czas rozpoznawania tekstu (OCR)',
+      );
+
+      // Stop after OCR for manual correction only when there is freshly recognised text to correct.
+      const needsCorrection = current.some((sc) => sc.status === 'ocr_done');
+      if (ocrCorrectionEnabled && !correctionPending && needsCorrection) {
+        setSubmitPhase('idle');
+        setCorrectionPending(true);
+        showToast('Tekst rozpoznany — popraw OCR przy zdjęciach, a następnie wyślij ponownie');
+        return;
+      }
+
+      // Queue any OCR-done scenes for audio (covers uncorrected scenes on resume).
+      await Promise.all(
+        current
+          .filter((sc) => sc.status === 'ocr_done' || sc.status === 'needs_review')
+          .map((sc) => api.updateScene(id, sc.id, { status: 'ready_for_audio' })),
+      );
+      current = await refreshScenes();
+
+      // TTS only when something actually needs synthesis (skip on reorder-only submits).
+      if (current.some((sc) => sc.status === 'ready_for_audio')) {
+        setSubmitPhase('tts');
+        await api.generateAudio(id);
+        await waitForPhase(
+          (s) => s.every((sc) => sc.status !== 'audio_generating'),
+          'Przekroczono czas generowania audio (TTS)',
+        );
+      }
+
+      // Always rebuild the playlist so playback order matches the current page order.
+      await api.buildPlaylist(id).catch(() => undefined);
+
+      setSubmitPhase('done');
+      setCorrectionPending(false);
+      setOrderDirty(false);
+      showToast('Wszystkie zdjęcia zostały przetworzone');
+      await delay(600);
+      setSubmitPhase('idle');
+      router.replace({ pathname: '/(app)/projects/[id]', params: { id } });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Nie udało się dokończyć przetwarzania';
+      setSubmitPhase('idle');
+      Alert.alert('Błąd', message);
+    }
   };
 
   const handleWebDrop = (e: { preventDefault: () => void; dataTransfer?: { files: FileList } }) => {
@@ -179,11 +310,12 @@ export default function ProjectImagesScreen() {
       exif: null,
       fileSize: f.size,
     }));
-    setPendingAssets(assets);
-    setHasChanges(true);
+    void addPhotos(assets);
   };
 
-  const handleDelete = (image: PageImageResponse) => {
+  const handleDelete = (imageId: string) => {
+    const image = images.find((i) => i.id === imageId);
+    if (!image) return;
     Alert.alert('Usuń zdjęcie', `Usunąć stronę ${image.orderIndex + 1}?`, [
       { text: 'Anuluj', style: 'cancel' },
       {
@@ -193,7 +325,6 @@ export default function ProjectImagesScreen() {
           try {
             await api.deleteImage(id, image.id);
             setImages((prev) => prev.filter((i) => i.id !== image.id));
-            setHasChanges(true);
           } catch {
             Alert.alert('Błąd', 'Nie udało się usunąć zdjęcia');
           }
@@ -202,29 +333,113 @@ export default function ProjectImagesScreen() {
     ]);
   };
 
-  const openRegionEditor = (imageId: string) => {
-    router.push(`/(app)/projects/${id}/text-regions/${imageId}`);
-  };
-
-  const moveImage = async (index: number, direction: -1 | 1) => {
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= images.length) return;
-    const newOrder = [...images];
-    [newOrder[index], newOrder[newIndex]] = [newOrder[newIndex], newOrder[index]];
-    setImages(newOrder);
+  const persistOrder = async (ordered: PageImageResponse[]) => {
+    const previous = images;
+    setImages(ordered);
     try {
       await api.reorderImages(
         id,
-        newOrder.map((i) => i.id),
+        ordered.map((i) => i.id),
       );
-      setHasChanges(true);
+      // Order persisted on the backend; playlist still needs rebuilding via submit.
+      setOrderDirty(true);
+      await refreshScenes();
     } catch {
-      setImages(images);
+      setImages(previous);
     }
   };
 
-  const renderImage = ({ item, index }: { item: PageImageResponse; index: number }) => {
+  // --- Region editor modal
+  const openRegionEditor = (imageId: string) => setRegionTargetId(imageId);
+  const closeRegionEditor = () => setRegionTargetId(null);
+
+  const regionTargetImage = images.find((i) => i.id === regionTargetId) ?? null;
+  const regionInitial: EditorRegion[] = allRegions
+    .filter((r) => r.pageImageId === regionTargetId)
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map((r, index) => ({
+      key: r.id,
+      orderIndex: index,
+      x: r.x,
+      y: r.y,
+      width: r.width,
+      height: r.height,
+    }));
+
+  const handleSaveRegions = async (editorRegions: EditorRegion[]) => {
+    if (!regionTargetId) return;
+    setRegionSaving(true);
+    try {
+      const otherPages: TextRegionInput[] = allRegions
+        .filter((r) => r.pageImageId !== regionTargetId)
+        .map(({ pageImageId, x, y, width, height, orderIndex }) => ({
+          pageImageId,
+          x,
+          y,
+          width,
+          height,
+          orderIndex,
+        }));
+      const thisPage: TextRegionInput[] = editorRegions.map((r, index) => ({
+        pageImageId: regionTargetId,
+        x: r.x,
+        y: r.y,
+        width: r.width,
+        height: r.height,
+        orderIndex: index,
+      }));
+      await api.saveTextRegions(id, [...otherPages, ...thisPage]);
+      // Changing OCR regions invalidates any existing OCR/TTS for this page — reset its scene
+      // (drops audio, clears text, re-queues) so it gets reprocessed on the next submit.
+      const scene = sceneByImage[regionTargetId];
+      if (scene) await api.resetScene(id, scene.id).catch(() => undefined);
+      const refreshed = await api.getTextRegions(id).catch(() => [] as TextRegionResponse[]);
+      setAllRegions(refreshed);
+      await refreshScenes();
+      closeRegionEditor();
+    } catch (e: unknown) {
+      Alert.alert('Błąd', e instanceof Error ? e.message : 'Nie udało się zapisać regionów.');
+    } finally {
+      setRegionSaving(false);
+    }
+  };
+
+  // --- OCR correction modal
+  const openCorrection = (imageId: string) => setCorrectionImageId(imageId);
+  const closeCorrection = () => setCorrectionImageId(null);
+
+  const correctionImage = images.find((i) => i.id === correctionImageId) ?? null;
+  const correctionScene = correctionImageId ? sceneByImage[correctionImageId] : undefined;
+  const correctionText = correctionScene?.editedText ?? correctionScene?.ocrText ?? '';
+
+  const handleSaveCorrection = async (text: string) => {
+    if (!correctionScene) return;
+    setCorrectionSaving(true);
+    try {
+      await api.updateScene(id, correctionScene.id, {
+        editedText: text || null,
+        status: 'ready_for_audio',
+      });
+      await refreshScenes();
+      showToast('Korekta zapisana');
+      closeCorrection();
+    } catch (e: unknown) {
+      showToast(e instanceof Error ? e.message : 'Nie udało się zapisać korekty', 'error');
+    } finally {
+      setCorrectionSaving(false);
+    }
+  };
+
+  const renderCard = (
+    item: PageImageResponse,
+    index: number,
+    dragHandleProps?: GestureResponderHandlers,
+    dragActive?: boolean,
+  ) => {
     const displayName = item.originalFilename || `Strona ${index + 1}`;
+    const scene = sceneByImage[item.id];
+    const ocrDone = !!scene && OCR_DONE_STATUSES.includes(scene.status);
+    const hasAudio = !!scene && (scene.status === 'audio_done' || audioBySceneId.has(scene.id));
     return (
       <PageImageCard
         imageId={item.id}
@@ -232,13 +447,17 @@ export default function ProjectImagesScreen() {
         thumbnailUrl={item.thumbnailUrl}
         displayName={displayName}
         pageNumber={index + 1}
-        index={index}
-        total={images.length}
         regionCount={regionCounts[item.id] ?? 0}
+        areaSelectionEnabled={areaSelectionEnabled}
+        ocrCorrectionEnabled={ocrCorrectionEnabled}
+        ocrDone={ocrDone}
+        hasAudio={hasAudio}
         onSelectRegions={openRegionEditor}
-        onMoveUp={(idx) => moveImage(idx, -1)}
-        onMoveDown={(idx) => moveImage(idx, 1)}
-        onDelete={() => handleDelete(item)}
+        onCorrectOcr={openCorrection}
+        onDelete={handleDelete}
+        dragHandleProps={dragHandleProps}
+        dragActive={dragActive}
+        testID={`page-card-${item.id}`}
       />
     );
   };
@@ -265,6 +484,34 @@ export default function ProjectImagesScreen() {
         }
       : {};
 
+  const settingsBar = images.length > 0 && (
+    <View style={styles.settingsBar}>
+      <Text style={styles.counter}>Zdjęć {images.length}</Text>
+      <View style={styles.toggles}>
+        <Pressable
+          accessibilityRole="switch"
+          accessibilityState={{ checked: areaSelectionEnabled }}
+          accessibilityLabel="Wybór obszarów"
+          onPress={() => setAreaSelectionEnabled((v) => !v)}
+          style={[styles.toggle, areaSelectionEnabled && styles.toggleOn]}
+        >
+          <Feather name="crop" size={14} color={t.color.text.onDark} />
+          <Text style={styles.toggleText}>Obszary</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="switch"
+          accessibilityState={{ checked: ocrCorrectionEnabled }}
+          accessibilityLabel="Korekta OCR"
+          onPress={() => setOcrCorrectionEnabled((v) => !v)}
+          style={[styles.toggle, ocrCorrectionEnabled && styles.toggleOn]}
+        >
+          <Feather name="edit-3" size={14} color={t.color.text.onDark} />
+          <Text style={styles.toggleText}>Korekta OCR</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
   return (
     <AudioFlowScreen>
       <FadeZoomContent>
@@ -275,66 +522,65 @@ export default function ProjectImagesScreen() {
             </View>
           )}
 
-          {pendingAssets.length > 0 && (
-            <GlassPanel style={styles.pendingPanel}>
-              <Text style={styles.pendingTitle}>Podgląd zdjęć ({pendingAssets.length})</Text>
-              {pendingAssets.map((asset, index) => (
-                <View key={`${asset.uri}-${index}`} style={styles.pendingItem}>
-                  <PageImagePreview
-                    imageUrl={asset.uri}
-                    style={styles.pendingThumb}
-                    resizeMode="contain"
-                  />
-                  <View style={styles.pendingInfo}>
-                    <Text style={styles.pendingName} numberOfLines={1}>
-                      {asset.fileName || `Strona ${index + 1}`}
-                    </Text>
-                    <Pressable
-                      style={styles.pendingRemoveBtn}
-                      onPress={() => removePendingAsset(index)}
-                    >
-                      <Text style={styles.pendingRemoveText}>Usuń z podglądu</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
-              <View style={styles.pendingActions}>
-                <GhostButton
-                  label="Anuluj"
-                  onPress={() => setPendingAssets([])}
-                  style={styles.pendingActionBtn}
-                />
-                <PearlButton
-                  label="Wyślij zdjęcia"
-                  onPress={confirmPendingUpload}
-                  style={styles.pendingActionBtn}
-                />
-              </View>
-            </GlassPanel>
-          )}
+          {settingsBar}
 
-          {images.length === 0 ? (
+          {images.length === 0 && pendingAssets.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {Platform.OS === 'web'
-                  ? 'Przeciągnij pliki lub kliknij „Galeria"'
-                  : 'Dodaj zdjęcia stron książki'}
-              </Text>
+              <GlassPanel style={styles.emptyCard}>
+                <View style={styles.emptyIconCircle}>
+                  <Feather name="book-open" size={34} color={t.color.accent.pearl} />
+                </View>
+                <Text style={styles.emptyTitle}>Zacznij od zdjęć stron</Text>
+                <Text style={styles.emptyBody}>
+                  {Platform.OS === 'web'
+                    ? 'Przeciągnij pliki tutaj lub użyj przycisku „Galeria" na dole ekranu.'
+                    : 'Dodaj zdjęcia stron książki — pojawią się tu jako lista, którą ułożysz w kolejności.'}
+                </Text>
+                <View style={styles.emptyHints}>
+                  <View style={styles.emptyHint}>
+                    <Feather name="image" size={16} color={t.color.text.onDark} />
+                    <Text style={styles.emptyHintText}>Galeria — wybierz z telefonu</Text>
+                  </View>
+                  {Platform.OS !== 'web' && (
+                    <View style={styles.emptyHint}>
+                      <Feather name="camera" size={16} color={t.color.text.onDark} />
+                      <Text style={styles.emptyHintText}>Aparat — zrób zdjęcie strony</Text>
+                    </View>
+                  )}
+                </View>
+              </GlassPanel>
             </View>
-          ) : (
+          ) : images.length === 0 ? (
+            <View style={styles.emptyContainer} />
+          ) : Platform.OS === 'web' ? (
             <FlatList
               data={images}
               keyExtractor={(item) => item.id}
-              renderItem={renderImage}
+              renderItem={({ item, index }) => renderCard(item, index)}
+              contentContainerStyle={styles.list}
+            />
+          ) : (
+            <DraggableImageList
+              data={images}
+              keyExtractor={(item) => item.id}
+              onReorder={(from, to) => {
+                const next = images.slice();
+                const [moved] = next.splice(from, 1);
+                next.splice(to, 0, moved);
+                persistOrder(next);
+              }}
+              renderRow={(item, index, dragHandleProps, dragActive) =>
+                renderCard(item, index, dragHandleProps, dragActive)
+              }
               contentContainerStyle={styles.list}
             />
           )}
 
-          {uploading && (
+          {submitPhase !== 'idle' && (
             <View style={styles.uploadOverlay}>
-              {fileProgress.length > 0 ? (
+              {submitPhase === 'uploading' && fileProgress.length > 0 ? (
                 <GlassPanel style={styles.progressList}>
-                  <Text style={styles.uploadTitle}>Przesyłanie plików</Text>
+                  <Text style={styles.uploadTitle}>Wysyłanie zdjęć…</Text>
                   {fileProgress.map((fp, i) => (
                     <View key={i} style={styles.progressItem}>
                       <Text style={styles.progressName} numberOfLines={1}>
@@ -369,22 +615,67 @@ export default function ProjectImagesScreen() {
               ) : (
                 <>
                   <ActivityIndicator size="large" color={t.color.accent.pearl} />
-                  <Text style={styles.uploadText}>Przesyłanie...</Text>
+                  <Text style={styles.uploadText}>
+                    {submitPhase === 'ocr'
+                      ? 'Rozpoznawanie tekstu (OCR)…'
+                      : submitPhase === 'tts'
+                        ? 'Generowanie audio (TTS)…'
+                        : submitPhase === 'done'
+                          ? 'Wszystkie zdjęcia zostały przetworzone'
+                          : 'Wysyłanie zdjęć…'}
+                  </Text>
                 </>
               )}
             </View>
           )}
         </View>
       </FadeZoomContent>
+
+      {/* OCR region selection modal */}
+      <Modal visible={!!regionTargetImage} animationType="slide" onRequestClose={closeRegionEditor}>
+        {regionTargetImage ? (
+          <OcrRegionEditor
+            key={regionTargetImage.id}
+            target={{
+              kind: 'uploaded',
+              id: regionTargetImage.id,
+              imageUrl: regionTargetImage.imageUrl,
+              thumbnailUrl: regionTargetImage.thumbnailUrl,
+            }}
+            initialRegions={regionInitial}
+            pageLabel={`Strona ${regionTargetImage.orderIndex + 1}`}
+            onCancel={closeRegionEditor}
+            onSave={handleSaveRegions}
+            saving={regionSaving}
+          />
+        ) : null}
+      </Modal>
+
+      {/* OCR text correction modal */}
+      <OcrCorrectionModal
+        visible={!!correctionImage}
+        pageLabel={
+          correctionImage
+            ? correctionImage.originalFilename || `Strona ${correctionImage.orderIndex + 1}`
+            : ''
+        }
+        imageUrl={correctionImage?.imageUrl}
+        thumbnailUrl={correctionImage?.thumbnailUrl}
+        initialText={correctionText}
+        saving={correctionSaving}
+        onClose={closeCorrection}
+        onSave={handleSaveCorrection}
+      />
+
       <AudioFlowFooterMenu
         bottomInset={insets.bottom}
         leftIcon="image"
         leftLabel="Galeria"
         onLibraryPress={pickFromGallery}
         createIcon="check"
-        createLabel="Zapisz zmiany"
-        createDisabled={!hasChanges}
-        onCreatePress={handleSaveChanges}
+        createLabel="Wyślij i przetwórz"
+        createDisabled={submitPhase !== 'idle' || (!hasProcessableWork && !orderDirty)}
+        onCreatePress={handleSubmit}
         rightIcon="camera"
         rightLabel="Aparat"
         rightDisabled={Platform.OS === 'web'}
@@ -398,10 +689,94 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'transparent' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: t.spacing.gutterMobile, paddingBottom: 100 },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emptyText: {
+  settingsBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: t.spacing.gutterMobile,
+    paddingVertical: t.spacing.stackSm,
+    gap: t.spacing.stackSm,
+  },
+  counter: {
+    color: t.color.text.onDark,
+    fontSize: 15,
+    fontFamily: 'Quicksand_600SemiBold',
+  },
+  toggles: { flexDirection: 'row', gap: t.spacing.stackSm },
+  toggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: t.color.surface.glassEdge,
+    backgroundColor: t.color.surface.glassLight,
+  },
+  toggleOn: {
+    borderColor: t.color.accent.pearl,
+    backgroundColor: t.color.surface.glassHover,
+  },
+  toggleText: {
+    color: t.color.text.onDark,
+    fontSize: 12,
+    fontFamily: 'VarelaRound_400Regular',
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: t.spacing.gutterMobile,
+  },
+  emptyCard: {
+    width: '100%',
+    maxWidth: 420,
+    alignItems: 'center',
+    padding: 24,
+    borderRadius: t.radius.card,
+  },
+  emptyIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: t.color.surface.glassLight,
+    borderWidth: 1,
+    borderColor: t.color.surface.glassEdge,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    color: t.color.text.onDark,
+    fontSize: 18,
+    fontFamily: 'Quicksand_700Bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptyBody: {
     color: t.color.text.onSurfaceMuted,
-    fontSize: 16,
+    fontSize: 14,
+    fontFamily: 'VarelaRound_400Regular',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 18,
+  },
+  emptyHints: { gap: 10, alignSelf: 'stretch' },
+  emptyHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: t.color.surface.glassEdge,
+    backgroundColor: t.color.surface.glassLight,
+  },
+  emptyHintText: {
+    color: t.color.text.onDark,
+    fontSize: 13,
     fontFamily: 'VarelaRound_400Regular',
   },
   uploadOverlay: {
@@ -459,38 +834,4 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: 'Quicksand_700Bold',
   },
-  pendingPanel: {
-    marginHorizontal: t.spacing.gutterMobile,
-    marginTop: t.spacing.stackSm,
-    padding: 12,
-    borderRadius: t.radius.card,
-  },
-  pendingTitle: {
-    color: t.color.text.onDark,
-    fontSize: 16,
-    fontFamily: 'Quicksand_600SemiBold',
-    marginBottom: 10,
-  },
-  pendingItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  pendingThumb: { width: 72, height: 96, borderRadius: t.radius.md, marginRight: 12 },
-  pendingInfo: { flex: 1 },
-  pendingName: {
-    color: t.color.text.onDark,
-    fontSize: 14,
-    fontFamily: 'VarelaRound_400Regular',
-    marginBottom: 6,
-  },
-  pendingRemoveBtn: { alignSelf: 'flex-start', paddingVertical: 4 },
-  pendingRemoveText: {
-    color: t.color.accent.danger,
-    fontSize: 13,
-    fontFamily: 'VarelaRound_400Regular',
-  },
-  pendingActions: {
-    flexDirection: 'row',
-    gap: t.spacing.stackSm,
-    justifyContent: 'flex-end',
-    marginTop: t.spacing.stackSm,
-  },
-  pendingActionBtn: { flex: 1 },
 });

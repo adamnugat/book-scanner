@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, Animated, StyleSheet } from 'react-native';
+import { audioFlowTokens } from './audioflow-tokens';
+
+const t = audioFlowTokens;
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -54,11 +57,20 @@ function ToastItem({ toast }: { toast: ToastMessage }) {
     ]).start();
   }, [opacity]);
 
-  const bgColor = toast.type === 'error' ? '#e94560' : toast.type === 'info' ? '#0f3460' : '#06d6a0';
+  const isSuccess = toast.type === 'success';
+  const bgColor =
+    toast.type === 'error' ? '#e94560' : toast.type === 'info' ? '#0f3460' : t.color.accent.pearl;
+  const textColor = isSuccess ? t.color.text.onPearl : '#fff';
 
   return (
-    <Animated.View style={[styles.toast, { opacity, backgroundColor: bgColor }]}>
-      <Text style={styles.toastText}>{toast.text}</Text>
+    <Animated.View
+      style={[
+        styles.toast,
+        isSuccess && styles.toastSuccess,
+        { opacity, backgroundColor: bgColor },
+      ]}
+    >
+      <Text style={[styles.toastText, { color: textColor }]}>{toast.text}</Text>
     </Animated.View>
   );
 }
@@ -78,8 +90,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     maxWidth: 400,
   },
+  // Success matches the primary (PearlButton) look: pearl-white fill + pearl glow.
+  toastSuccess: {
+    borderRadius: t.radius.full,
+    boxShadow: `0 4px 20px ${t.color.accent.pearlGlow}`,
+    shadowColor: t.color.accent.pearl,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 8,
+  },
   toastText: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'center',

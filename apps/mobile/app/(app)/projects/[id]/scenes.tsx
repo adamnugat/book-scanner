@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -24,7 +24,11 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 };
 
 export default function ScenesScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, newSceneIds } = useLocalSearchParams<{ id: string; newSceneIds?: string }>();
+  const newSceneIdSet = useMemo(
+    () => new Set((newSceneIds ?? '').split(',').filter(Boolean)),
+    [newSceneIds],
+  );
   const [scenes, setScenes] = useState<SceneResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
@@ -85,9 +89,10 @@ export default function ScenesScreen() {
 
   const renderScene = ({ item }: { item: SceneResponse }) => {
     const cfg = STATUS_CONFIG[item.status] || { label: item.status, color: '#888' };
+    const isNew = newSceneIdSet.has(item.id);
     return (
       <Pressable
-        style={styles.card}
+        style={[styles.card, isNew && styles.cardNew]}
         onPress={() => {
           if (
             item.status === 'ocr_done' ||
@@ -102,6 +107,7 @@ export default function ScenesScreen() {
         <View style={styles.cardRow}>
           <Text style={styles.pageNum}>{item.orderIndex + 1}</Text>
           <View style={styles.cardContent}>
+            {isNew && <Text style={styles.newBadge}>NOWA</Text>}
             <Text style={styles.ocrPreview} numberOfLines={2}>
               {item.ocrText ||
                 (item.status === 'ocr_processing' ? 'Przetwarzanie...' : 'Oczekuje...')}
@@ -132,50 +138,61 @@ export default function ScenesScreen() {
   return (
     <AudioFlowScreen>
       <FadeZoomContent>
-      <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Sceny ({scenes.length})</Text>
-        {hasPending && (
-          <View style={styles.processingBadge}>
-            <ActivityIndicator size="small" color="#f0a500" />
-            <Text style={styles.processingText}>OCR w toku...</Text>
-          </View>
-        )}
-      </View>
-
-      {scenes.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>
-            Brak scen. Uruchom OCR, aby rozpoznać tekst ze zdjęć.
-          </Text>
-          <Pressable style={styles.ocrBtn} onPress={handleProcessOcr} disabled={processing}>
-            {processing ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.ocrBtnText}>Uruchom OCR</Text>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Sceny ({scenes.length})</Text>
+            {hasPending && (
+              <View style={styles.processingBadge}>
+                <ActivityIndicator size="small" color="#f0a500" />
+                <Text style={styles.processingText}>OCR w toku...</Text>
+              </View>
             )}
-          </Pressable>
-        </View>
-      ) : (
-        <>
-          <FlatList
-            data={scenes}
-            keyExtractor={(item) => item.id}
-            renderItem={renderScene}
-            contentContainerStyle={styles.list}
-          />
-          {!hasPending && (
-            <View style={styles.bottomBar}>
+          </View>
+
+          {scenes.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                Brak scen. Uruchom OCR, aby rozpoznać tekst ze zdjęć.
+              </Text>
               <Pressable style={styles.ocrBtn} onPress={handleProcessOcr} disabled={processing}>
-                <Text style={styles.ocrBtnText}>
-                  {processing ? 'Przetwarzanie...' : 'Ponów OCR (nowe strony)'}
-                </Text>
+                {processing ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.ocrBtnText}>Uruchom OCR</Text>
+                )}
               </Pressable>
             </View>
+          ) : (
+            <>
+              <FlatList
+                data={scenes}
+                keyExtractor={(item) => item.id}
+                renderItem={renderScene}
+                contentContainerStyle={styles.list}
+              />
+              {!hasPending && (
+                <View style={styles.bottomBar}>
+                  <Pressable style={styles.ocrBtn} onPress={handleProcessOcr} disabled={processing}>
+                    <Text style={styles.ocrBtnText}>
+                      {processing ? 'Przetwarzanie...' : 'Ponów OCR (nowe strony)'}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.ocrBtn, styles.voiceCta]}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/(app)/projects/[id]/voice',
+                        params: { id, newSceneIds: Array.from(newSceneIdSet).join(',') },
+                      })
+                    }
+                  >
+                    <Text style={styles.ocrBtnText}>Przejdź do Głosu Lektora</Text>
+                  </Pressable>
+                </View>
+              )}
+            </>
           )}
-        </>
-      )}
-      </View>
+        </View>
       </FadeZoomContent>
     </AudioFlowScreen>
   );
@@ -202,6 +219,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: '#0f3460',
+  },
+  cardNew: {
+    borderColor: '#f0a500',
+    borderWidth: 2,
+  },
+  newBadge: {
+    color: '#f0a500',
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 4,
   },
   cardRow: { flexDirection: 'row', alignItems: 'center' },
   pageNum: { color: '#888', fontSize: 16, fontWeight: 'bold', width: 28, textAlign: 'center' },
@@ -234,5 +262,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#1a1a2e',
     borderTopWidth: 1,
     borderTopColor: '#0f3460',
+    gap: 8,
+  },
+  voiceCta: {
+    backgroundColor: '#06d6a0',
   },
 });

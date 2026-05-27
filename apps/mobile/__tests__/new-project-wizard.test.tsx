@@ -61,7 +61,7 @@ describe('New audiobook wizard step 1', () => {
   it('loads voices, shows local jingle options, creates project before step 2', async () => {
     render(<NewProjectScreen />);
 
-    expect(await screen.findByText('Krok 1 z 3')).toBeTruthy();
+    expect(await screen.findByText('Krok 1 z 2')).toBeTruthy();
     expect(screen.getByText('Zacznijmy od podstaw')).toBeTruthy();
     expect(screen.getByText('Lektor')).toBeTruthy();
     expect(screen.getByText('Wstawka muzyczna')).toBeTruthy();
@@ -90,7 +90,7 @@ describe('New audiobook wizard step 1', () => {
       });
     });
     expect(mockGetVoices).toHaveBeenCalledWith('pl');
-    expect(mockRouterReplace).toHaveBeenCalledWith('/(app)/projects/new/images?projectId=proj-1');
+    expect(mockRouterReplace).toHaveBeenCalledWith('/(app)/projects/proj-1/images');
   });
 
   it('does not fetch interstitial presets from backend', async () => {

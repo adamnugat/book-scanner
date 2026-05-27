@@ -14,6 +14,8 @@ const mockSoundCreate = jest.fn();
 const mockSoundPause = jest.fn();
 const mockSoundUnload = jest.fn();
 
+let mockSearchParams: Record<string, string | undefined> = { id: 'proj-1' };
+
 jest.mock('expo-router', () => ({
   router: { push: (...args: unknown[]) => mockPush(...args), back: jest.fn() },
   useFocusEffect: (callback: () => void | (() => void)) => {
@@ -23,7 +25,7 @@ jest.mock('expo-router', () => ({
       return typeof cleanup === 'function' ? cleanup : undefined;
     }, [callback]);
   },
-  useLocalSearchParams: () => ({ id: 'proj-1' }),
+  useLocalSearchParams: () => mockSearchParams,
 }));
 
 jest.mock('../lib/api', () => ({
@@ -137,6 +139,7 @@ const tracksMulti = [
 describe('VoiceSelectScreen voice and audio flow', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSearchParams = { id: 'proj-1' };
     mockGetProject.mockResolvedValue(project);
     mockGetVoices.mockResolvedValue(voices);
     mockGetScenes.mockResolvedValue(scenes);
@@ -193,6 +196,33 @@ describe('VoiceSelectScreen voice and audio flow', () => {
     expect(
       await screen.findByText('Nie udało się pobrać głosów. Sprawdź konfigurację ElevenLabs.'),
     ).toBeTruthy();
+  });
+
+  it('highlights newly synced scenes and prompts to run TTS', async () => {
+    mockSearchParams = { id: 'proj-1', newSceneIds: 'scene-a,scene-b' };
+
+    render(<VoiceSelectScreen />);
+
+    expect(await screen.findByText('Nowe zdjęcia gotowe do TTS: 2')).toBeTruthy();
+    expect(screen.getByText('Możesz uruchomić TTS dla nowych zdjęć')).toBeTruthy();
+  });
+
+  it('does not show the new-scenes line when newSceneIds is absent', async () => {
+    render(<VoiceSelectScreen />);
+
+    await screen.findByText('Antoni');
+    expect(screen.queryByText(/Nowe zdjęcia gotowe do TTS/)).toBeNull();
+    expect(screen.queryByText('Możesz uruchomić TTS dla nowych zdjęć')).toBeNull();
+  });
+
+  it('does not show the TTS prompt when generation is not yet available', async () => {
+    mockSearchParams = { id: 'proj-1', newSceneIds: 'scene-a' };
+    mockGetScenes.mockResolvedValue([{ ...scenes[0], status: 'ocr_done' }]);
+
+    render(<VoiceSelectScreen />);
+
+    expect(await screen.findByText('Nowe zdjęcia gotowe do TTS: 1')).toBeTruthy();
+    expect(screen.queryByText('Możesz uruchomić TTS dla nowych zdjęć')).toBeNull();
   });
 });
 

@@ -1,47 +1,23 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Single shared OCR region editor component
 
-The mobile app SHALL provide one shared component (`OcrRegionEditor`) used to define OCR regions for a single page image. The component MUST be the only implementation rendered by both the audiobook creation wizard (advanced mode) and the project page-images screen, ensuring identical visual and behavioral output.
+The mobile app SHALL provide one shared component (`OcrRegionEditor`) used to define OCR regions for a single page image. The component MUST be the only implementation rendered by both the audiobook creation wizard (advanced mode) and the project page-images screen. On the page-images screen the editor MUST be presented inside a **modal host** (not a separate navigation route), ensuring identical visual and behavioral output across entry points.
 
 #### Scenario: Wizard advanced mode opens the editor
 
 - **WHEN** the user opens region editing for a page in the audiobook creation wizard's advanced mode
 - **THEN** the shared `OcrRegionEditor` component MUST render the editor UI, not any wizard-local duplicate
 
-#### Scenario: Page-images screen opens the editor
+#### Scenario: Page-images screen opens the editor in a modal
 
 - **WHEN** the user opens region editing for a page from the project page-images screen
-- **THEN** the shared `OcrRegionEditor` component MUST render the editor UI, not any project-local duplicate
+- **THEN** the shared `OcrRegionEditor` component MUST render inside a modal host, not a separate route and not any project-local duplicate
 
 #### Scenario: Visual parity across entry points
 
 - **WHEN** the same page image is opened in the editor from either entry point
 - **THEN** the editor MUST display the same layout, typography, colors, spacing, and action affordances
-
-### Requirement: Editor follows the AudioFlow design system
-
-The `OcrRegionEditor` component SHALL use only design tokens from `audioFlowTokens` (colors, typography, radii, spacing) and AudioFlow primitives (`AudioFlowScreen`, `FadeZoomContent`, `GlassPanel`, `AudioFlowFooterMenu`). The component MUST NOT use raw hex color literals or ad-hoc styles outside the design system.
-
-#### Scenario: Background and surfaces
-
-- **WHEN** the editor renders
-- **THEN** the page background MUST be the `AudioFlowScreen` ambient background and the image preview/region list MUST sit on `GlassPanel` surfaces from the design system
-
-#### Scenario: Typography
-
-- **WHEN** the editor renders titles, eyebrows, and body text
-- **THEN** typography MUST come from `audioFlowStyles` / `audioFlowTokens.typography.*`
-
-#### Scenario: Region overlay colors
-
-- **WHEN** the editor renders region overlays or the live drag rectangle
-- **THEN** the colors MUST be sourced from `audioFlowTokens.color.accent.*`, with the same semantic accent reused across both entry points
-
-#### Scenario: Icons follow Feather set
-
-- **WHEN** the editor renders icon affordances (e.g. delete region, close, confirm)
-- **THEN** icons MUST come from Feather via `@expo/vector-icons`
 
 ### Requirement: Editor supports both uploaded and pending page targets
 

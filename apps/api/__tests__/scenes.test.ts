@@ -2,25 +2,51 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app';
 import { prisma } from '../src/lib/db';
+import { deleteFile } from '../src/lib/storage';
 import { signAccessToken } from '../src/lib/jwt';
 
 vi.mock('../src/lib/db', () => ({
   prisma: {
     user: { findUnique: vi.fn() },
-    subscriptionPlan: { create: vi.fn(), findFirst: vi.fn().mockResolvedValue({ planType: 'max', pagesLimit: 1500, projectsLimit: 50 }) },
-    usageTracking: { findUnique: vi.fn().mockResolvedValue({ pagesUsed: 0 }), create: vi.fn(), upsert: vi.fn() },
-    project: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    subscriptionPlan: {
+      create: vi.fn(),
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({ planType: 'max', pagesLimit: 1500, projectsLimit: 50 }),
+    },
+    usageTracking: {
+      findUnique: vi.fn().mockResolvedValue({ pagesUsed: 0 }),
+      create: vi.fn(),
+      upsert: vi.fn(),
+    },
+    project: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
     projectShare: { findUnique: vi.fn() },
     pageImage: {
-      create: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(),
-      findUnique: vi.fn(), update: vi.fn(), delete: vi.fn(),
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     },
     scene: {
-      create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(),
-      update: vi.fn(), count: vi.fn(),
+      create: vi.fn(),
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      count: vi.fn(),
     },
+    audioTrack: { findUnique: vi.fn(), delete: vi.fn() },
     textRegion: {
-      create: vi.fn(), deleteMany: vi.fn(), findMany: vi.fn(),
+      create: vi.fn(),
+      deleteMany: vi.fn(),
+      findMany: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -30,37 +56,74 @@ vi.mock('../src/lib/ocr', () => ({
   recognizeText: vi.fn().mockResolvedValue({ text: 'Recognized text sample', confidence: 0.95 }),
 }));
 
+vi.mock('../src/lib/storage', () => ({
+  deleteFile: vi.fn().mockResolvedValue(undefined),
+}));
+
 const db = vi.mocked(prisma);
 const tokenA = signAccessToken({ userId: 'user-a', email: 'a@test.com' });
 const tokenB = signAccessToken({ userId: 'user-b', email: 'b@test.com' });
 
 const now = new Date();
 const projectA = {
-  id: 'proj-1', ownerId: 'user-a', title: 'Test', coverUrl: null,
-  language: 'pl', voiceId: null, interstitialPreset: null, status: 'draft',
-  createdAt: now, updatedAt: now,
+  id: 'proj-1',
+  ownerId: 'user-a',
+  title: 'Test',
+  coverUrl: null,
+  language: 'pl',
+  voiceId: null,
+  interstitialPreset: null,
+  status: 'draft',
+  createdAt: now,
+  updatedAt: now,
 };
 
 const img1 = {
-  id: 'img-1', projectId: 'proj-1', storagePath: 'projects/proj-1/pages/1.jpg',
-  thumbnailPath: null, orderIndex: 0, originalFilename: 'page1.jpg',
-  fileSize: 5000, mimeType: 'image/jpeg', createdAt: now, textRegions: [],
+  id: 'img-1',
+  projectId: 'proj-1',
+  storagePath: 'projects/proj-1/pages/1.jpg',
+  thumbnailPath: null,
+  orderIndex: 0,
+  originalFilename: 'page1.jpg',
+  fileSize: 5000,
+  mimeType: 'image/jpeg',
+  createdAt: now,
+  textRegions: [],
 };
 const img2 = {
-  id: 'img-2', projectId: 'proj-1', storagePath: 'projects/proj-1/pages/2.jpg',
-  thumbnailPath: null, orderIndex: 1, originalFilename: 'page2.jpg',
-  fileSize: 6000, mimeType: 'image/jpeg', createdAt: now, textRegions: [],
+  id: 'img-2',
+  projectId: 'proj-1',
+  storagePath: 'projects/proj-1/pages/2.jpg',
+  thumbnailPath: null,
+  orderIndex: 1,
+  originalFilename: 'page2.jpg',
+  fileSize: 6000,
+  mimeType: 'image/jpeg',
+  createdAt: now,
+  textRegions: [],
 };
 
 const scene1 = {
-  id: 'scene-1', projectId: 'proj-1', pageImageId: 'img-1',
-  ocrText: null, editedText: null, status: 'queued', orderIndex: 0,
-  createdAt: now, updatedAt: now,
+  id: 'scene-1',
+  projectId: 'proj-1',
+  pageImageId: 'img-1',
+  ocrText: null,
+  editedText: null,
+  status: 'queued',
+  orderIndex: 0,
+  createdAt: now,
+  updatedAt: now,
 };
 const scene2 = {
-  id: 'scene-2', projectId: 'proj-1', pageImageId: 'img-2',
-  ocrText: null, editedText: null, status: 'queued', orderIndex: 1,
-  createdAt: now, updatedAt: now,
+  id: 'scene-2',
+  projectId: 'proj-1',
+  pageImageId: 'img-2',
+  ocrText: null,
+  editedText: null,
+  status: 'queued',
+  orderIndex: 1,
+  createdAt: now,
+  updatedAt: now,
 };
 
 describe('Scenes endpoints', () => {
@@ -158,16 +221,20 @@ describe('Scenes endpoints', () => {
       db.pageImage.findMany.mockResolvedValue([img1]);
       db.textRegion.deleteMany.mockResolvedValue({ count: 0 });
       db.textRegion.create.mockResolvedValue({
-        id: 'tr-1', pageImageId: 'img-1', x: 10, y: 20, width: 100, height: 50, orderIndex: 0,
+        id: 'tr-1',
+        pageImageId: 'img-1',
+        x: 10,
+        y: 20,
+        width: 100,
+        height: 50,
+        orderIndex: 0,
       });
 
       const res = await request(app)
         .post('/projects/proj-1/scenes/text-regions')
         .set('Authorization', `Bearer ${tokenA}`)
         .send({
-          regions: [
-            { pageImageId: 'img-1', x: 10, y: 20, width: 100, height: 50 },
-          ],
+          regions: [{ pageImageId: 'img-1', x: 10, y: 20, width: 100, height: 50 }],
         });
 
       expect(res.status).toBe(201);
@@ -220,10 +287,22 @@ describe('Scenes endpoints', () => {
       db.textRegion.deleteMany.mockResolvedValue({ count: 0 });
       db.textRegion.create
         .mockResolvedValueOnce({
-          id: 'tr-1', pageImageId: 'img-2', x: 0.2, y: 0.1, width: 0.4, height: 0.2, orderIndex: 0,
+          id: 'tr-1',
+          pageImageId: 'img-2',
+          x: 0.2,
+          y: 0.1,
+          width: 0.4,
+          height: 0.2,
+          orderIndex: 0,
         })
         .mockResolvedValueOnce({
-          id: 'tr-2', pageImageId: 'img-1', x: 0.1, y: 0.3, width: 0.5, height: 0.1, orderIndex: 1,
+          id: 'tr-2',
+          pageImageId: 'img-1',
+          x: 0.1,
+          y: 0.3,
+          width: 0.5,
+          height: 0.1,
+          orderIndex: 1,
         });
 
       const res = await request(app)
@@ -250,8 +329,24 @@ describe('Scenes endpoints', () => {
     it('returns saved text regions ordered by page and region order', async () => {
       db.project.findUnique.mockResolvedValue(projectA);
       db.textRegion.findMany.mockResolvedValue([
-        { id: 'tr-1', pageImageId: 'img-1', x: 0.1, y: 0.2, width: 0.3, height: 0.4, orderIndex: 0 },
-        { id: 'tr-2', pageImageId: 'img-1', x: 0.5, y: 0.2, width: 0.2, height: 0.2, orderIndex: 1 },
+        {
+          id: 'tr-1',
+          pageImageId: 'img-1',
+          x: 0.1,
+          y: 0.2,
+          width: 0.3,
+          height: 0.4,
+          orderIndex: 0,
+        },
+        {
+          id: 'tr-2',
+          pageImageId: 'img-1',
+          x: 0.5,
+          y: 0.2,
+          width: 0.2,
+          height: 0.2,
+          orderIndex: 1,
+        },
       ]);
 
       const res = await request(app)
@@ -260,8 +355,24 @@ describe('Scenes endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual([
-        { id: 'tr-1', pageImageId: 'img-1', x: 0.1, y: 0.2, width: 0.3, height: 0.4, orderIndex: 0 },
-        { id: 'tr-2', pageImageId: 'img-1', x: 0.5, y: 0.2, width: 0.2, height: 0.2, orderIndex: 1 },
+        {
+          id: 'tr-1',
+          pageImageId: 'img-1',
+          x: 0.1,
+          y: 0.2,
+          width: 0.3,
+          height: 0.4,
+          orderIndex: 0,
+        },
+        {
+          id: 'tr-2',
+          pageImageId: 'img-1',
+          x: 0.5,
+          y: 0.2,
+          width: 0.2,
+          height: 0.2,
+          orderIndex: 1,
+        },
       ]);
       expect(db.textRegion.findMany).toHaveBeenCalledWith({
         where: { pageImage: { projectId: 'proj-1' } },
@@ -307,7 +418,10 @@ describe('Scenes endpoints', () => {
       db.project.findUnique.mockResolvedValue(projectA);
       db.scene.findUnique.mockResolvedValue({ ...scene1, status: 'ocr_done', ocrText: 'Original' });
       db.scene.update.mockResolvedValue({
-        ...scene1, status: 'ocr_done', ocrText: 'Original', editedText: 'Poprawiony tekst',
+        ...scene1,
+        status: 'ocr_done',
+        ocrText: 'Original',
+        editedText: 'Poprawiony tekst',
       });
 
       const res = await request(app)
@@ -321,9 +435,16 @@ describe('Scenes endpoints', () => {
 
     it('T-5.5: setting editedText to null uses ocr_text', async () => {
       db.project.findUnique.mockResolvedValue(projectA);
-      db.scene.findUnique.mockResolvedValue({ ...scene1, status: 'ocr_done', editedText: 'was edited' });
+      db.scene.findUnique.mockResolvedValue({
+        ...scene1,
+        status: 'ocr_done',
+        editedText: 'was edited',
+      });
       db.scene.update.mockResolvedValue({
-        ...scene1, status: 'ocr_done', ocrText: 'Original', editedText: null,
+        ...scene1,
+        status: 'ocr_done',
+        ocrText: 'Original',
+        editedText: null,
       });
 
       const res = await request(app)
@@ -333,6 +454,35 @@ describe('Scenes endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.editedText).toBeNull();
+    });
+
+    it('deletes existing audio and re-queues the scene when the text is corrected', async () => {
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.scene.findUnique.mockResolvedValue({
+        ...scene1,
+        status: 'audio_done',
+        ocrText: 'Original',
+      });
+      db.audioTrack.findUnique.mockResolvedValue({
+        id: 'track-1',
+        sceneId: 'scene-1',
+        storagePath: 'projects/proj-1/audio/track-1.mp3',
+      });
+      db.scene.update.mockResolvedValue({
+        ...scene1,
+        status: 'ready_for_audio',
+        editedText: 'Poprawione',
+      });
+
+      const res = await request(app)
+        .put('/projects/proj-1/scenes/scene-1')
+        .set('Authorization', `Bearer ${tokenA}`)
+        .send({ editedText: 'Poprawione', status: 'ready_for_audio' });
+
+      expect(res.status).toBe(200);
+      expect(deleteFile).toHaveBeenCalledWith('projects/proj-1/audio/track-1.mp3');
+      expect(db.audioTrack.delete).toHaveBeenCalledWith({ where: { id: 'track-1' } });
+      expect(res.body.status).toBe('ready_for_audio');
     });
 
     it('updates status to ready_for_audio', async () => {
@@ -369,6 +519,68 @@ describe('Scenes endpoints', () => {
         .put('/projects/proj-1/scenes/nope')
         .set('Authorization', `Bearer ${tokenA}`)
         .send({ editedText: 'test' });
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe('POST /projects/:projectId/scenes/:sceneId/reset', () => {
+    it('drops audio, clears text and re-queues the scene for reprocessing', async () => {
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.scene.findUnique.mockResolvedValue({
+        ...scene1,
+        status: 'audio_done',
+        ocrText: 'Stary tekst',
+        editedText: 'Poprawiony',
+      });
+      db.audioTrack.findUnique.mockResolvedValue({
+        id: 'track-1',
+        sceneId: 'scene-1',
+        storagePath: 'projects/proj-1/audio/track-1.mp3',
+      });
+      db.scene.update.mockResolvedValue({
+        ...scene1,
+        status: 'queued',
+        ocrText: null,
+        editedText: null,
+      });
+
+      const res = await request(app)
+        .post('/projects/proj-1/scenes/scene-1/reset')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(res.status).toBe(200);
+      expect(deleteFile).toHaveBeenCalledWith('projects/proj-1/audio/track-1.mp3');
+      expect(db.audioTrack.delete).toHaveBeenCalledWith({ where: { id: 'track-1' } });
+      expect(db.scene.update).toHaveBeenCalledWith({
+        where: { id: 'scene-1' },
+        data: { ocrText: null, editedText: null, status: 'queued' },
+      });
+      expect(res.body.status).toBe('queued');
+    });
+
+    it('resets a scene without audio (no track to delete)', async () => {
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.scene.findUnique.mockResolvedValue({ ...scene1, status: 'ocr_done', ocrText: 'x' });
+      db.audioTrack.findUnique.mockResolvedValue(null);
+      db.scene.update.mockResolvedValue({ ...scene1, status: 'queued', ocrText: null });
+
+      const res = await request(app)
+        .post('/projects/proj-1/scenes/scene-1/reset')
+        .set('Authorization', `Bearer ${tokenA}`);
+
+      expect(res.status).toBe(200);
+      expect(db.audioTrack.delete).not.toHaveBeenCalled();
+      expect(res.body.status).toBe('queued');
+    });
+
+    it('returns 404 for non-existent scene', async () => {
+      db.project.findUnique.mockResolvedValue(projectA);
+      db.scene.findUnique.mockResolvedValue(null);
+
+      const res = await request(app)
+        .post('/projects/proj-1/scenes/nope/reset')
+        .set('Authorization', `Bearer ${tokenA}`);
 
       expect(res.status).toBe(404);
     });

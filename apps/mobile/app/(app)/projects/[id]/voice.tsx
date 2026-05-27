@@ -1,12 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Audio } from 'expo-av';
 import { api } from '../../../../lib/api';
@@ -33,7 +26,11 @@ const t = audioFlowTokens;
 const AUDIO_POLL_INTERVAL_MS = 3000;
 
 export default function VoiceSelectScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, newSceneIds } = useLocalSearchParams<{ id: string; newSceneIds?: string }>();
+  const newSceneIdSet = useMemo(
+    () => new Set((newSceneIds ?? '').split(',').filter(Boolean)),
+    [newSceneIds],
+  );
   const [voices, setVoices] = useState<VoiceResponse[]>([]);
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -316,6 +313,11 @@ export default function VoiceSelectScreen() {
 
             <GlassPanel style={styles.statusCard}>
               <SectionHeading title="Text to Speech" style={styles.statusHeading} />
+              {newSceneIdSet.size > 0 && (
+                <Text style={[styles.statusLine, styles.newSceneLine]}>
+                  Nowe zdjęcia gotowe do TTS: {newSceneIdSet.size}
+                </Text>
+              )}
               <Text style={styles.statusLine}>Gotowe sceny do audio: {readySceneCount}</Text>
               {generatingSceneCount > 0 && (
                 <Text style={styles.statusLine}>Audio w toku: {generatingSceneCount}</Text>
@@ -323,10 +325,11 @@ export default function VoiceSelectScreen() {
               {erroredSceneCount > 0 && (
                 <Text style={styles.errorText}>Sceny z błędem audio: {erroredSceneCount}</Text>
               )}
+              {newSceneIdSet.size > 0 && canGenerate && (
+                <Text style={styles.hintText}>Możesz uruchomić TTS dla nowych zdjęć</Text>
+              )}
               {readySceneCount === 0 && generatingSceneCount === 0 && (
-                <Text style={styles.hintText}>
-                  Zatwierdź tekst scen po OCR, aby uruchomić TTS.
-                </Text>
+                <Text style={styles.hintText}>Zatwierdź tekst scen po OCR, aby uruchomić TTS.</Text>
               )}
             </GlassPanel>
 
@@ -416,6 +419,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'VarelaRound_400Regular',
     marginBottom: 4,
+  },
+  newSceneLine: {
+    color: t.color.accent.pearl,
+    fontFamily: 'Quicksand_600SemiBold',
   },
   audioCard: {
     borderRadius: t.radius.card,
