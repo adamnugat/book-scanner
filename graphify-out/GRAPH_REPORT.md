@@ -1,16 +1,16 @@
 # Graph Report - book-scaner  (2026-05-28)
 
 ## Corpus Check
-- 332 files · ~246,535 words
+- 332 files · ~246,540 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4177 nodes · 5005 edges · 368 communities (342 shown, 26 thin omitted)
+- 4177 nodes · 5001 edges · 368 communities (342 shown, 26 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 192 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f1880e15`
+- Built from commit: `5aa79894`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -406,7 +406,7 @@ Nodes (73): ElevenLabs TTS provider, Google Cloud Vision OCR provider, JWT authe
 
 ### Community 1 - "Community 1"
 Cohesion: 0.07
-Nodes (33): AudioFlowGlobalMenuButton(), EditorRegion, EMPTY_LAYOUT, OcrEditorTarget, OcrRegionEditor(), OcrRegionEditorProps, styles, PageImagePreviewProps (+25 more)
+Nodes (33): audioFlowFooterMenuHeight(), EditorRegion, EMPTY_LAYOUT, OcrEditorTarget, OcrRegionEditor(), OcrRegionEditorProps, styles, PageImagePreviewProps (+25 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.07
@@ -421,12 +421,12 @@ Cohesion: 0.11
 Nodes (26): Audiobook Jingle Between Tracks (Change), Advanced Mode (Audiobook Creation), AudioTrack, Automatic Mode (Audiobook Creation), InterstitialPreset (Backend DB Table), Local Jingle Preset (Capability), local-jingles.ts Module (Asset Registry), LOCAL_JINGLES Registry (+18 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.08
-Nodes (29): styles, AudioFlowButtonProps, AudioFlowLogo(), audioFlowReferenceViews, AudioFlowScreenProps, audioFlowStyles, AudioFlowTextField(), audioFlowTokens (+21 more)
+Cohesion: 0.06
+Nodes (31): styles, AudioFlowButtonProps, AudioFlowLogo(), audioFlowReferenceViews, AudioFlowScreenProps, audioFlowStyles, AudioFlowTextField(), audioFlowTokens (+23 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.2
-Nodes (13): ProjectsScreen, CARD_HEIGHT_REST, CARD_HEIGHT_SECOND, dashboardPlaybackProgress(), ProjectsScreen(), STATUS_LABELS, audioFlowFontFamilies, AudioFlowBottomNavigation() (+5 more)
+Cohesion: 0.31
+Nodes (11): Capability: audioflow-auth-ui, Capability: mobile-app-navigation, Change: Apply AudioFlow Login Dashboard Shell (2026-05-11), AudioFlow Footer Menu, AudioFlow Top Navigation, Proposal: Apply AudioFlow to Login, Dashboard and App Shell, Spec: AudioFlow Auth UI, AudioFlow Mobile Design System (+3 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.07
@@ -445,20 +445,20 @@ Cohesion: 0.08
 Nodes (38): project sharing and QR deep-link, verifyAssetToken(), requireRouteParam(), routeParam(), createBucketIfMissing(), deleteFile(), downloadFileWithMetadata(), ensureBucketExists() (+30 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.1
-Nodes (30): PlayerScreen, Offline Playback / Cache, formatTime(), PlayerScreen(), styles, buildPlaylistWithJingles(), getLocalJingle(), LOCAL_JINGLES (+22 more)
+Cohesion: 0.08
+Nodes (37): PlayerScreen, Offline Playback / Cache, formatTime(), PlayerScreen(), styles, buildPlaylistWithJingles(), getLocalJingle(), LOCAL_JINGLES (+29 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.12
-Nodes (27): Change: Fix New Audio Not Showing in Player, Change: Fix TTS Generation Completion Feedback, Change: Redesign Project Detail Page, Component: apps/api/src/routes/playlist.ts, Component: apps/mobile player.tsx (Player Screen), Component: apps/mobile projects/[id]/index.tsx (Project Detail Screen), Component: apps/mobile voice.tsx (Voice & Audio Screen), Concept: Scene Audio Statuses (audio_generating / audio_done / audio_error) (+19 more)
+Cohesion: 0.11
+Nodes (29): Change: Fix New Audio Not Showing in Player, Change: Fix TTS Generation Completion Feedback, Change: Redesign Project Detail Page, Component: apps/api/src/routes/playlist.ts, Component: apps/mobile player.tsx (Player Screen), Component: apps/mobile projects/[id]/index.tsx (Project Detail Screen), Component: apps/mobile voice.tsx (Voice & Audio Screen), Concept: Scene Audio Statuses (audio_generating / audio_done / audio_error) (+21 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.2
 Nodes (11): Capability: project-dashboard-ui, Change: Apply AudioFlow Project Details, Change: Apply AudioFlow Dashboard, Login, Navigation, Design: Dashboard, Login, Nav (AudioFlow), Proposal: Apply AudioFlow Dashboard, Login, Navigation, Requirement: AudioFlow Project Library Dashboard, Requirement: AudioFlow Project Detail Shell, Requirement: Dynamic Dashboard States (Consumption vs Creation) (+3 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.15
-Nodes (22): background.jpg (app background), LoginScreen(), RegisterScreen(), AudioFlow Design System, audioFlowFooterMenuHeight(), AudioFlowGlobalNavigation, FadeZoomContent, PageImagePreview (+14 more)
+Cohesion: 0.18
+Nodes (20): background.jpg (app background), LoginScreen(), RegisterScreen(), AudioFlow Design System, AudioFlowGlobalNavigation, FadeZoomContent, PageImagePreview, ProjectCoverTexture (+12 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.07
@@ -473,8 +473,8 @@ Cohesion: 0.11
 Nodes (21): ACCESS_EXPIRES, ASSET_EXPIRES, AssetTokenPayload, REFRESH_EXPIRES, signRefreshToken(), TokenPayload, verifyToken(), collectErrors() (+13 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.09
-Nodes (31): PricingScreen, EditProjectScreen, ProjectImagesScreen, ProjectDetailScreen, ScenesScreen, SharingScreen, TextRegionsScreen, AudioFlowFooterMenu() (+23 more)
+Cohesion: 0.08
+Nodes (33): PricingScreen, EditProjectScreen, ProjectImagesScreen, ScenesScreen, SharingScreen, TextRegionsScreen, styles, AudioFlowFooterMenu() (+25 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.12
@@ -566,7 +566,7 @@ Nodes (14): AudioTrackResponse, CreateProjectRequest, InterstitialPresetResponse
 
 ### Community 41 - "Community 41"
 Cohesion: 0.08
-Nodes (24): IndexRedirect(), styles, RootLayout(), styles, NavigationMenuSheet(), styles, ToastContext, ToastContextValue (+16 more)
+Nodes (27): CARD_HEIGHT_REST, CARD_HEIGHT_SECOND, dashboardPlaybackProgress(), IndexRedirect(), ProjectsScreen(), STATUS_LABELS, styles, RootLayout() (+19 more)
 
 ### Community 42 - "Community 42"
 Cohesion: 0.15
@@ -605,12 +605,12 @@ Cohesion: 0.16
 Nodes (18): Artifact: design-system/reference-views/Dashboard.html, Artifact: design-system/reference-views/Login.html, Capability: audiobook-creation-wizard, Capability: audioflow-mobile-design-system, Change: Apply AudioFlow Design System (2026-05-11), Concept: AudioFlow App Shell Footer Menu (bottom navigation), Concept: AudioFlow Brand Header Primitive, Concept: AudioFlow Glass Form Field Primitive (+10 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.15
-Nodes (20): Navigation Content Fade-Zoom Transition (Change), AudioFlow Footer Menu, AudioFlow Top Navigation, content-fade-zoom-transition Capability, expo-router / React Navigation Stack, FadeZoomContent Component, Mobile App Navigation (Capability), Project Card SVG Texture (Capability) (+12 more)
+Cohesion: 0.21
+Nodes (12): Navigation Content Fade-Zoom Transition (Change), content-fade-zoom-transition Capability, expo-router / React Navigation Stack, FadeZoomContent Component, Mobile App Navigation (Capability), Stack animation:none + FadeZoomContent delegation, Navigation Fade-Zoom Transition Design Doc, Navigation Fade-Zoom Transition Proposal (+4 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.13
-Nodes (21): Artifact: design-system/reference-views/Project Details.html, Capability: audioflow-auth-ui, Capability: mobile-app-navigation, Capability: project-dashboard-ui, Change: Redesign Project Detail Page (2026-05-09), Change: Apply AudioFlow Login Dashboard Shell (2026-05-11), Change: Apply AudioFlow Project Details (2026-05-11), Concept: AudioFlow Progress Bar (pearl fill, muted track) (+13 more)
+Cohesion: 0.16
+Nodes (16): Artifact: design-system/reference-views/Project Details.html, Capability: project-dashboard-ui, Change: Redesign Project Detail Page (2026-05-09), Change: Apply AudioFlow Project Details (2026-05-11), Concept: AudioFlow Progress Bar (pearl fill, muted track), Concept: Context Menu for Management Actions (Edit/Delete Project), Concept: Dynamic Dashboard States (Consumption vs Creation State), Concept: AudioFlow Project Tool Tile Primitive (+8 more)
 
 ### Community 53 - "Community 53"
 Cohesion: 0.11
@@ -857,8 +857,8 @@ Cohesion: 0.17
 Nodes (11): 1. Użycie `audioFlowTokens` zamiast inline stałych, 2. `TopAppBar` zamiast własnego nagłówka, 3. `GlassPanel` dla kart list, 4. `PearlButton` / `GhostButton` dla CTA, 5. `AudioFlowTextField` w `sharing.tsx`, 6. `RoundIconButton` dla play/pause, Context, Decisions (+3 more)
 
 ### Community 145 - "Community 145"
-Cohesion: 0.06
-Nodes (28): DraggableImageList(), DraggableImageListProps, RowProps, OcrCorrectionModal(), OcrCorrectionModalProps, styles, FeatherIconName, IconActionButtonProps (+20 more)
+Cohesion: 0.07
+Nodes (22): DraggableImageList(), DraggableImageListProps, RowProps, FeatherIconName, IconActionButtonProps, PageImageCard(), PageImageCardProps, StatusIconProps (+14 more)
 
 ### Community 146 - "Community 146"
 Cohesion: 0.18
@@ -1621,8 +1621,8 @@ Cohesion: 0.17
 Nodes (11): 1. Wspólny komponent `components/PageImageCard.tsx`, 2. Ikony Feather, 3. Layout 3 grup, 4. Widok „Zdjęcia stron” zyskuje przycisk obszarów, 5. Wymiar dotykowy ≥ 44×44 pt, code:ts (type PageImageCardProps = {), Context, Decisions (+3 more)
 
 ### Community 341 - "Community 341"
-Cohesion: 0.08
-Nodes (22): AppLayout, AuthLayout(), AudioFlowPlayerPanel(), AudioFlowStackHeader(), AudioFlowTopChrome(), AudioFlowTopNavigation(), PLAN_ACCENT, stackHeaderBg() (+14 more)
+Cohesion: 0.09
+Nodes (28): ProjectsScreen, AppLayout, ProjectDetailScreen, AuthLayout(), AudioFlowPlayerPanel(), GlassPanel(), AudioFlowBottomNavigation(), AudioFlowGlobalMenuButton() (+20 more)
 
 ### Community 342 - "Community 342"
 Cohesion: 0.18
@@ -1713,12 +1713,12 @@ Cohesion: 0.33
 Nodes (6): scripts, build:web, dev, dev:web, lint, test
 
 ### Community 364 - "Community 364"
-Cohesion: 0.5
-Nodes (3): mockLogin, mockReplace, { Text }
+Cohesion: 0.25
+Nodes (6): OcrCorrectionModal(), OcrCorrectionModalProps, styles, styles, ZoomableImage(), ZoomableImageProps
 
 ### Community 365 - "Community 365"
-Cohesion: 0.25
-Nodes (8): offlineCache.deleteProjectCache, offlineCache.downloadProject, offlineCache.getCachedAudioForTrack, offlineCache.getCachedPlaylist, offlineCache.getCacheSize, getFileSystem(), offlineCache.getTotalCacheSize, offlineCache.isProjectCached
+Cohesion: 0.29
+Nodes (6): mockGetMyUsage, mockGetPricing, mockRegister, mockResetPassword, registerRender, { Text }
 
 ### Community 366 - "Community 366"
 Cohesion: 0.29

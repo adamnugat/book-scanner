@@ -31,7 +31,6 @@ export const audioFlowReferenceViews: Record<string, string> = {
   '/(app)/projects/new/index': 'New Project.html',
   '/(app)/projects/[id]/index': 'Project Details.html',
   '/(app)/projects/[id]/images': 'Add Photos.html',
-  '/(app)/projects/[id]/voice': 'Voice and Audio.html',
   '/(app)/projects/[id]/sharing': 'Share.html',
   '/(app)/projects/[id]/export': 'Export.html',
 };

@@ -81,9 +81,9 @@ export interface CreateProjectRequest {
 export interface UpdateProjectRequest {
   title?: string;
   language?: SupportedLanguage;
-  coverUrl?: string;
-  voiceId?: string;
-  interstitialPreset?: string;
+  coverUrl?: string | null;
+  voiceId?: string | null;
+  interstitialPreset?: string | null;
 }
 
 export interface PageImageResponse {

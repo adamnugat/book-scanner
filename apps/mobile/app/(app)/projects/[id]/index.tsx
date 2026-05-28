@@ -43,7 +43,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const HERO_HEIGHT = Math.max(Dimensions.get('window').height * 0.44, 360);
 const t = audioFlowTokens;
-const PROJECT_TOOL_COUNT = 3;
+const PROJECT_TOOL_COUNT = 2;
 
 const formatDuration = (durationMs: number) => {
   const totalSeconds = Math.max(0, Math.floor(durationMs / 1000));
@@ -307,9 +307,9 @@ export default function ProjectDetailScreen() {
                   <Pressable
                     accessibilityRole="button"
                     style={({ pressed }) => [styles.nextStepButton, pressed && styles.pressed]}
-                    onPress={() => router.push(`/(app)/projects/${id}/voice`)}
+                    onPress={() => router.push(`/(app)/projects/${id}/images`)}
                   >
-                    <Text style={styles.nextStepButtonText}>Wybierz głos i generuj audio</Text>
+                    <Text style={styles.nextStepButtonText}>Przejdź do edycji audio</Text>
                   </Pressable>
                 )}
               </GlassPanel>
@@ -326,19 +326,10 @@ export default function ProjectDetailScreen() {
             </View>
             <View style={styles.toolsList}>
               <SectionTile
-                accessibilityLabel="Otwórz zdjęcia stron"
-                title="Zdjęcia stron"
-                summary={statusLabel}
+                accessibilityLabel="Otwórz edycję audiobooka"
+                title="Edytuj audiobook"
                 trailingIcon="chevron-right"
                 onPress={() => router.push(`/(app)/projects/${id}/images`)}
-              />
-
-              <SectionTile
-                accessibilityLabel="Otwórz głos i audio"
-                title="Głos i audio"
-                summary={voiceName ?? 'Nie wybrano'}
-                trailingIcon="chevron-right"
-                onPress={() => router.push(`/(app)/projects/${id}/voice`)}
               />
 
               <SectionTile

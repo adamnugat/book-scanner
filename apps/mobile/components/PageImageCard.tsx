@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -131,14 +130,9 @@ export function PageImageCard({
   style,
 }: PageImageCardProps) {
   const pending = status === 'pending';
-  const [editUnlocked, setEditUnlocked] = useState(false);
 
-  // Region stage: pressable when enabled and either not yet completed or edit-unlocked.
-  // Regions stay editable whenever the toggle is on — re-opening the editor must always work.
   const regionPressable = !pending && areaSelectionEnabled && !!onSelectRegions;
-  // OCR stage: correction available once OCR has run (or when re-opened via edit).
-  const ocrPressable =
-    !pending && ocrCorrectionEnabled && !!onCorrectOcr && (ocrDone || editUnlocked);
+  const ocrPressable = !pending && ocrCorrectionEnabled && !!onCorrectOcr && ocrDone;
 
   const idFor = (suffix: string) => (testID ? `${testID}-${suffix}` : undefined);
 
@@ -201,23 +195,8 @@ export function PageImageCard({
         </View>
       </View>
 
-      {/* Column 3 — edit + delete */}
+      {/* Column 3 — delete */}
       <View style={styles.actions}>
-        <Pressable
-          accessibilityLabel={`Edytuj etapy ${displayName}`}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: pending, selected: editUnlocked }}
-          disabled={pending}
-          onPress={() => setEditUnlocked((v) => !v)}
-          style={({ pressed }) => [
-            styles.actionBtn,
-            editUnlocked && styles.actionBtnActive,
-            pressed && !pending && styles.pressed,
-          ]}
-          testID={idFor('edit')}
-        >
-          <Feather name="edit-2" size={18} color={t.color.text.onDark} />
-        </Pressable>
         <Pressable
           accessibilityLabel={`Usuń ${displayName}`}
           accessibilityRole="button"
@@ -346,6 +325,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
   },
-  actionBtnActive: { borderColor: t.color.accent.pearl },
   actionBtnDanger: { backgroundColor: 'rgba(255, 143, 163, 0.10)' },
 });

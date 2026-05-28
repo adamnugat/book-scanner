@@ -13,6 +13,10 @@ const mockGenerateAudio = jest.fn();
 const mockBuildPlaylist = jest.fn();
 const mockUpdateScene = jest.fn();
 const mockSaveTextRegions = jest.fn();
+const mockGetProject = jest.fn();
+const mockUpdateProject = jest.fn();
+const mockGetVoices = jest.fn();
+const mockGetInterstitialPresets = jest.fn();
 const mockLaunchImageLibraryAsync = jest.fn();
 const mockLaunchCameraAsync = jest.fn();
 const mockRequestCameraPermissionsAsync = jest.fn();
@@ -72,6 +76,10 @@ jest.mock('../lib/api', () => ({
     buildPlaylist: (...args: unknown[]) => mockBuildPlaylist(...args),
     updateScene: (...args: unknown[]) => mockUpdateScene(...args),
     saveTextRegions: (...args: unknown[]) => mockSaveTextRegions(...args),
+    getProject: (...args: unknown[]) => mockGetProject(...args),
+    updateProject: (...args: unknown[]) => mockUpdateProject(...args),
+    getVoices: (...args: unknown[]) => mockGetVoices(...args),
+    getInterstitialPresets: (...args: unknown[]) => mockGetInterstitialPresets(...args),
   },
 }));
 
@@ -136,6 +144,55 @@ describe('ProjectImagesScreen redesigned workflow', () => {
     mockGetTextRegions.mockResolvedValue([]);
     mockGetScenes.mockResolvedValue([]);
     mockGetAudioTracks.mockResolvedValue([]);
+    mockGetProject.mockResolvedValue({
+      id: 'proj-1',
+      title: 'Test',
+      coverUrl: null,
+      language: 'pl',
+      voiceId: 'voice-1',
+      interstitialPreset: null,
+      status: 'draft',
+      createdAt: '2026-05-05T00:00:00.000Z',
+      updatedAt: '2026-05-05T00:00:00.000Z',
+    });
+    mockGetVoices.mockResolvedValue([
+      {
+        id: 'v-1',
+        elevenlabsVoiceId: 'voice-1',
+        name: 'Anna',
+        language: 'pl',
+        plan: 'free',
+        previewUrl: null,
+      },
+      {
+        id: 'v-2',
+        elevenlabsVoiceId: 'voice-2',
+        name: 'Bartek',
+        language: 'pl',
+        plan: 'free',
+        previewUrl: null,
+      },
+    ]);
+    mockGetInterstitialPresets.mockResolvedValue([
+      {
+        id: 'preset-1',
+        name: 'Klasyczna',
+        audioUrl: 'http://api.test/preset-1.mp3',
+        durationMs: 4000,
+      },
+    ]);
+    mockUpdateProject.mockImplementation(async (_id: string, data: Record<string, unknown>) => ({
+      id: 'proj-1',
+      title: 'Test',
+      coverUrl: null,
+      language: 'pl',
+      voiceId: 'voice-1',
+      interstitialPreset: null,
+      status: 'draft',
+      createdAt: '2026-05-05T00:00:00.000Z',
+      updatedAt: '2026-05-05T00:00:00.000Z',
+      ...data,
+    }));
     mockUploadImages.mockResolvedValue([
       {
         ...existingImages[0],
@@ -261,5 +318,122 @@ describe('ProjectImagesScreen redesigned workflow', () => {
       );
     });
     expect(mockGenerateAudio).not.toHaveBeenCalled();
+  });
+
+  describe('Audio editing menu', () => {
+    it('renders the Audio button alongside the existing toggles', async () => {
+      render(<ProjectImagesScreen />);
+      await screen.findByText('Zdjęć 1');
+      expect(screen.getByLabelText('Edycja audio')).toBeTruthy();
+      expect(screen.getByLabelText('Wybór obszarów')).toBeTruthy();
+      expect(screen.getByLabelText('Korekta OCR')).toBeTruthy();
+    });
+
+    it('opens the audio menu with collapsed accordion sections', async () => {
+      render(<ProjectImagesScreen />);
+      fireEvent.press(await screen.findByLabelText('Edycja audio'));
+      await screen.findByText('Lektor');
+      expect(screen.getByText('Wstawka muzyczna')).toBeTruthy();
+      // Cards are hidden until accordions are expanded.
+      expect(screen.queryByText('Bartek')).toBeNull();
+      expect(screen.queryByText('Klasyczna')).toBeNull();
+    });
+
+    it('expanding Lektor reveals voice options', async () => {
+      render(<ProjectImagesScreen />);
+      fireEvent.press(await screen.findByLabelText('Edycja audio'));
+      fireEvent.press(await screen.findByLabelText('Edytuj Lektor'));
+      expect(await screen.findByText('Bartek')).toBeTruthy();
+    });
+
+    it('changing voice calls updateProject with voiceId only and refreshes', async () => {
+      mockGetScenes.mockResolvedValue([doneScene]);
+      render(<ProjectImagesScreen />);
+      await screen.findByText('Zdjęć 1');
+
+      fireEvent.press(screen.getByLabelText('Edycja audio'));
+      fireEvent.press(await screen.findByLabelText('Edytuj Lektor'));
+      fireEvent.press(await screen.findByTestId('audio-menu-voice-voice-2'));
+      fireEvent.press(screen.getByTestId('audio-menu-save'));
+
+      await waitFor(() => {
+        expect(mockUpdateProject).toHaveBeenCalledWith('proj-1', { voiceId: 'voice-2' });
+      });
+      // loadImages re-invoked after voice change → second project fetch
+      await waitFor(() => {
+        expect(mockGetProject).toHaveBeenCalledTimes(2);
+      });
+    });
+
+    it('voice change activates submit even when scenes had audio (server now resets them)', async () => {
+      mockGetScenes
+        .mockResolvedValueOnce([doneScene])
+        .mockResolvedValueOnce([readyScene])
+        .mockResolvedValue([readyScene]);
+      mockGetAudioTracks.mockResolvedValueOnce([]).mockResolvedValue([]);
+
+      render(<ProjectImagesScreen />);
+      await screen.findByText('Zdjęć 1');
+
+      let submitBtn = screen.getByLabelText('Wyślij i przetwórz');
+      expect(submitBtn.props.accessibilityState?.disabled).toBe(true);
+
+      fireEvent.press(screen.getByLabelText('Edycja audio'));
+      fireEvent.press(await screen.findByLabelText('Edytuj Lektor'));
+      fireEvent.press(await screen.findByTestId('audio-menu-voice-voice-2'));
+      fireEvent.press(screen.getByTestId('audio-menu-save'));
+
+      await waitFor(() => expect(mockUpdateProject).toHaveBeenCalled());
+
+      await waitFor(() => {
+        submitBtn = screen.getByLabelText('Wyślij i przetwórz');
+        expect(submitBtn.props.accessibilityState?.disabled).toBe(false);
+      });
+
+      fireEvent.press(submitBtn);
+      await waitFor(() => {
+        expect(mockGenerateAudio).toHaveBeenCalledWith('proj-1');
+      });
+    });
+
+    it('changing interstitial only triggers buildPlaylist on submit (no OCR/TTS)', async () => {
+      mockGetScenes.mockResolvedValue([doneScene]);
+
+      render(<ProjectImagesScreen />);
+      await screen.findByText('Zdjęć 1');
+
+      fireEvent.press(screen.getByLabelText('Edycja audio'));
+      fireEvent.press(await screen.findByLabelText('Edytuj Wstawka muzyczna'));
+      fireEvent.press(await screen.findByTestId('audio-menu-preset-preset-1'));
+      fireEvent.press(screen.getByTestId('audio-menu-save'));
+
+      await waitFor(() => {
+        expect(mockUpdateProject).toHaveBeenCalledWith('proj-1', {
+          interstitialPreset: 'preset-1',
+        });
+      });
+
+      const submitBtn = await screen.findByLabelText('Wyślij i przetwórz');
+      await waitFor(() => {
+        expect(submitBtn.props.accessibilityState?.disabled).toBe(false);
+      });
+
+      fireEvent.press(submitBtn);
+      await waitFor(() => {
+        expect(mockBuildPlaylist).toHaveBeenCalledWith('proj-1');
+      });
+      expect(mockProcessOcrBatch).not.toHaveBeenCalled();
+      expect(mockGenerateAudio).not.toHaveBeenCalled();
+    });
+
+    it('cancel closes menu without saving', async () => {
+      render(<ProjectImagesScreen />);
+      fireEvent.press(await screen.findByLabelText('Edycja audio'));
+      fireEvent.press(await screen.findByLabelText('Edytuj Lektor'));
+      fireEvent.press(await screen.findByTestId('audio-menu-voice-voice-2'));
+      fireEvent.press(screen.getByTestId('audio-menu-cancel'));
+
+      expect(mockUpdateProject).not.toHaveBeenCalled();
+    });
   });
 });

@@ -27,8 +27,7 @@ export default function AppLayout() {
       <Stack.Screen name="projects/[id]/images" options={{ title: 'Dodaj zdjęcia' }} />
       <Stack.Screen name="projects/[id]/scenes" options={{ title: 'Krok 2/2 · Sceny OCR' }} />
       <Stack.Screen name="projects/[id]/scenes/[sceneId]" options={{ title: 'Edycja sceny' }} />
-      <Stack.Screen name="projects/[id]/voice" options={{ title: 'Głos lektora' }} />
-      <Stack.Screen name="projects/[id]/player" options={{ title: 'Odtwarzacz' }} />
+<Stack.Screen name="projects/[id]/player" options={{ title: 'Odtwarzacz' }} />
       <Stack.Screen name="projects/[id]/sharing" options={{ title: 'Udostępnianie' }} />
       <Stack.Screen name="pricing/index" options={{ title: 'Cennik i plan' }} />
     </Stack>

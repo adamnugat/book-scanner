@@ -20,7 +20,7 @@ describe('PageImageCard', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the three columns: drag handle with ordinal, status icons, edit + delete', () => {
+  it('renders the three columns: drag handle with ordinal, status icons, delete', () => {
     render(<PageImageCard {...baseProps} pageNumber={2} areaSelectionEnabled />);
 
     expect(screen.getByLabelText('Przeciągnij page-1.jpg, pozycja 2')).toBeTruthy();
@@ -28,7 +28,6 @@ describe('PageImageCard', () => {
     expect(screen.getByLabelText('Obszary OCR dla page-1.jpg')).toBeTruthy();
     expect(screen.getByLabelText('Korekta OCR dla page-1.jpg')).toBeTruthy();
     expect(screen.getByLabelText('Audio dla page-1.jpg')).toBeTruthy();
-    expect(screen.getByLabelText('Edytuj etapy page-1.jpg')).toBeTruthy();
     expect(screen.getByLabelText('Usuń page-1.jpg')).toBeTruthy();
   });
 
@@ -82,19 +81,6 @@ describe('PageImageCard', () => {
 
     fireEvent.press(regionIcon);
     expect(baseProps.onSelectRegions).toHaveBeenCalledWith('img-1');
-  });
-
-  it('edit button re-unlocks the OCR correction stage before OCR has run', () => {
-    render(<PageImageCard {...baseProps} ocrCorrectionEnabled ocrDone={false} />);
-
-    const ocrIcon = screen.getByLabelText('Korekta OCR dla page-1.jpg');
-    expect(ocrIcon.props.accessibilityState).toMatchObject({ disabled: true });
-
-    fireEvent.press(screen.getByLabelText('Edytuj etapy page-1.jpg'));
-
-    expect(
-      screen.getByLabelText('Korekta OCR dla page-1.jpg').props.accessibilityState,
-    ).toMatchObject({ disabled: false });
   });
 
   it('marks the audio icon active when audio is assigned', () => {

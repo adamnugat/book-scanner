@@ -2,12 +2,18 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../src/app';
 import { prisma } from '../src/lib/db';
+import { deleteFile } from '../src/lib/storage';
 import { signAccessToken } from '../src/lib/jwt';
 
 vi.mock('../src/lib/db', () => ({
   prisma: {
     user: { findUnique: vi.fn() },
-    subscriptionPlan: { create: vi.fn(), findFirst: vi.fn().mockResolvedValue({ planType: 'max', pagesLimit: 1500, projectsLimit: 50 }) },
+    subscriptionPlan: {
+      create: vi.fn(),
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({ planType: 'max', pagesLimit: 1500, projectsLimit: 50 }),
+    },
     project: {
       create: vi.fn(),
       findMany: vi.fn(),
@@ -17,7 +23,15 @@ vi.mock('../src/lib/db', () => ({
       delete: vi.fn(),
     },
     projectShare: { findUnique: vi.fn(), findMany: vi.fn().mockResolvedValue([]) },
+    audioTrack: { findMany: vi.fn().mockResolvedValue([]), deleteMany: vi.fn() },
+    scene: { updateMany: vi.fn() },
+    playlistItem: { deleteMany: vi.fn() },
+    $transaction: vi.fn(async (ops: unknown[]) => Promise.all(ops as Promise<unknown>[])),
   },
+}));
+
+vi.mock('../src/lib/storage', () => ({
+  deleteFile: vi.fn().mockResolvedValue(undefined),
 }));
 
 const db = vi.mocked(prisma);
@@ -58,9 +72,7 @@ describe('Projects CRUD', () => {
     });
 
     it('T-2.6: without token → 401', async () => {
-      const res = await request(app)
-        .post('/projects')
-        .send({ title: 'Test', language: 'pl' });
+      const res = await request(app).post('/projects').send({ title: 'Test', language: 'pl' });
 
       expect(res.status).toBe(401);
     });
@@ -88,9 +100,7 @@ describe('Projects CRUD', () => {
     it('T-2.2: returns only projects of current user', async () => {
       db.project.findMany.mockResolvedValue([projectA]);
 
-      const res = await request(app)
-        .get('/projects')
-        .set('Authorization', `Bearer ${tokenA}`);
+      const res = await request(app).get('/projects').set('Authorization', `Bearer ${tokenA}`);
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveLength(1);
@@ -106,9 +116,7 @@ describe('Projects CRUD', () => {
     it('returns empty array when no projects', async () => {
       db.project.findMany.mockResolvedValue([]);
 
-      const res = await request(app)
-        .get('/projects')
-        .set('Authorization', `Bearer ${tokenA}`);
+      const res = await request(app).get('/projects').set('Authorization', `Bearer ${tokenA}`);
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual([]);
@@ -141,9 +149,7 @@ describe('Projects CRUD', () => {
     it('returns 404 for non-existent project', async () => {
       db.project.findUnique.mockResolvedValue(null);
 
-      const res = await request(app)
-        .get('/projects/nope')
-        .set('Authorization', `Bearer ${tokenA}`);
+      const res = await request(app).get('/projects/nope').set('Authorization', `Bearer ${tokenA}`);
 
       expect(res.status).toBe(404);
     });
@@ -184,6 +190,109 @@ describe('Projects CRUD', () => {
         .send({ title: '' });
 
       expect(res.status).toBe(400);
+    });
+
+    describe('voiceId change invalidates audio', () => {
+      const projectWithVoice = { ...projectA, voiceId: 'voice-old' };
+
+      it('drops AudioTrack rows + storage when voiceId changes', async () => {
+        db.project.findUnique.mockResolvedValue(projectWithVoice);
+        db.project.update.mockResolvedValue({ ...projectWithVoice, voiceId: 'voice-new' });
+        db.audioTrack.findMany.mockResolvedValue([
+          { id: 't-1', storagePath: 'audio/s-1.mp3' },
+          { id: 't-2', storagePath: 'audio/s-2.mp3' },
+        ]);
+
+        const res = await request(app)
+          .put('/projects/proj-1')
+          .set('Authorization', `Bearer ${tokenA}`)
+          .send({ voiceId: 'voice-new' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.voiceId).toBe('voice-new');
+        expect(deleteFile).toHaveBeenCalledWith('audio/s-1.mp3');
+        expect(deleteFile).toHaveBeenCalledWith('audio/s-2.mp3');
+        expect(db.audioTrack.deleteMany).toHaveBeenCalledWith({
+          where: { scene: { projectId: 'proj-1' } },
+        });
+        expect(db.scene.updateMany).toHaveBeenCalledWith({
+          where: {
+            projectId: 'proj-1',
+            status: { in: ['audio_done', 'audio_error', 'audio_generating'] },
+          },
+          data: { status: 'ready_for_audio' },
+        });
+        expect(db.playlistItem.deleteMany).toHaveBeenCalledWith({
+          where: { projectId: 'proj-1' },
+        });
+      });
+
+      it('continues when deleteFile rejects (warn only)', async () => {
+        db.project.findUnique.mockResolvedValue(projectWithVoice);
+        db.project.update.mockResolvedValue({ ...projectWithVoice, voiceId: 'voice-new' });
+        db.audioTrack.findMany.mockResolvedValue([{ id: 't-1', storagePath: 'audio/s-1.mp3' }]);
+        vi.mocked(deleteFile).mockRejectedValueOnce(new Error('storage down'));
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+        const res = await request(app)
+          .put('/projects/proj-1')
+          .set('Authorization', `Bearer ${tokenA}`)
+          .send({ voiceId: 'voice-new' });
+
+        expect(res.status).toBe(200);
+        expect(db.audioTrack.deleteMany).toHaveBeenCalled();
+        warnSpy.mockRestore();
+      });
+
+      it('skips invalidation when voiceId matches current value', async () => {
+        db.project.findUnique.mockResolvedValue(projectWithVoice);
+        db.project.update.mockResolvedValue(projectWithVoice);
+
+        const res = await request(app)
+          .put('/projects/proj-1')
+          .set('Authorization', `Bearer ${tokenA}`)
+          .send({ voiceId: 'voice-old' });
+
+        expect(res.status).toBe(200);
+        expect(db.audioTrack.findMany).not.toHaveBeenCalled();
+        expect(db.audioTrack.deleteMany).not.toHaveBeenCalled();
+        expect(db.scene.updateMany).not.toHaveBeenCalled();
+        expect(db.playlistItem.deleteMany).not.toHaveBeenCalled();
+      });
+
+      it('skips invalidation when only interstitialPreset changes', async () => {
+        db.project.findUnique.mockResolvedValue(projectWithVoice);
+        db.project.update.mockResolvedValue({
+          ...projectWithVoice,
+          interstitialPreset: 'preset-2',
+        });
+
+        const res = await request(app)
+          .put('/projects/proj-1')
+          .set('Authorization', `Bearer ${tokenA}`)
+          .send({ interstitialPreset: 'preset-2' });
+
+        expect(res.status).toBe(200);
+        expect(res.body.interstitialPreset).toBe('preset-2');
+        expect(db.audioTrack.findMany).not.toHaveBeenCalled();
+        expect(db.audioTrack.deleteMany).not.toHaveBeenCalled();
+        expect(db.scene.updateMany).not.toHaveBeenCalled();
+        expect(db.playlistItem.deleteMany).not.toHaveBeenCalled();
+      });
+
+      it('skips invalidation when body omits voiceId', async () => {
+        db.project.findUnique.mockResolvedValue(projectWithVoice);
+        db.project.update.mockResolvedValue({ ...projectWithVoice, title: 'Nowy' });
+
+        const res = await request(app)
+          .put('/projects/proj-1')
+          .set('Authorization', `Bearer ${tokenA}`)
+          .send({ title: 'Nowy' });
+
+        expect(res.status).toBe(200);
+        expect(db.audioTrack.findMany).not.toHaveBeenCalled();
+        expect(db.audioTrack.deleteMany).not.toHaveBeenCalled();
+      });
     });
   });
 

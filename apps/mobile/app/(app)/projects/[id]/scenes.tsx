@@ -177,17 +177,7 @@ export default function ScenesScreen() {
                       {processing ? 'Przetwarzanie...' : 'Ponów OCR (nowe strony)'}
                     </Text>
                   </Pressable>
-                  <Pressable
-                    style={[styles.ocrBtn, styles.voiceCta]}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/(app)/projects/[id]/voice',
-                        params: { id, newSceneIds: Array.from(newSceneIdSet).join(',') },
-                      })
-                    }
-                  >
-                    <Text style={styles.ocrBtnText}>Przejdź do Głosu Lektora</Text>
-                  </Pressable>
+
                 </View>
               )}
             </>
@@ -264,7 +254,5 @@ const styles = StyleSheet.create({
     borderTopColor: '#0f3460',
     gap: 8,
   },
-  voiceCta: {
-    backgroundColor: '#06d6a0',
-  },
+
 });

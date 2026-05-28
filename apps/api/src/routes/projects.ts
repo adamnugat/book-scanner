@@ -4,6 +4,7 @@ import { SUPPORTED_LANGUAGES } from '@book-scanner/shared';
 import { prisma } from '../lib/db';
 import { requireAuth } from '../middleware/auth';
 import { checkProjectLimit } from '../lib/limits';
+import { deleteFile } from '../lib/storage';
 
 export const projectsRouter = Router();
 
@@ -109,9 +110,7 @@ projectsRouter.get('/:id', async (req, res) => {
       },
     });
     if (!share) {
-      res
-        .status(403)
-        .json({ error: 'Forbidden', message: 'Access denied', statusCode: 403 });
+      res.status(403).json({ error: 'Forbidden', message: 'Access denied', statusCode: 403 });
       return;
     }
   }
@@ -130,7 +129,11 @@ projectsRouter.put('/:id', async (req, res) => {
   if (project.ownerId !== req.user!.userId) {
     res
       .status(403)
-      .json({ error: 'Forbidden', message: 'Only the owner can edit this project', statusCode: 403 });
+      .json({
+        error: 'Forbidden',
+        message: 'Only the owner can edit this project',
+        statusCode: 403,
+      });
     return;
   }
 
@@ -162,6 +165,38 @@ projectsRouter.put('/:id', async (req, res) => {
   if (voiceId !== undefined) data.voiceId = voiceId;
   if (interstitialPreset !== undefined) data.interstitialPreset = interstitialPreset;
 
+  const voiceIdChanged = voiceId !== undefined && voiceId !== project.voiceId;
+
+  if (voiceIdChanged) {
+    // Drop generated audio for every scene so user can regenerate with new voice.
+    const audioTracks = await prisma.audioTrack.findMany({
+      where: { scene: { projectId: project.id } },
+      select: { id: true, storagePath: true },
+    });
+
+    await Promise.allSettled(
+      audioTracks.map(async (track) => {
+        try {
+          await deleteFile(track.storagePath);
+        } catch (err) {
+          console.warn('Failed to delete audio track storage on voice change', err);
+        }
+      }),
+    );
+
+    await prisma.$transaction([
+      prisma.audioTrack.deleteMany({ where: { scene: { projectId: project.id } } }),
+      prisma.scene.updateMany({
+        where: {
+          projectId: project.id,
+          status: { in: ['audio_done', 'audio_error', 'audio_generating'] },
+        },
+        data: { status: 'ready_for_audio' },
+      }),
+      prisma.playlistItem.deleteMany({ where: { projectId: project.id } }),
+    ]);
+  }
+
   const updated = await prisma.project.update({
     where: { id: req.params.id },
     data,
@@ -181,7 +216,11 @@ projectsRouter.delete('/:id', async (req, res) => {
   if (project.ownerId !== req.user!.userId) {
     res
       .status(403)
-      .json({ error: 'Forbidden', message: 'Only the owner can delete this project', statusCode: 403 });
+      .json({
+        error: 'Forbidden',
+        message: 'Only the owner can delete this project',
+        statusCode: 403,
+      });
     return;
   }
 

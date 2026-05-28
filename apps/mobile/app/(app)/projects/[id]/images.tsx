@@ -23,6 +23,10 @@ import { PageImageCard } from '../../../../components/PageImageCard';
 import { OcrRegionEditor, type EditorRegion } from '../../../../components/OcrRegionEditor';
 import { OcrCorrectionModal } from '../../../../components/OcrCorrectionModal';
 import {
+  AudioEditingMenu,
+  type AudioEditingMenuChanges,
+} from '../../../../components/AudioEditingMenu';
+import {
   AudioFlowScreen,
   AudioFlowFooterMenu,
   audioFlowTokens,
@@ -31,10 +35,13 @@ import {
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type {
   PageImageResponse,
+  ProjectResponse,
   SceneResponse,
   AudioTrackResponse,
+  InterstitialPresetResponse,
   TextRegionResponse,
   TextRegionInput,
+  VoiceResponse,
 } from '@book-scanner/shared';
 
 const t = audioFlowTokens;
@@ -83,6 +90,14 @@ export default function ProjectImagesScreen() {
   const [regionSaving, setRegionSaving] = useState(false);
   const [correctionSaving, setCorrectionSaving] = useState(false);
 
+  // Audio editing menu (voice + interstitial)
+  const [project, setProject] = useState<ProjectResponse | null>(null);
+  const [voices, setVoices] = useState<VoiceResponse[]>([]);
+  const [presets, setPresets] = useState<InterstitialPresetResponse[]>([]);
+  const [audioMenuOpen, setAudioMenuOpen] = useState(false);
+  const [audioMenuSaving, setAudioMenuSaving] = useState(false);
+  const [interstitialDirty, setInterstitialDirty] = useState(false);
+
   const dropRef = useRef<View>(null);
   const progressResetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -117,16 +132,24 @@ export default function ProjectImagesScreen() {
 
   const loadImages = useCallback(async () => {
     try {
-      const [data, regionData, sceneData, trackData] = await Promise.all([
+      const [projectData, data, regionData, sceneData, trackData, presetData] = await Promise.all([
+        api.getProject(id),
         api.getImages(id),
         api.getTextRegions(id).catch(() => [] as TextRegionResponse[]),
         api.getScenes(id).catch(() => [] as SceneResponse[]),
         api.getAudioTracks(id).catch(() => [] as AudioTrackResponse[]),
+        api.getInterstitialPresets().catch(() => [] as InterstitialPresetResponse[]),
       ]);
+      setProject(projectData);
       setImages(data);
       setAllRegions(regionData);
       setScenes(sceneData);
       setAudioTracks(trackData);
+      setPresets(presetData);
+      const voiceData = await api
+        .getVoices(projectData.language)
+        .catch(() => [] as VoiceResponse[]);
+      setVoices(voiceData);
     } catch {
       Alert.alert('Błąd', 'Nie udało się pobrać zdjęć');
     } finally {
@@ -139,6 +162,7 @@ export default function ProjectImagesScreen() {
       setSubmitPhase('idle');
       setCorrectionPending(false);
       setOrderDirty(false);
+      setInterstitialDirty(false);
       loadImages();
     }, [loadImages]),
   );
@@ -235,6 +259,14 @@ export default function ProjectImagesScreen() {
   const handleSubmit = async () => {
     if (submitPhase !== 'idle') return;
     try {
+      // Interstitial-only path: just rebuild playlist (no OCR/TTS work pending).
+      if (interstitialDirty && !hasProcessableWork && !orderDirty) {
+        await api.buildPlaylist(id);
+        setInterstitialDirty(false);
+        showToast('Wstawka zaktualizowana');
+        return;
+      }
+
       if (pendingAssets.length > 0) {
         const { failed } = await uploadAssets(pendingAssets);
         if (failed.length > 0) throw new Error(`Nie udało się wysłać ${failed.length} plików`);
@@ -281,6 +313,7 @@ export default function ProjectImagesScreen() {
       setSubmitPhase('done');
       setCorrectionPending(false);
       setOrderDirty(false);
+      setInterstitialDirty(false);
       showToast('Wszystkie zdjęcia zostały przetworzone');
       await delay(600);
       setSubmitPhase('idle');
@@ -412,6 +445,41 @@ export default function ProjectImagesScreen() {
   const correctionScene = correctionImageId ? sceneByImage[correctionImageId] : undefined;
   const correctionText = correctionScene?.editedText ?? correctionScene?.ocrText ?? '';
 
+  // --- Audio editing menu
+  const openAudioMenu = () => setAudioMenuOpen(true);
+  const closeAudioMenu = () => {
+    if (audioMenuSaving) return;
+    setAudioMenuOpen(false);
+  };
+
+  const handleSaveAudioMenu = async (changes: AudioEditingMenuChanges) => {
+    const hasVoiceChange = changes.voiceId !== undefined;
+    const hasPresetChange = changes.interstitialPreset !== undefined;
+    if (!hasVoiceChange && !hasPresetChange) {
+      setAudioMenuOpen(false);
+      return;
+    }
+    setAudioMenuSaving(true);
+    try {
+      const updated = await api.updateProject(id, changes);
+      setProject(updated);
+      if (hasVoiceChange) {
+        // Server dropped audio + reset scenes — refresh local lists.
+        await loadImages();
+      }
+      if (hasPresetChange) {
+        setInterstitialDirty(true);
+      }
+      setAudioMenuOpen(false);
+      showToast('Zapisano ustawienia audio');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Nie udało się zapisać ustawień audio';
+      Alert.alert('Błąd', message);
+    } finally {
+      setAudioMenuSaving(false);
+    }
+  };
+
   const handleSaveCorrection = async (text: string) => {
     if (!correctionScene) return;
     setCorrectionSaving(true);
@@ -507,6 +575,17 @@ export default function ProjectImagesScreen() {
         >
           <Feather name="edit-3" size={14} color={t.color.text.onDark} />
           <Text style={styles.toggleText}>Korekta OCR</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Edycja audio"
+          onPress={openAudioMenu}
+          style={styles.toggle}
+          testID="audio-menu-open"
+        >
+          <Feather name="mic" size={14} color={t.color.text.onDark} />
+          <Text style={styles.toggleText}>Audio</Text>
+          {interstitialDirty ? <View style={styles.toggleDot} /> : null}
         </Pressable>
       </View>
     </View>
@@ -667,6 +746,17 @@ export default function ProjectImagesScreen() {
         onSave={handleSaveCorrection}
       />
 
+      <AudioEditingMenu
+        visible={audioMenuOpen}
+        voices={voices}
+        presets={presets}
+        initialVoiceId={project?.voiceId ?? null}
+        initialInterstitialPreset={project?.interstitialPreset ?? null}
+        saving={audioMenuSaving}
+        onCancel={closeAudioMenu}
+        onSave={handleSaveAudioMenu}
+      />
+
       <AudioFlowFooterMenu
         bottomInset={insets.bottom}
         leftIcon="image"
@@ -674,7 +764,9 @@ export default function ProjectImagesScreen() {
         onLibraryPress={pickFromGallery}
         createIcon="check"
         createLabel="Wyślij i przetwórz"
-        createDisabled={submitPhase !== 'idle' || (!hasProcessableWork && !orderDirty)}
+        createDisabled={
+          submitPhase !== 'idle' || (!hasProcessableWork && !orderDirty && !interstitialDirty)
+        }
         onCreatePress={handleSubmit}
         rightIcon="camera"
         rightLabel="Aparat"
@@ -722,6 +814,13 @@ const styles = StyleSheet.create({
     color: t.color.text.onDark,
     fontSize: 12,
     fontFamily: 'VarelaRound_400Regular',
+  },
+  toggleDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: t.color.accent.pearl,
+    marginLeft: 2,
   },
   emptyContainer: {
     flex: 1,

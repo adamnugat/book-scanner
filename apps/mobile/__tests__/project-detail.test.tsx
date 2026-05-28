@@ -118,9 +118,9 @@ describe('ProjectDetailScreen TTS next step', () => {
     render(<ProjectDetailScreen />);
 
     expect(await screen.findByText('Następny krok: Text to Speech')).toBeTruthy();
-    fireEvent.press(screen.getByText('Wybierz głos i generuj audio'));
+    fireEvent.press(screen.getByText('Przejdź do edycji audio'));
 
-    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/voice');
+    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/images');
   });
 
   it('explains that text must be approved before TTS when the project is not ready', async () => {
@@ -129,7 +129,7 @@ describe('ProjectDetailScreen TTS next step', () => {
     render(<ProjectDetailScreen />);
 
     expect(await screen.findByText('Najpierw zakończ OCR i zatwierdź tekst scen.')).toBeTruthy();
-    expect(screen.queryByText('Wybierz głos i generuj audio')).toBeNull();
+    expect(screen.queryByText('Przejdź do edycji audio')).toBeNull();
   });
 
   it('shows the listening cover state when generated audio exists', async () => {
@@ -169,17 +169,17 @@ describe('ProjectDetailScreen TTS next step', () => {
   it('renders accessible AudioFlow project tool tiles with existing routes', async () => {
     render(<ProjectDetailScreen />);
 
-    expect(await screen.findByLabelText('Otwórz zdjęcia stron')).toBeTruthy();
-    expect(screen.getByLabelText('Otwórz głos i audio')).toBeTruthy();
+    expect(await screen.findByLabelText('Otwórz edycję audiobooka')).toBeTruthy();
+    expect(screen.queryByLabelText('Otwórz głos i audio')).toBeNull();
     expect(screen.getByLabelText('Otwórz udostępnianie')).toBeTruthy();
+    expect(screen.getByText('2 dostępne')).toBeTruthy();
 
-    fireEvent.press(screen.getByLabelText('Otwórz zdjęcia stron'));
-    fireEvent.press(screen.getByLabelText('Otwórz głos i audio'));
+    fireEvent.press(screen.getByLabelText('Otwórz edycję audiobooka'));
     fireEvent.press(screen.getByLabelText('Otwórz udostępnianie'));
 
     expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/images');
-    expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/voice');
     expect(mockPush).toHaveBeenCalledWith('/(app)/projects/proj-1/sharing');
+    expect(mockPush).not.toHaveBeenCalledWith('/(app)/projects/proj-1/voice');
   });
 
   it('renders the AudioFlow footer menu with existing route actions', async () => {
