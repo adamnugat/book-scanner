@@ -111,11 +111,21 @@ export default function ProjectsScreen() {
     <View style={styles.welcome}>
       <Text style={styles.eyebrow}>Biblioteka audiobooków</Text>
       <Text style={styles.welcomeHeadline}>Witaj ponownie</Text>
-      <Text style={styles.welcomeCopy}>
-        {projects.length === 0
-          ? 'Dodaj zdjęcia książki i zamień je w pierwszy audiobook.'
-          : `Masz ${projects.length} ${projects.length === 1 ? 'audiobook' : 'audiobooki'} w swojej bibliotece.`}
-      </Text>
+      {projects.length === 0 ? (
+        <Text style={styles.welcomeCopy}>
+          Dodaj zdjęcia książki i zamień je w pierwszy audiobook.
+        </Text>
+      ) : (
+        <View style={styles.welcomeCopyRow}>
+          <Text style={styles.welcomeCopyInline}>Masz </Text>
+          <View style={styles.countBadge}>
+            <Text style={styles.countBadgeText}>{projects.length}</Text>
+          </View>
+          <Text style={styles.welcomeCopyInline}>
+            {' '}{projects.length === 1 ? 'audiobook' : 'audiobooki'} w swojej bibliotece.
+          </Text>
+        </View>
+      )}
     </View>
   );
 
@@ -173,9 +183,9 @@ export default function ProjectsScreen() {
   );
 }
 
-const CARD_HEIGHT_FIRST = 112;
-const CARD_HEIGHT_SECOND = Math.round(CARD_HEIGHT_FIRST * 0.85); // 95
-const CARD_HEIGHT_REST = Math.round(CARD_HEIGHT_FIRST * 0.7); // 78
+const CARD_HEIGHT_FIRST = 130;
+const CARD_HEIGHT_SECOND = 90;
+const CARD_HEIGHT_REST = 55;
 
 const t = audioFlowTokens;
 
@@ -205,11 +215,37 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
+  welcomeCopyRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: t.spacing.stackSm,
+    width: '100%',
+  },
   welcomeCopy: {
     ...audioFlowStyles.body,
     marginTop: t.spacing.stackSm,
     textAlign: 'center',
     width: '100%',
+  },
+  welcomeCopyInline: {
+    ...audioFlowStyles.body,
+  },
+  countBadge: {
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    justifyContent: 'center',
+    minWidth: 24,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  countBadgeText: {
+    color: '#1A1A2E',
+    fontFamily: audioFlowFontFamilies.quicksandSemiBold,
+    fontSize: 13,
+    lineHeight: 18,
   },
   featuredCard: {
     shadowColor: t.color.accent.pearl,
