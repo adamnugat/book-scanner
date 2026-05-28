@@ -37,7 +37,7 @@ export default function ResetPasswordScreen() {
 
   if (sent) {
     return (
-      <AudioFlowScreen variant="login">
+      <AudioFlowScreen>
         <View style={styles.container}>
           <Text style={styles.title}>Sprawdź email</Text>
           <Text style={styles.subtitle}>
@@ -52,7 +52,7 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <AudioFlowScreen variant="login">
+    <AudioFlowScreen>
       <FadeZoomContent>
       <View style={styles.container}>
         <Text style={styles.title}>Resetuj hasło</Text>

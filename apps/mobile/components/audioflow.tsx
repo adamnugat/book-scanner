@@ -41,25 +41,15 @@ interface AudioFlowScreenProps {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   testID?: string;
-  variant?: 'login' | 'dimmed';
 }
 
 export function AudioFlowScreen({
   children,
   style,
   testID = 'audioflow-screen',
-  variant = 'dimmed',
 }: AudioFlowScreenProps) {
   return (
     <View style={[styles.screen, style]} testID={testID}>
-      <Image
-        source={require('../assets/images/background.jpg')}
-        style={[
-          StyleSheet.absoluteFill,
-          { opacity: variant === 'login' ? 0.5 : 0.1, width: '100%', height: '100%' },
-        ]}
-        resizeMode="cover"
-      />
       {children}
     </View>
   );
@@ -1165,7 +1155,6 @@ const styles = StyleSheet.create({
     boxShadow: `0 4px 20px ${t.color.accent.pearlGlow}`,
     height: 56,
     justifyContent: 'center',
-    marginTop: -28,
     shadowColor: t.color.accent.pearl,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,

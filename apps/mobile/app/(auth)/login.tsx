@@ -38,7 +38,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <AudioFlowScreen style={styles.screen} variant="login">
+    <AudioFlowScreen style={styles.screen}>
       <FadeZoomContent>
       <View style={styles.content}>
         <View style={styles.brand}>

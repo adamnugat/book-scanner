@@ -45,8 +45,8 @@
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/packages/shared/src/types.ts": {
-    "mtime": 1778517231.019997,
-    "ast_hash": "9d1999444a1e4f53d009b581fde6dbce",
+    "mtime": 1779961944.2464132,
+    "ast_hash": "e3c24a5609ee3294212e24cc7b410aaa",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/packages/shared/src/constants.ts": {
@@ -130,8 +130,8 @@
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/_layout.tsx": {
-    "mtime": 1779832540.000664,
-    "ast_hash": "d45f7399d70f74304628b01196a47ac9",
+    "mtime": 1779962905.1410303,
+    "ast_hash": "2d3e96662da9a6487409c9a35acd3888",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/new/index.tsx": {
@@ -140,13 +140,13 @@
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/[id]/index.tsx": {
-    "mtime": 1779468876.6598716,
-    "ast_hash": "c13b626b4cd2b854652fc84f96a1e119",
+    "mtime": 1779962912.6804545,
+    "ast_hash": "e52a505998abd1db4272ae6caaa0961c",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/[id]/scenes.tsx": {
-    "mtime": 1779788340.9392219,
-    "ast_hash": "ec1b17af4c4c145e061b883520cfbbf5",
+    "mtime": 1779962914.7658951,
+    "ast_hash": "80c3e29a5f933398e219e5bfeb56980a",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/[id]/player.tsx": {
@@ -155,8 +155,8 @@
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/[id]/images.tsx": {
-    "mtime": 1779896643.7933521,
-    "ast_hash": "256b8c1634beb15beaf623d603dd9bbf",
+    "mtime": 1779961944.1380658,
+    "ast_hash": "6304ebd7d3b4788669cb7eefb7eda080",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/[id]/edit.tsx": {
@@ -167,11 +167,6 @@
   "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/[id]/sharing.tsx": {
     "mtime": 1779095053.381295,
     "ast_hash": "fc8de0ee80d32c8d66209868c300eba2",
-    "semantic_hash": ""
-  },
-  "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/[id]/voice.tsx": {
-    "mtime": 1779788340.9399288,
-    "ast_hash": "b4c28dfc47315c21186f9e7b392804d2",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/app/(app)/projects/[id]/scenes/[sceneId].tsx": {
@@ -209,6 +204,11 @@
     "ast_hash": "40997ac7220576a3f3bbfdea7de0573b",
     "semantic_hash": ""
   },
+  "/Users/awieczorek/dev/book-scaner/apps/mobile/components/AudioEditingMenu.tsx": {
+    "mtime": 1779962452.337323,
+    "ast_hash": "abc95cbd03e5a77ed6a6b6b6527a6fe2",
+    "semantic_hash": ""
+  },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/components/ProjectCoverTexture.tsx": {
     "mtime": 1779001977.3640807,
     "ast_hash": "cc872b1498479e2c00d99ff92e31163b",
@@ -235,8 +235,8 @@
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/components/PageImageCard.tsx": {
-    "mtime": 1779895961.369314,
-    "ast_hash": "cf2fe87564c7d78bd7ff303f0e9c1d93",
+    "mtime": 1779961944.1396081,
+    "ast_hash": "e5c7fceb6b7e3bfecdf22b6311f09409",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/components/SectionTile.tsx": {
@@ -255,8 +255,8 @@
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/components/audioflow.tsx": {
-    "mtime": 1779832546.447675,
-    "ast_hash": "dabd8d2ecba31d8d9d73295ac11ef5da",
+    "mtime": 1779962941.7178526,
+    "ast_hash": "91d7c49df6724aa6f00804f7de5a55f4",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/components/PageImagePreview.tsx": {
@@ -274,9 +274,14 @@
     "ast_hash": "48dad23117221b96ed79db40f9e3bc1c",
     "semantic_hash": ""
   },
+  "/Users/awieczorek/dev/book-scaner/apps/mobile/__tests__/audio-editing-menu.test.tsx": {
+    "mtime": 1779962490.4590719,
+    "ast_hash": "d8e0ba1449719c6fa87aee79abb2a673",
+    "semantic_hash": ""
+  },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/__tests__/page-image-card.test.tsx": {
-    "mtime": 1779895983.0662217,
-    "ast_hash": "2ed465a47b4cfdc8589463b3a7c188e2",
+    "mtime": 1779961944.1350596,
+    "ast_hash": "fe3338d6f32332d45a553565581d0714",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/__tests__/audioflow-design-system.test.tsx": {
@@ -285,13 +290,13 @@
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/__tests__/project-detail.test.tsx": {
-    "mtime": 1779083452.086281,
-    "ast_hash": "42f683e7ede9e9d25e0daff317d59aa2",
+    "mtime": 1779962944.7878363,
+    "ast_hash": "45c1b7ea04dfd127b6da11f325e1aa7f",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/__tests__/project-images.test.tsx": {
-    "mtime": 1779896688.5470421,
-    "ast_hash": "79d1c50b90557bddb4a0af17ea399564",
+    "mtime": 1779962527.5030558,
+    "ast_hash": "c7c0f7182966b0a09e259c3e4b89153b",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/__tests__/login-audioflow.test.tsx": {
@@ -307,11 +312,6 @@
   "/Users/awieczorek/dev/book-scaner/apps/mobile/__tests__/text-region-geometry.test.ts": {
     "mtime": 1777952743.7947252,
     "ast_hash": "6c3c5da9c0793d5e43b113407c622f0b",
-    "semantic_hash": ""
-  },
-  "/Users/awieczorek/dev/book-scaner/apps/mobile/__tests__/voice-audio.test.tsx": {
-    "mtime": 1779788340.9373958,
-    "ast_hash": "563e81165c07afe97579ef7968b46a37",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/mobile/__tests__/project-cover-texture.test.tsx": {
@@ -430,8 +430,8 @@
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/api/__tests__/projects.test.ts": {
-    "mtime": 1776152908.3728766,
-    "ast_hash": "da43cd4cc11559a11bd0dfbf5205f094",
+    "mtime": 1779962051.678328,
+    "ast_hash": "4a7c160790001a22eb297f114ed69e11",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/api/__tests__/interstitial-presets.test.ts": {
@@ -555,8 +555,8 @@
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/api/src/routes/projects.ts": {
-    "mtime": 1776152907.9682548,
-    "ast_hash": "a11934b9b33cb5046aa7c6a2de0bc07a",
+    "mtime": 1779962051.5995762,
+    "ast_hash": "555241e3c151d42731ba147284e2439e",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/apps/api/src/routes/interstitial-presets.ts": {
@@ -865,13 +865,13 @@
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/openspec/specs/text-to-speech-generation/spec.md": {
-    "mtime": 1778312523.5704403,
-    "ast_hash": "c0aa524b18599777968a68f0ffc76b06",
+    "mtime": 1779965350.1913168,
+    "ast_hash": "307896da64a462a122ef5312ed26abc9",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/openspec/specs/inline-audio-player/spec.md": {
-    "mtime": 1779403722.3022954,
-    "ast_hash": "f78b4af69bc2ea61312e4a4ee6258207",
+    "mtime": 1779965324.4184656,
+    "ast_hash": "840800d73e13719c8bba1a7ce48e7259",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/openspec/specs/audiobook-creation-progress-screen/spec.md": {
@@ -909,9 +909,19 @@
     "ast_hash": "ad15a6b8b045bc43f8bda363d34608d3",
     "semantic_hash": ""
   },
+  "/Users/awieczorek/dev/book-scaner/openspec/specs/project-tools-navigation/spec.md": {
+    "mtime": 1779960567.712991,
+    "ast_hash": "9502417461eb5a04710c555b17ea391f",
+    "semantic_hash": ""
+  },
   "/Users/awieczorek/dev/book-scaner/openspec/specs/local-jingle-preset/spec.md": {
     "mtime": 1778996827.2496336,
     "ast_hash": "a04390365cc5dedb8a311c195342914c",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/specs/audiobook-audio-editing-menu/spec.md": {
+    "mtime": 1779965308.4355783,
+    "ast_hash": "f8c3677f52387d292ce7a96940ff8252",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/openspec/specs/share-project-screen-ui/spec.md": {
@@ -1072,6 +1082,41 @@
   "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-11-redesign-add-audiobook-wizard/specs/audiobook-creation-wizard/spec.md": {
     "mtime": 1778518103.922929,
     "ast_hash": "e3bf980a58068b5f96f90f5e79cbb4f0",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-add-audio-editing-menu/.openspec.yaml": {
+    "mtime": 1779960615.9871,
+    "ast_hash": "833c011ecf7e08a569d9a116d6095c53",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-add-audio-editing-menu/tasks.md": {
+    "mtime": 1779963151.2546842,
+    "ast_hash": "20ab603d166dd2f5fd0ea94cd37c6500",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-add-audio-editing-menu/design.md": {
+    "mtime": 1779960836.814985,
+    "ast_hash": "73d9abf74986636b7492239546de3b00",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-add-audio-editing-menu/proposal.md": {
+    "mtime": 1779960732.2216148,
+    "ast_hash": "252ca786e6a1b1d25b40b90671ef99c7",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-add-audio-editing-menu/specs/text-to-speech-generation/spec.md": {
+    "mtime": 1779960923.7543457,
+    "ast_hash": "75b8fda72184106ee965a49c561fe1b6",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-add-audio-editing-menu/specs/inline-audio-player/spec.md": {
+    "mtime": 1779960940.33987,
+    "ast_hash": "ab1cd579dc0b1ff02df3758505ae1125",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-add-audio-editing-menu/specs/audiobook-audio-editing-menu/spec.md": {
+    "mtime": 1779960898.4098952,
+    "ast_hash": "ae572c00dc802fd193dbb2d32da7563c",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-11-apply-audioflow-top-navigation/.openspec.yaml": {
@@ -1647,6 +1692,31 @@
   "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-05-enable-audio-track-playback/specs/text-to-speech-generation/spec.md": {
     "mtime": 1777959674.151297,
     "ast_hash": "3aa977ab4ec0585a86f97c751d4cce4c",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-rename-project-tools-and-hide-voice-audio/.openspec.yaml": {
+    "mtime": 1779958317.6938896,
+    "ast_hash": "833c011ecf7e08a569d9a116d6095c53",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-rename-project-tools-and-hide-voice-audio/tasks.md": {
+    "mtime": 1779958710.9262416,
+    "ast_hash": "32f19b625e5022574c839ee74f217111",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-rename-project-tools-and-hide-voice-audio/design.md": {
+    "mtime": 1779958417.4657116,
+    "ast_hash": "7f3773e70278bfa17affcd1ab65f4df5",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-rename-project-tools-and-hide-voice-audio/proposal.md": {
+    "mtime": 1779958392.1103919,
+    "ast_hash": "7f09d0dd01f837dded23c5b491eea4a3",
+    "semantic_hash": ""
+  },
+  "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-28-rename-project-tools-and-hide-voice-audio/specs/project-tools-navigation/spec.md": {
+    "mtime": 1779958448.4969656,
+    "ast_hash": "9502417461eb5a04710c555b17ea391f",
     "semantic_hash": ""
   },
   "/Users/awieczorek/dev/book-scaner/openspec/changes/archive/2026-05-26-submit-ocr-sync-and-voice-handoff/.openspec.yaml": {

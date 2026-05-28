@@ -1,16 +1,16 @@
 # Graph Report - book-scaner  (2026-05-28)
 
 ## Corpus Check
-- 332 files · ~246,540 words
+- 344 files · ~252,821 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4177 nodes · 5001 edges · 368 communities (342 shown, 26 thin omitted)
-- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 192 edges (avg confidence: 0.9)
+- 4219 nodes · 4984 edges · 370 communities (348 shown, 22 thin omitted)
+- Extraction: 96% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 172 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5aa79894`
+- Built from commit: `67907952`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -373,17 +373,19 @@
 - [[_COMMUNITY_Community 365|Community 365]]
 - [[_COMMUNITY_Community 366|Community 366]]
 - [[_COMMUNITY_Community 367|Community 367]]
+- [[_COMMUNITY_Community 368|Community 368]]
+- [[_COMMUNITY_Community 369|Community 369]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `files` - 57 edges
-2. `api` - 35 edges
-3. `prisma (db client)` - 34 edges
-4. `AudioFlowScreen()` - 31 edges
-5. `Audiobook MVP Specification` - 29 edges
-6. `FadeZoomContent()` - 27 edges
-7. `AudioFlow — Design System` - 24 edges
+2. `prisma (db client)` - 34 edges
+3. `Audiobook MVP Specification` - 29 edges
+4. `api` - 28 edges
+5. `AudioFlowScreen()` - 27 edges
+6. `AudioFlow — Design System` - 24 edges
+7. `FadeZoomContent()` - 23 edges
 8. `requireAuth()` - 22 edges
-9. `Express app entry (src/app)` - 19 edges
+9. `Express app entry (src/app)` - 18 edges
 10. `PRD Template` - 17 edges
 
 ## Surprising Connections (you probably didn't know these)
@@ -398,35 +400,35 @@
 - `TextRegionInput` --references--> `packages/shared Workspace`  [INFERRED]
   apps/mobile/lib/text-region-geometry.ts → openspec/config.yaml
 
-## Communities (368 total, 26 thin omitted)
+## Communities (370 total, 22 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.05
-Nodes (73): ElevenLabs TTS provider, Google Cloud Vision OCR provider, JWT authentication (access + refresh + asset tokens), Subscription plan limits (free/premium/max), S3-compatible object storage, DB table: audio_tracks, DB table: interstitial_presets, DB table: page_images (+65 more)
+Nodes (71): ElevenLabs TTS provider, Google Cloud Vision OCR provider, JWT authentication (access + refresh + asset tokens), Subscription plan limits (free/premium/max), S3-compatible object storage, DB table: audio_tracks, DB table: interstitial_presets, DB table: page_images (+63 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.07
-Nodes (33): audioFlowFooterMenuHeight(), EditorRegion, EMPTY_LAYOUT, OcrEditorTarget, OcrRegionEditor(), OcrRegionEditorProps, styles, PageImagePreviewProps (+25 more)
+Nodes (35): TextRegionsScreen, EditorRegion, EMPTY_LAYOUT, OcrEditorTarget, OcrRegionEditor(), OcrRegionEditorProps, styles, PageImagePreview() (+27 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.07
 Nodes (29): dependencies, @book-scanner/shared, expo, expo-av, expo-blur, expo-constants, expo-font, @expo-google-fonts/quicksand (+21 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.1
-Nodes (29): plan-based limits (free/premium/max), prisma (db client), checkPageLimit(), checkProjectLimit(), currentPeriod(), getUserPlan(), getUserUsage(), incrementPageUsage() (+21 more)
+Cohesion: 0.11
+Nodes (24): plan-based limits (free/premium/max), prisma (db client), verifyToken(), checkPageLimit(), checkProjectLimit(), currentPeriod(), getUserPlan(), getUserUsage() (+16 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.11
-Nodes (26): Audiobook Jingle Between Tracks (Change), Advanced Mode (Audiobook Creation), AudioTrack, Automatic Mode (Audiobook Creation), InterstitialPreset (Backend DB Table), Local Jingle Preset (Capability), local-jingles.ts Module (Asset Registry), LOCAL_JINGLES Registry (+18 more)
+Cohesion: 0.12
+Nodes (23): Audiobook Jingle Between Tracks (Change), Advanced Mode (Audiobook Creation), Automatic Mode (Audiobook Creation), InterstitialPreset (Backend DB Table), Local Jingle Preset (Capability), local-jingles.ts Module (Asset Registry), LOCAL_JINGLES Registry, local: Prefix Routing for Jingle Preset (+15 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.06
-Nodes (31): styles, AudioFlowButtonProps, AudioFlowLogo(), audioFlowReferenceViews, AudioFlowScreenProps, audioFlowStyles, AudioFlowTextField(), audioFlowTokens (+23 more)
+Cohesion: 0.07
+Nodes (43): ProjectsScreen, CARD_HEIGHT_REST, CARD_HEIGHT_SECOND, dashboardPlaybackProgress(), ProjectsScreen(), STATUS_LABELS, styles, AudioFlowButtonProps (+35 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.31
-Nodes (11): Capability: audioflow-auth-ui, Capability: mobile-app-navigation, Change: Apply AudioFlow Login Dashboard Shell (2026-05-11), AudioFlow Footer Menu, AudioFlow Top Navigation, Proposal: Apply AudioFlow to Login, Dashboard and App Shell, Spec: AudioFlow Auth UI, AudioFlow Mobile Design System (+3 more)
+Cohesion: 0.08
+Nodes (27): ADDED Requirements, Requirement: Karty zdjęć odzwierciedlają reset audio po zmianie lektora, Requirement: Menu Audio prezentuje sekcję edycji lektora, Requirement: Menu Audio prezentuje sekcję edycji wstawki, Requirement: Przycisk "Audio" w pasku akcji ekranu edycji audiobooka, Requirement: Wybór w menu jest transakcyjny, Requirement: Zapis lektora aktywuje submit z pełnym przetwarzaniem audio, Requirement: Zapis wstawki aktywuje submit w trybie tylko-playlist (+19 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.07
@@ -441,48 +443,48 @@ Cohesion: 0.08
 Nodes (26): ElevenLabsVoice, estimateDuration(), listTtsVoices(), synthesizeSpeech(), synthesizeWithElevenLabs(), synthesizeWithMock(), TtsResult, TtsVoice (+18 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.08
-Nodes (38): project sharing and QR deep-link, verifyAssetToken(), requireRouteParam(), routeParam(), createBucketIfMissing(), deleteFile(), downloadFileWithMetadata(), ensureBucketExists() (+30 more)
+Cohesion: 0.09
+Nodes (34): project sharing and QR deep-link, verifyAssetToken(), requireRouteParam(), routeParam(), downloadFileWithMetadata(), uploadFile(), requireProjectOwner(), MAGIC_BYTES (+26 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.08
 Nodes (37): PlayerScreen, Offline Playback / Cache, formatTime(), PlayerScreen(), styles, buildPlaylistWithJingles(), getLocalJingle(), LOCAL_JINGLES (+29 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.11
-Nodes (29): Change: Fix New Audio Not Showing in Player, Change: Fix TTS Generation Completion Feedback, Change: Redesign Project Detail Page, Component: apps/api/src/routes/playlist.ts, Component: apps/mobile player.tsx (Player Screen), Component: apps/mobile projects/[id]/index.tsx (Project Detail Screen), Component: apps/mobile voice.tsx (Voice & Audio Screen), Concept: Scene Audio Statuses (audio_generating / audio_done / audio_error) (+21 more)
+Cohesion: 0.18
+Nodes (19): Change: Fix New Audio Not Showing in Player, Change: Fix TTS Generation Completion Feedback, Component: apps/api/src/routes/playlist.ts, Component: apps/mobile player.tsx (Player Screen), Component: apps/mobile voice.tsx (Voice & Audio Screen), Concept: Scene Audio Statuses (audio_generating / audio_done / audio_error), Concept: Client-side Polling for audio_generating Status, Concept: Playlist Auto-rebuild on GET /playlist (+11 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.2
 Nodes (11): Capability: project-dashboard-ui, Change: Apply AudioFlow Project Details, Change: Apply AudioFlow Dashboard, Login, Navigation, Design: Dashboard, Login, Nav (AudioFlow), Proposal: Apply AudioFlow Dashboard, Login, Navigation, Requirement: AudioFlow Project Library Dashboard, Requirement: AudioFlow Project Detail Shell, Requirement: Dynamic Dashboard States (Consumption vs Creation) (+3 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.18
-Nodes (20): background.jpg (app background), LoginScreen(), RegisterScreen(), AudioFlow Design System, AudioFlowGlobalNavigation, FadeZoomContent, PageImagePreview, ProjectCoverTexture (+12 more)
+Cohesion: 0.21
+Nodes (13): audioFlowFooterMenuHeight(), FadeZoomContent, PageImagePreview, Audiobook Creation Wizard (3-step flow), AudioFlow Design Tokens, OCR -> TTS Audio Generation Pipeline, api (REST client), image-upload (uploadFileFromImagePickerAsset) (+5 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.07
 Nodes (26): ApiErrorResponse, ApiHealthResponse, AudioTrackResponse, AuthResponse, CreateProjectRequest, InterstitialPresetResponse, LoginRequest, PageImageResponse (+18 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.13
-Nodes (24): annotateImagesWithGoogle(), chunkGoogleInputs(), extractRegionText(), getBlockText(), getGoogleCredentialsFromJson(), getGoogleVisionClientOptions(), GoogleTextAnnotation, GoogleVisionClientOptions (+16 more)
+Cohesion: 0.11
+Nodes (29): incrementPageUsage(), annotateImagesWithGoogle(), chunkGoogleInputs(), extractRegionText(), getBlockText(), getGoogleCredentialsFromJson(), getGoogleVisionClientOptions(), GoogleTextAnnotation (+21 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.11
-Nodes (21): ACCESS_EXPIRES, ASSET_EXPIRES, AssetTokenPayload, REFRESH_EXPIRES, signRefreshToken(), TokenPayload, verifyToken(), collectErrors() (+13 more)
+Cohesion: 0.15
+Nodes (14): signRefreshToken(), collectErrors(), validateEmail(), validatePassword(), ValidationError, authRouter, decoded, { email } (+6 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.08
-Nodes (33): PricingScreen, EditProjectScreen, ProjectImagesScreen, ScenesScreen, SharingScreen, TextRegionsScreen, styles, AudioFlowFooterMenu() (+25 more)
+Cohesion: 0.09
+Nodes (25): PricingScreen, EditProjectScreen, SharingScreen, AudioFlowFooterMenu(), FadeZoomContent(), FadeZoomContentProps, Audiobook Creation Wizard, styles (+17 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.12
 Nodes (21): signAssetToken(), imageResponse(), allowed, buildPageImageUrls(), created, data, { editedText, status }, existingImageIds (+13 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.08
-Nodes (22): cleanup, finishedScenes, generatingScenes, mockGenerateAudio, mockGetAudioTracks, mockGetCachedAudioForTrack, mockGetProject, mockGetScenes (+14 more)
+Cohesion: 0.11
+Nodes (15): createBucketIfMissing(), downloadFile(), ensureBucketExists(), s3, storageDownloadFile, visionMocks, db, img1 (+7 more)
 
 ### Community 21 - "Community 21"
 Cohesion: 0.08
@@ -493,8 +495,8 @@ Cohesion: 0.09
 Nodes (11): getTextureIndex(), ProjectCoverTexture(), styles, TEXTURES, getTextureIndex (test), ids, idx, ProjectCoverTexture (test) (+3 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.29
-Nodes (6): globalErrorHandler(), apiLimiter, authLimiter, audioRouter, healthRouter, response
+Cohesion: 0.1
+Nodes (19): globalErrorHandler(), apiLimiter, authLimiter, audioRouter, healthRouter, response, app, expired (+11 more)
 
 ### Community 24 - "Community 24"
 Cohesion: 0.06
@@ -529,8 +531,8 @@ Cohesion: 0.05
 Nodes (58): bcryptjs password hashing (12 rounds), Iterative Implementation Skill, Iterative Implementation Plan (13 iterations), Deep link bookscanner://project/:id/player, E2E tests (full flow project to QR), expo-av Audio.Sound player, expo-file-system for offline cache, JWT authentication with refresh tokens (+50 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.07
-Nodes (29): doneScene, existingImages, heicAssetWithoutMimeType, heifAsset, mockBuildPlaylist, mockDeleteImage, mockGenerateAudio, mockGetAudioTracks (+21 more)
+Cohesion: 0.06
+Nodes (30): doneScene, existingImages, mockBuildPlaylist, mockDeleteImage, mockGenerateAudio, mockGetAudioTracks, mockGetImages, mockGetInterstitialPresets (+22 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.16
@@ -561,12 +563,12 @@ Cohesion: 0.2
 Nodes (14): Artifact: design-system/tokens.json, Artifact: design-system/reference-views/Add Photos.html, Artifact: design-system/reference-views/New Project.html, Component: apps/mobile/components/audioflow.tsx, Concept: AudioFlow Design System (tokens, glass/pearl visual language), Concept: GlassPanel / Glass Surface Primitive, Concept: AudioFlow Hero Player Container (Project Details top section), Concept: PearlButton Primitive (+6 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.19
-Nodes (14): AudioTrackResponse, CreateProjectRequest, InterstitialPresetResponse, PageImageResponse, PlaylistItemResponse, PlaylistItemType, ProjectResponse, ProjectStatus (+6 more)
+Cohesion: 0.13
+Nodes (14): Context, D1. Lokalizacja przycisku "Audio" w pasku akcji, D2. Komponent menu — `AudioEditingMenu`, D3. Reużycie endpointów — bez nowych route'ów, D4. Inwalidacja audio przy zmianie `voiceId` — strona serwera, D5. Tryb "tylko wstawka" w submit, D6. Tryb "zmiana głosu" w submit, D7. Stan zapisany lokalnie vs. natychmiastowy PUT (+6 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.08
-Nodes (27): CARD_HEIGHT_REST, CARD_HEIGHT_SECOND, dashboardPlaybackProgress(), IndexRedirect(), ProjectsScreen(), STATUS_LABELS, styles, RootLayout() (+19 more)
+Cohesion: 0.15
+Nodes (13): RootLayout(), styles, ToastContext, ToastContextValue, ToastMessage, ToastProvider(), ToastType, useToast() (+5 more)
 
 ### Community 42 - "Community 42"
 Cohesion: 0.15
@@ -601,16 +603,16 @@ Cohesion: 0.13
 Nodes (14): baseProject, mockBack, mockDeleteProject, mockGetAudioTracks, mockGetProject, mockGetVoices, mockGoToSceneIndex, mockHandlePlayPause (+6 more)
 
 ### Community 50 - "Community 50"
-Cohesion: 0.16
-Nodes (18): Artifact: design-system/reference-views/Dashboard.html, Artifact: design-system/reference-views/Login.html, Capability: audiobook-creation-wizard, Capability: audioflow-mobile-design-system, Change: Apply AudioFlow Design System (2026-05-11), Concept: AudioFlow App Shell Footer Menu (bottom navigation), Concept: AudioFlow Brand Header Primitive, Concept: AudioFlow Glass Form Field Primitive (+10 more)
+Cohesion: 0.13
+Nodes (24): Artifact: design-system/reference-views/Dashboard.html, Artifact: design-system/reference-views/Login.html, Capability: audiobook-creation-wizard, Capability: audioflow-auth-ui, Capability: audioflow-mobile-design-system, Capability: mobile-app-navigation, Change: Apply AudioFlow Design System (2026-05-11), Change: Apply AudioFlow Login Dashboard Shell (2026-05-11) (+16 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.21
-Nodes (12): Navigation Content Fade-Zoom Transition (Change), content-fade-zoom-transition Capability, expo-router / React Navigation Stack, FadeZoomContent Component, Mobile App Navigation (Capability), Stack animation:none + FadeZoomContent delegation, Navigation Fade-Zoom Transition Design Doc, Navigation Fade-Zoom Transition Proposal (+4 more)
+Cohesion: 0.17
+Nodes (18): Navigation Content Fade-Zoom Transition (Change), AudioFlow Footer Menu, AudioFlow Top Navigation, content-fade-zoom-transition Capability, expo-router / React Navigation Stack, FadeZoomContent Component, Mobile App Navigation (Capability), Stack animation:none + FadeZoomContent delegation (+10 more)
 
 ### Community 52 - "Community 52"
-Cohesion: 0.16
-Nodes (16): Artifact: design-system/reference-views/Project Details.html, Capability: project-dashboard-ui, Change: Redesign Project Detail Page (2026-05-09), Change: Apply AudioFlow Project Details (2026-05-11), Concept: AudioFlow Progress Bar (pearl fill, muted track), Concept: Context Menu for Management Actions (Edit/Delete Project), Concept: Dynamic Dashboard States (Consumption vs Creation State), Concept: AudioFlow Project Tool Tile Primitive (+8 more)
+Cohesion: 0.17
+Nodes (15): Artifact: design-system/reference-views/Project Details.html, Capability: project-dashboard-ui, Change: Redesign Project Detail Page (2026-05-09), Change: Apply AudioFlow Project Details (2026-05-11), Concept: AudioFlow Progress Bar (pearl fill, muted track), Concept: Context Menu for Management Actions (Edit/Delete Project), Concept: Dynamic Dashboard States (Consumption vs Creation State), Concept: AudioFlow Project Tool Tile Primitive (+7 more)
 
 ### Community 53 - "Community 53"
 Cohesion: 0.11
@@ -641,8 +643,8 @@ Cohesion: 0.22
 Nodes (9): classes, contentHash, exports, filePath, functions, hasStructuralAnalysis, imports, totalLines (+1 more)
 
 ### Community 61 - "Community 61"
-Cohesion: 0.06
-Nodes (36): ADDED Requirements, MODIFIED Requirements, Requirement: Akcja Text to Speech jest widoczna po OCR, Requirement: Katalog głosów jest dostępny po skonfigurowaniu TTS, Requirement: Playlista musi być spójna z wygenerowanymi ścieżkami audio, Requirement: TTS generuje audio dla gotowych scen, Requirement: Użytkownik może wybrać głos dla projektu, Requirement: Wygenerowane audio jest dostępne do odtworzenia przez autoryzowany URL (+28 more)
+Cohesion: 0.05
+Nodes (45): ADDED Requirements, MODIFIED Requirements, Requirement: Akcja Text to Speech jest widoczna po OCR, Requirement: Katalog głosów jest dostępny po skonfigurowaniu TTS, Requirement: Playlista musi być spójna z wygenerowanymi ścieżkami audio, Requirement: TTS generuje audio dla gotowych scen, Requirement: Użytkownik może wybrać głos dla projektu, Requirement: Wygenerowane audio jest dostępne do odtworzenia przez autoryzowany URL (+37 more)
 
 ### Community 62 - "Community 62"
 Cohesion: 0.07
@@ -677,8 +679,8 @@ Cohesion: 0.4
 Nodes (4): name, private, type, version
 
 ### Community 71 - "Community 71"
-Cohesion: 0.2
-Nodes (9): call, db, freePlan, now, premiumPlan, projectA, tokenA, usage0 (+1 more)
+Cohesion: 0.18
+Nodes (8): FeatherIconName, PageImageCard(), PageImageCardProps, StatusIconProps, styles, baseProps, ocrIcon, regionIcon
 
 ### Community 72 - "Community 72"
 Cohesion: 0.22
@@ -733,8 +735,36 @@ Cohesion: 0.67
 Nodes (3): Book Scanner Expo app config, mobile app entry (expo-router), mobile package.json
 
 ### Community 88 - "Community 88"
-Cohesion: 0.67
-Nodes (3): SaveTextRegionsRequest, TextRegionInput, TextRegionResponse
+Cohesion: 0.27
+Nodes (10): Change: Redesign Project Detail Page, Component: apps/mobile projects/[id]/index.tsx (Project Detail Screen), Concept: Edge-to-Edge Cover (50% screen height) with Play Button, Project Card SVG Texture (Capability), Capability: project-dashboard-ui (dynamic dashboard based on audio state), Concept: Project Detail Dual State (Consumption vs Creation), Concept: 2-Column Tool Tile Grid Layout, Design: Redesign Project Detail Page (+2 more)
+
+### Community 90 - "Community 90"
+Cohesion: 0.2
+Nodes (8): ADDED Requirements, Requirement: Kafelek edycji audiobooka zastępuje "Zdjęcia stron", Requirement: Kafelek "Głos i audio" jest ukryty, Requirement: Licznik narzędzi odzwierciedla liczbę widocznych kafelków, Scenario: Kafelek "Głos i audio" nie jest renderowany, Scenario: Kafelek ma poprawny tytuł, Scenario: Kafelek nawiguje do edycji audiobooka, Scenario: Licznik pokazuje 2
+
+### Community 91 - "Community 91"
+Cohesion: 0.29
+Nodes (6): Capabilities, Impact, Modified Capabilities, New Capabilities, What Changes, Why
+
+### Community 110 - "Community 110"
+Cohesion: 0.29
+Nodes (6): Capabilities, Impact, Modified Capabilities, New Capabilities, What Changes, Why
+
+### Community 111 - "Community 111"
+Cohesion: 0.33
+Nodes (4): Props, SceneTranscriptBox(), styles, { rerender }
+
+### Community 112 - "Community 112"
+Cohesion: 0.33
+Nodes (5): 1. Backend — inwalidacja audio po zmianie głosu, 2. Mobile — komponent `AudioEditingMenu`, 3. Mobile — integracja z `images.tsx`, 4. Mobile — testy, 5. Weryfikacja końcowa
+
+### Community 113 - "Community 113"
+Cohesion: 0.4
+Nodes (4): Context, Decisions, Goals / Non-Goals, Risks / Trade-offs
+
+### Community 114 - "Community 114"
+Cohesion: 0.5
+Nodes (3): 1. Zmiany w ekranie szczegółów projektu, 2. Aktualizacja testów, 3. Weryfikacja
 
 ### Community 115 - "Community 115"
 Cohesion: 0.07
@@ -749,8 +779,8 @@ Cohesion: 0.08
 Nodes (27): ADDED Requirements, MODIFIED Requirements, Requirement: Empty region selection scans the whole image, Requirement: Region coordinates map to OCR image space, Requirement: Region order is visible and preserved, Requirement: Region selection UI is consistent across entry points, Requirement: User can review and remove selected regions, Requirement: User can select OCR regions on an image preview (+19 more)
 
 ### Community 118 - "Community 118"
-Cohesion: 0.08
-Nodes (25): ADDED Requirements, MODIFIED Requirements, Requirement: Hook `useAudioPlayer` jako reużywalna abstrakcja audio, Requirement: Nawigacja do poprzedniej i następnej strony (sceny), Requirement: Odtwarzanie audio inline na ekranie szczegółów projektu, Requirement: Pasek postępu z dokładnym czasem odtwarzania, Requirement: Przewijanie o ±10 sekund, Requirement: Przycisk „Zaawansowany odtwarzacz" (+17 more)
+Cohesion: 0.07
+Nodes (29): ADDED Requirements, MODIFIED Requirements, Requirement: Hook `useAudioPlayer` jako reużywalna abstrakcja audio, Requirement: Nawigacja do poprzedniej i następnej strony (sceny), Requirement: Odtwarzanie audio inline na ekranie szczegółów projektu, Requirement: Pasek postępu z dokładnym czasem odtwarzania, Requirement: Przewijanie o ±10 sekund, Requirement: Przycisk „Zaawansowany odtwarzacz" (+21 more)
 
 ### Community 119 - "Community 119"
 Cohesion: 0.05
@@ -858,7 +888,7 @@ Nodes (11): 1. Użycie `audioFlowTokens` zamiast inline stałych, 2. `TopAppBar`
 
 ### Community 145 - "Community 145"
 Cohesion: 0.07
-Nodes (22): DraggableImageList(), DraggableImageListProps, RowProps, FeatherIconName, IconActionButtonProps, PageImageCard(), PageImageCardProps, StatusIconProps (+14 more)
+Nodes (24): AudioEditingMenu(), AudioEditingMenuChanges, AudioEditingMenuProps, ExpandedSection, styles, SectionAccordion(), DraggableImageList(), DraggableImageListProps (+16 more)
 
 ### Community 146 - "Community 146"
 Cohesion: 0.18
@@ -1621,8 +1651,8 @@ Cohesion: 0.17
 Nodes (11): 1. Wspólny komponent `components/PageImageCard.tsx`, 2. Ikony Feather, 3. Layout 3 grup, 4. Widok „Zdjęcia stron” zyskuje przycisk obszarów, 5. Wymiar dotykowy ≥ 44×44 pt, code:ts (type PageImageCardProps = {), Context, Decisions (+3 more)
 
 ### Community 341 - "Community 341"
-Cohesion: 0.09
-Nodes (28): ProjectsScreen, AppLayout, ProjectDetailScreen, AuthLayout(), AudioFlowPlayerPanel(), GlassPanel(), AudioFlowBottomNavigation(), AudioFlowGlobalMenuButton() (+20 more)
+Cohesion: 0.07
+Nodes (27): IndexRedirect(), styles, AuthLayout(), LoginScreen(), RegisterScreen(), styles, AudioFlowGlobalNavigation, AudioFlowGlobalMenuButton() (+19 more)
 
 ### Community 342 - "Community 342"
 Cohesion: 0.18
@@ -1633,8 +1663,8 @@ Cohesion: 0.2
 Nodes (9): 1. Przycisk zamknięcia X — `RoundIconButton` w nagłówku arkusza, 2. Dane użycia — `useEffect` w `NavigationMenuSheet`, 3. Komponent `MenuUsageCard` — lokalny w pliku nawigacji, 4. Layout arkusza — nagłówek + content + footer usage, code:block1 (menuSheet), Context, Decisions, Goals / Non-Goals (+1 more)
 
 ### Community 344 - "Community 344"
-Cohesion: 0.18
-Nodes (10): db, endpoints, fakeExe, img, jpegHeader, now, project, scene (+2 more)
+Cohesion: 0.5
+Nodes (3): mockLogin, mockReplace, { Text }
 
 ### Community 345 - "Community 345"
 Cohesion: 0.22
@@ -1650,7 +1680,7 @@ Nodes (8): 1. Backend — cleanup audio przy usuwaniu obrazu (apps/api), 2. Back
 
 ### Community 348 - "Community 348"
 Cohesion: 0.05
-Nodes (37): globalForPrisma, signAccessToken(), app, expired, mockedPrisma, token, db, tokenA (+29 more)
+Nodes (41): globalForPrisma, ACCESS_EXPIRES, ASSET_EXPIRES, AssetTokenPayload, REFRESH_EXPIRES, signAccessToken(), TokenPayload, db (+33 more)
 
 ### Community 349 - "Community 349"
 Cohesion: 0.22
@@ -1716,10 +1746,6 @@ Nodes (6): scripts, build:web, dev, dev:web, lint, test
 Cohesion: 0.25
 Nodes (6): OcrCorrectionModal(), OcrCorrectionModalProps, styles, styles, ZoomableImage(), ZoomableImageProps
 
-### Community 365 - "Community 365"
-Cohesion: 0.29
-Nodes (6): mockGetMyUsage, mockGetPricing, mockRegister, mockResetPassword, registerRender, { Text }
-
 ### Community 366 - "Community 366"
 Cohesion: 0.29
 Nodes (6): Capabilities, Impact, Modified Capabilities, New Capabilities, What Changes, Why
@@ -1737,9 +1763,9 @@ Nodes (3): 1. Komponent ZoomableImage, 2. Integracja z OcrCorrectionModal, 3. We
   apps/mobile/assets/audio/page-turn-3.mp3 · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **2713 isolated node(s):** `OcrCorrectionModalProps`, `styles`, `ToastType`, `ToastMessage`, `ToastContextValue` (+2708 more)
+- **2752 isolated node(s):** `db`, `tokenA`, `tokenB`, `now`, `projectA` (+2747 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **26 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **22 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -1750,11 +1776,11 @@ _Questions this graph is uniquely positioned to answer:_
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
 - **What is the exact relationship between `page-turn-3.mp3` and `OCR -> TTS Audio Generation Pipeline`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `OCR pipeline concept (mock and Google Vision)` connect `Community 0` to `Community 3`, `Community 18`, `Community 19`?**
-  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Why does `files` connect `Community 335` to `Community 159`, `Community 291`, `Community 292`, `Community 293`, `Community 294`, `Community 295`, `Community 296`, `Community 297`, `Community 298`, `Community 299`, `Community 300`, `Community 301`, `Community 60`, `Community 302`, `Community 303`, `Community 305`, `Community 306`, `Community 307`, `Community 308`, `Community 309`, `Community 310`, `Community 311`, `Community 312`, `Community 313`, `Community 314`, `Community 315`, `Community 316`, `Community 317`, `Community 318`, `Community 319`, `Community 320`, `Community 321`, `Community 322`, `Community 323`, `Community 324`, `Community 325`, `Community 326`, `Community 327`, `Community 328`, `Community 329`, `Community 330`, `Community 331`, `Community 332`, `Community 333`, `Community 334`, `Community 72`, `Community 73`, `Community 74`, `Community 75`, `Community 77`, `Community 80`, `Community 81`, `Community 82`, `Community 216`, `Community 304`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
-- **Why does `ocrRouter` connect `Community 3` to `Community 0`, `Community 10`, `Community 16`, `Community 19`, `Community 23`?**
-  _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **What connects `OcrCorrectionModalProps`, `styles`, `ToastType` to the rest of the system?**
-  _2721 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _High betweenness centrality (0.019) - this node is a cross-community bridge._
+- **Why does `OCR pipeline concept (mock and Google Vision)` connect `Community 0` to `Community 16`, `Community 1`, `Community 19`?**
+  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+- **Why does `TextRegionsScreen` connect `Community 1` to `Community 0`, `Community 18`, `Community 5`?**
+  _High betweenness centrality (0.010) - this node is a cross-community bridge._
+- **Are the 7 inferred relationships involving `Audiobook MVP Specification` (e.g. with `Iteration 0: Project Scaffold` and `Multi-Turn PRD Generation Prompt (Senior PM)`) actually correct?**
+  _`Audiobook MVP Specification` has 7 INFERRED edges - model-reasoned connections that need verification._
