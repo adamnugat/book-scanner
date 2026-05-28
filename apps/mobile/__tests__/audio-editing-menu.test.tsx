@@ -107,7 +107,7 @@ describe('AudioEditingMenu', () => {
     );
 
     expandVoice();
-    expect(screen.getByText('Brak głosów dla języka projektu.')).toBeTruthy();
+    expect(screen.getByText('Brak głosów dla języka audiobooka.')).toBeTruthy();
   });
 
   it('save is disabled when nothing changed', () => {

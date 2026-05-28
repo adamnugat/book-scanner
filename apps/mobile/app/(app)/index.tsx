@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ProjectResponse } from '@book-scanner/shared';
 
 import {
-  AudioFlowScreen,
   audioFlowFontFamilies,
   GlassPanel,
   PearlButton,
@@ -13,7 +12,7 @@ import {
   audioFlowStyles,
   audioFlowTokens,
 } from '../../components/audioflow';
-import { AudioFlowBottomNavigation } from '../../components/audioflow-global-navigation';
+import { AudioFlowBottomNavigation, AudioFlowScreenWithHeader, DashboardBrand } from '../../components/audioflow-global-navigation';
 import { FadeZoomContent } from '../../components/FadeZoomContent';
 import { useToast } from '../../components/Toast';
 import { api } from '../../lib/api';
@@ -41,7 +40,7 @@ export default function ProjectsScreen() {
       const data = await api.getProjects();
       setProjects(data);
     } catch {
-      Alert.alert('Błąd', 'Nie udało się pobrać projektów');
+      Alert.alert('Błąd', 'Nie udało się pobrać audiobooków');
     } finally {
       setLoading(false);
     }
@@ -79,7 +78,7 @@ export default function ProjectsScreen() {
                 setProjects((prev) => prev.filter((p) => p.id !== item.id));
                 showToast('Audiobook usunięty');
               } catch {
-                Alert.alert('Błąd', 'Nie udało się usunąć projektu');
+                Alert.alert('Błąd', 'Nie udało się usunąć audiobooka');
               }
             },
           },
@@ -115,13 +114,13 @@ export default function ProjectsScreen() {
       <Text style={styles.welcomeCopy}>
         {projects.length === 0
           ? 'Dodaj zdjęcia książki i zamień je w pierwszy audiobook.'
-          : `Masz ${projects.length} ${projects.length === 1 ? 'projekt' : 'projekty'} w swojej bibliotece.`}
+          : `Masz ${projects.length} ${projects.length === 1 ? 'audiobook' : 'audiobooki'} w swojej bibliotece.`}
       </Text>
     </View>
   );
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreenWithHeader center={<DashboardBrand />} showBack={false}>
       <FadeZoomContent>
       <View style={styles.content}>
         {loading ? (
@@ -130,7 +129,7 @@ export default function ProjectsScreen() {
             testID="dashboard-state-panel"
           >
             <Text style={styles.emptyTitle}>Ładowanie biblioteki...</Text>
-            <Text style={styles.emptyHint}>Przygotowujemy Twoje projekty AudioFlow.</Text>
+            <Text style={styles.emptyHint}>Przygotowujemy Twoje audiobooki AudioFlow.</Text>
           </GlassPanel>
         ) : projects.length === 0 ? (
           <>
@@ -139,7 +138,7 @@ export default function ProjectsScreen() {
               style={[styles.statePanel, { marginBottom: footerPadding }]}
               testID="dashboard-state-panel"
             >
-              <Text style={styles.emptyTitle}>Nie masz jeszcze żadnych projektów</Text>
+              <Text style={styles.emptyTitle}>Nie masz jeszcze żadnych audiobooków</Text>
               <Text style={styles.emptyHint}>Stwórz swój pierwszy audiobook!</Text>
               <PearlButton
                 accessibilityLabel="Utwórz pierwszy audiobook"
@@ -170,7 +169,7 @@ export default function ProjectsScreen() {
         onCreatePress={createProject}
         variant="create-only"
       />
-    </AudioFlowScreen>
+    </AudioFlowScreenWithHeader>
   );
 }
 

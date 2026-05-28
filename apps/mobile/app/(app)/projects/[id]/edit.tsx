@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { api } from '../../../../lib/api';
-import { AudioFlowScreen } from '../../../../components/audioflow';
+import { AudioFlowScreenWithHeader } from '../../../../components/audioflow-global-navigation';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type { SupportedLanguage } from '@book-scanner/shared';
 
@@ -28,7 +28,7 @@ export default function EditProjectScreen() {
         setTitle(project.title);
         setLanguage(project.language as SupportedLanguage);
       } catch {
-        Alert.alert('Błąd', 'Nie udało się pobrać projektu');
+        Alert.alert('Błąd', 'Nie udało się pobrać audiobooka');
         router.back();
       } finally {
         setLoading(false);
@@ -38,7 +38,7 @@ export default function EditProjectScreen() {
 
   const handleSave = async () => {
     if (!title.trim()) {
-      Alert.alert('Błąd', 'Podaj tytuł projektu');
+      Alert.alert('Błąd', 'Podaj tytuł audiobooka');
       return;
     }
     setSaving(true);
@@ -55,19 +55,19 @@ export default function EditProjectScreen() {
 
   if (loading) {
     return (
-      <AudioFlowScreen>
+      <AudioFlowScreenWithHeader title="Edycja audiobooka">
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#e94560" />
         </View>
-      </AudioFlowScreen>
+      </AudioFlowScreenWithHeader>
     );
   }
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreenWithHeader title="Edycja audiobooka">
       <FadeZoomContent>
       <View style={styles.container}>
-        <Text style={styles.heading}>Edytuj projekt</Text>
+        <Text style={styles.heading}>Edytuj audiobook</Text>
 
         <Text style={styles.label}>Tytuł</Text>
         <TextInput
@@ -101,7 +101,7 @@ export default function EditProjectScreen() {
         </Pressable>
       </View>
       </FadeZoomContent>
-    </AudioFlowScreen>
+    </AudioFlowScreenWithHeader>
   );
 }
 

@@ -15,7 +15,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { api } from '../../../../../lib/api';
 import { useToast } from '../../../../../components/Toast';
 import { PageImagePreview } from '../../../../../components/PageImagePreview';
-import { AudioFlowScreen } from '../../../../../components/audioflow';
+import { AudioFlowScreenWithHeader } from '../../../../../components/audioflow-global-navigation';
 import { FadeZoomContent } from '../../../../../components/FadeZoomContent';
 import type { SceneResponse } from '@book-scanner/shared';
 
@@ -129,11 +129,11 @@ export default function SceneEditorScreen() {
 
   if (loading || !scene) {
     return (
-      <AudioFlowScreen>
+      <AudioFlowScreenWithHeader title="Edycja sceny">
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#e94560" />
         </View>
-      </AudioFlowScreen>
+      </AudioFlowScreenWithHeader>
     );
   }
 
@@ -198,7 +198,7 @@ export default function SceneEditorScreen() {
   );
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreenWithHeader title="Edycja sceny">
       <FadeZoomContent>
       <View style={styles.container}>
       {isDesktop ? (
@@ -254,7 +254,7 @@ export default function SceneEditorScreen() {
       </View>
       </View>
       </FadeZoomContent>
-    </AudioFlowScreen>
+    </AudioFlowScreenWithHeader>
   );
 }
 

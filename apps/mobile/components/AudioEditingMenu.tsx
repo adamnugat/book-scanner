@@ -117,7 +117,7 @@ export function AudioEditingMenu({
               style={styles.accordion}
             >
               {voices.length === 0 ? (
-                <Text style={styles.emptyText}>Brak głosów dla języka projektu.</Text>
+                <Text style={styles.emptyText}>Brak głosów dla języka audiobooka.</Text>
               ) : (
                 voices.map((voice) => {
                   const isSelected = selectedVoice === voice.elevenlabsVoiceId;

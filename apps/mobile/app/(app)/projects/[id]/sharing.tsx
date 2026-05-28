@@ -13,7 +13,6 @@ import {
 import { useLocalSearchParams } from 'expo-router';
 import { api } from '../../../../lib/api';
 import {
-  AudioFlowScreen,
   audioFlowTokens,
   GlassPanel,
   PearlButton,
@@ -22,6 +21,7 @@ import {
   SectionHeading,
 } from '../../../../components/audioflow';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
+import { AudioFlowScreenWithHeader } from '../../../../components/audioflow-global-navigation';
 
 const t = audioFlowTokens;
 
@@ -75,7 +75,7 @@ export default function SharingScreen() {
       const result = await api.shareProject(id, email.trim().toLowerCase());
       setShares((prev) => [...prev, result as unknown as ShareEntry]);
       setEmail('');
-      Alert.alert('Udostępniono', `Projekt udostępniony dla ${result.sharedWithEmail}`);
+      Alert.alert('Udostępniono', `Audiobook udostępniony dla ${result.sharedWithEmail}`);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Nie udało się udostępnić';
       Alert.alert('Błąd', msg);
@@ -122,16 +122,16 @@ export default function SharingScreen() {
 
   if (loading) {
     return (
-      <AudioFlowScreen>
+      <AudioFlowScreenWithHeader title="Udostępnianie">
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={t.color.accent.pearl} />
         </View>
-      </AudioFlowScreen>
+      </AudioFlowScreenWithHeader>
     );
   }
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreenWithHeader title="Udostępnianie">
       <FadeZoomContent>
         <View style={styles.container}>
           <FlatList
@@ -139,7 +139,7 @@ export default function SharingScreen() {
             keyExtractor={(item) => item.id}
             ListHeaderComponent={
               <>
-                <SectionHeading title="Udostępnij projekt" style={styles.sectionHeading} />
+                <SectionHeading title="Udostępnij audiobook" style={styles.sectionHeading} />
                 <View style={styles.shareRow}>
                   <AudioFlowTextField
                     placeholder="Email użytkownika..."
@@ -212,7 +212,7 @@ export default function SharingScreen() {
           />
         </View>
       </FadeZoomContent>
-    </AudioFlowScreen>
+    </AudioFlowScreenWithHeader>
   );
 }
 

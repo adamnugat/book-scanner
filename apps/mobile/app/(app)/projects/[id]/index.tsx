@@ -86,7 +86,7 @@ export default function ProjectDetailScreen() {
           setAudioTracks(audioTracks);
           setVoices(voicesData);
         } catch {
-          Alert.alert('Błąd', 'Nie udało się pobrać projektu');
+          Alert.alert('Błąd', 'Nie udało się pobrać audiobooka');
           router.back();
         }
       })();
@@ -98,7 +98,7 @@ export default function ProjectDetailScreen() {
   );
 
   const handleDelete = () => {
-    Alert.alert('Usuń projekt', `Czy na pewno chcesz usunąć "${project?.title}"?`, [
+    Alert.alert('Usuń audiobook', `Czy na pewno chcesz usunąć "${project?.title}"?`, [
       { text: 'Anuluj', style: 'cancel' },
       {
         text: 'Usuń',
@@ -108,7 +108,7 @@ export default function ProjectDetailScreen() {
             await api.deleteProject(id);
             router.replace('/(app)');
           } catch {
-            Alert.alert('Błąd', 'Nie udało się usunąć projektu');
+            Alert.alert('Błąd', 'Nie udało się usunąć audiobooka');
           }
         },
       },
@@ -123,7 +123,7 @@ export default function ProjectDetailScreen() {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ['Anuluj', 'Edytuj projekt', 'Usuń projekt'],
+          options: ['Anuluj', 'Edytuj audiobook', 'Usuń audiobook'],
           cancelButtonIndex: 0,
           destructiveButtonIndex: 2,
           title: project?.title,
@@ -136,9 +136,9 @@ export default function ProjectDetailScreen() {
       return;
     }
 
-    Alert.alert('Opcje projektu', 'Wybierz akcję', [
-      { text: 'Edytuj projekt', onPress: handleEdit },
-      { text: 'Usuń projekt', style: 'destructive', onPress: handleDelete },
+    Alert.alert('Opcje audiobooka', 'Wybierz akcję', [
+      { text: 'Edytuj audiobook', onPress: handleEdit },
+      { text: 'Usuń audiobook', style: 'destructive', onPress: handleDelete },
       { text: 'Anuluj', style: 'cancel' },
     ]);
   };
@@ -167,7 +167,7 @@ export default function ProjectDetailScreen() {
                   <AudioFlowGlobalMenuButton />
                 </View>
               }
-              title="Projekt"
+              title="Audiobook"
             />
           </AudioFlowTopChrome>
           <View style={styles.loadingState} />
@@ -209,7 +209,7 @@ export default function ProjectDetailScreen() {
                 <AudioFlowGlobalMenuButton />
               </View>
             }
-            title="Projekt"
+            title="Audiobook"
           />
         </AudioFlowTopChrome>
 
@@ -223,12 +223,7 @@ export default function ProjectDetailScreen() {
               {project.coverUrl ? (
                 <Image source={{ uri: project.coverUrl }} style={styles.coverImage} />
               ) : (
-                <View style={styles.coverArt}>
-                  <View style={styles.coverBandPrimary} />
-                  <View style={styles.coverBandSecondary} />
-                  <View style={styles.coverOrbitLarge} />
-                  <View style={styles.coverOrbitSmall} />
-                </View>
+                <View style={styles.coverArt} />
               )}
 
               <View pointerEvents="none" style={styles.coverOverlay} />
@@ -319,10 +314,10 @@ export default function ProjectDetailScreen() {
           <View style={styles.toolsSection}>
             <View style={styles.toolsHeading}>
               <View style={styles.toolsHeadingTexts}>
-                <Text style={audioFlowStyles.headlineMd}>Narzędzia projektu</Text>
+                <Text style={audioFlowStyles.headlineMd}>Narzędzia audiobooka</Text>
                 <Text style={styles.toolsCount}>{`${PROJECT_TOOL_COUNT} dostępne`}</Text>
               </View>
-              <RoundIconButton icon="⋮" label="Opcje projektu" onPress={handleProjectOptions} />
+              <RoundIconButton icon="⋮" label="Opcje audiobooka" onPress={handleProjectOptions} />
             </View>
             <View style={styles.toolsList}>
               <SectionTile
@@ -389,46 +384,6 @@ const styles = StyleSheet.create({
   },
   coverArt: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: t.color.background.deep1,
-    overflow: 'hidden',
-  },
-  coverBandPrimary: {
-    position: 'absolute',
-    bottom: 118,
-    height: 128,
-    left: -48,
-    right: -32,
-    transform: [{ rotate: '-12deg' }],
-    backgroundColor: 'rgba(240, 234, 214, 0.16)',
-  },
-  coverBandSecondary: {
-    position: 'absolute',
-    bottom: 72,
-    height: 108,
-    left: -64,
-    right: -48,
-    transform: [{ rotate: '-9deg' }],
-    backgroundColor: 'rgba(255, 177, 200, 0.18)',
-  },
-  coverOrbitLarge: {
-    borderColor: 'rgba(255, 255, 255, 0.14)',
-    borderRadius: 120,
-    borderWidth: 1,
-    height: 240,
-    position: 'absolute',
-    right: -30,
-    top: 70,
-    width: 240,
-  },
-  coverOrbitSmall: {
-    borderColor: 'rgba(255, 255, 255, 0.12)',
-    borderRadius: 76,
-    borderWidth: 1,
-    height: 152,
-    position: 'absolute',
-    right: 14,
-    top: 114,
-    width: 152,
   },
   coverOverlay: {
     ...StyleSheet.absoluteFillObject,

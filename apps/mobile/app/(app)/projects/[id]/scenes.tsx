@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { api } from '../../../../lib/api';
-import { AudioFlowScreen } from '../../../../components/audioflow';
+import { AudioFlowScreenWithHeader } from '../../../../components/audioflow-global-navigation';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type { SceneResponse } from '@book-scanner/shared';
 
@@ -127,16 +127,16 @@ export default function ScenesScreen() {
 
   if (loading) {
     return (
-      <AudioFlowScreen>
+      <AudioFlowScreenWithHeader title="Krok 2/2 · Sceny OCR">
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#e94560" />
         </View>
-      </AudioFlowScreen>
+      </AudioFlowScreenWithHeader>
     );
   }
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreenWithHeader title="Krok 2/2 · Sceny OCR">
       <FadeZoomContent>
         <View style={styles.container}>
           <View style={styles.header}>
@@ -184,7 +184,7 @@ export default function ScenesScreen() {
           )}
         </View>
       </FadeZoomContent>
-    </AudioFlowScreen>
+    </AudioFlowScreenWithHeader>
   );
 }
 

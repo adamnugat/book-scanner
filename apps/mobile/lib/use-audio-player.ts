@@ -246,7 +246,7 @@ export function useAudioPlayer(projectId: string, enabled = true): UseAudioPlaye
   };
 
   const handleDeleteCache = () => {
-    Alert.alert('Usuń cache', 'Usunąć pobrane audio z tego projektu?', [
+    Alert.alert('Usuń cache', 'Usunąć pobrane audio z tego audiobooka?', [
       { text: 'Anuluj', style: 'cancel' },
       {
         text: 'Usuń',

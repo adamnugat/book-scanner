@@ -12,9 +12,9 @@ import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
 import { api } from '../../../../lib/api';
+import { AudioFlowScreenWithHeader } from '../../../../components/audioflow-global-navigation';
 import {
   AudioFlowFooterMenu,
-  AudioFlowScreen,
   GlassPanel,
   PickerCard,
   SectionAccordion,
@@ -145,7 +145,7 @@ export default function NewProjectScreen() {
       });
       router.replace(`/(app)/projects/${project.id}/images`);
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Nie udało się stworzyć projektu';
+      const message = error instanceof Error ? error.message : 'Nie udało się stworzyć audiobooka';
       Alert.alert('Błąd', message);
     } finally {
       setSubmitting(false);
@@ -160,7 +160,7 @@ export default function NewProjectScreen() {
     LOCAL_JINGLES.find((j) => j.name === selectedPresetName)?.label ?? selectedPresetName;
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreenWithHeader title="Nowy audiobook">
       <FadeZoomContent>
         <ScrollView
           style={styles.container}
@@ -280,7 +280,7 @@ export default function NewProjectScreen() {
         onLibraryPress={() => router.replace('/(app)')}
         playerDisabled
       />
-    </AudioFlowScreen>
+    </AudioFlowScreenWithHeader>
   );
 }
 

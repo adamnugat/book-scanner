@@ -1,8 +1,8 @@
 import { useState, useEffect, type ComponentProps } from 'react';
 import type { NativeStackHeaderProps } from '@react-navigation/native-stack';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAuth } from '../lib/auth-context';
@@ -10,6 +10,7 @@ import { api } from '../lib/api';
 import {
   AudioFlowFooterMenu,
   AudioFlowLogo,
+  AudioFlowScreen,
   GhostButton,
   RoundIconButton,
   TopAppBar,
@@ -61,14 +62,14 @@ function MenuUsageCard({ usage }: { usage: Usage }) {
       </View>
       <View style={styles.usageBarsRow}>
         <MenuUsageBar label="Strony" used={usage.pagesUsed} limit={usage.pagesLimit} />
-        <MenuUsageBar label="Projekty" used={usage.projectsUsed} limit={usage.projectsLimit} />
+        <MenuUsageBar label="Audiobooki" used={usage.projectsUsed} limit={usage.projectsLimit} />
       </View>
       <Text style={styles.menuUsagePeriod}>Okres: {usage.periodMonth}</Text>
     </View>
   );
 }
 
-function DashboardBrand() {
+export function DashboardBrand() {
   return (
     <View style={styles.brandCenter}>
       <AudioFlowLogo />
@@ -174,12 +175,12 @@ function stackHeaderBg(options: NativeStackHeaderProps['options']): string {
   ) {
     return (options.headerStyle as { backgroundColor: string }).backgroundColor;
   }
-  return SCREEN_BG;
+  return 'transparent';
 }
 
 /** Safe-area + stałe tło jak w nagłówku Stack – używane też dla ekranów bez natywnego nagłówka (np. szczegóły projektu). */
 export function AudioFlowTopChrome({
-  backgroundColor = SCREEN_BG,
+  backgroundColor = 'transparent',
   children,
 }: {
   backgroundColor?: string;
@@ -205,6 +206,47 @@ export function AudioFlowTopNavigation(props: NativeStackHeaderProps) {
 /** Dolne menu aplikacji (Biblioteka / Nowy / Odtwarzacz) — ten sam komponent co `AudioFlowFooterMenu`. */
 export function AudioFlowBottomNavigation(props: ComponentProps<typeof AudioFlowFooterMenu>) {
   return <AudioFlowFooterMenu {...props} />;
+}
+
+/** Wrapper ekranu z wbudowanym headerem nawigacyjnym. Zastępuje natywny Stack header. */
+export function AudioFlowScreenWithHeader({
+  children,
+  title,
+  center,
+  showBack,
+  style,
+}: {
+  children: React.ReactNode;
+  title?: string;
+  center?: React.ReactNode;
+  showBack?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const navigation = useNavigation();
+  const canGoBack = navigation.canGoBack();
+  const shouldShowBack = showBack !== false && canGoBack;
+
+  return (
+    <AudioFlowScreen style={style}>
+      <AudioFlowTopChrome>
+        <TopAppBar
+          center={center}
+          left={
+            shouldShowBack ? (
+              <RoundIconButton
+                featherIcon="chevron-left"
+                label="Wróć"
+                onPress={() => navigation.goBack()}
+              />
+            ) : undefined
+          }
+          right={<AudioFlowGlobalMenuButton />}
+          title={title}
+        />
+      </AudioFlowTopChrome>
+      {children}
+    </AudioFlowScreen>
+  );
 }
 
 export function AudioFlowStackHeader({ navigation, route, options, back }: NativeStackHeaderProps) {

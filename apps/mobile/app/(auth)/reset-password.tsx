@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Link } from 'expo-router';
 import { api } from '../../lib/api';
-import { AudioFlowScreen } from '../../components/audioflow';
+import { AudioFlowScreenWithHeader } from '../../components/audioflow-global-navigation';
 import { FadeZoomContent } from '../../components/FadeZoomContent';
 
 export default function ResetPasswordScreen() {
@@ -37,7 +37,7 @@ export default function ResetPasswordScreen() {
 
   if (sent) {
     return (
-      <AudioFlowScreen>
+      <AudioFlowScreenWithHeader title="Reset hasła">
         <View style={styles.container}>
           <Text style={styles.title}>Sprawdź email</Text>
           <Text style={styles.subtitle}>
@@ -47,12 +47,12 @@ export default function ResetPasswordScreen() {
             Wróć do logowania
           </Link>
         </View>
-      </AudioFlowScreen>
+      </AudioFlowScreenWithHeader>
     );
   }
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreenWithHeader title="Reset hasła">
       <FadeZoomContent>
       <View style={styles.container}>
         <Text style={styles.title}>Resetuj hasło</Text>
@@ -82,7 +82,7 @@ export default function ResetPasswordScreen() {
         </Link>
       </View>
       </FadeZoomContent>
-    </AudioFlowScreen>
+    </AudioFlowScreenWithHeader>
   );
 }
 

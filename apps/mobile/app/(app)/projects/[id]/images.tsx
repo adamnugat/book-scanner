@@ -27,11 +27,11 @@ import {
   type AudioEditingMenuChanges,
 } from '../../../../components/AudioEditingMenu';
 import {
-  AudioFlowScreen,
   AudioFlowFooterMenu,
   audioFlowTokens,
   GlassPanel,
 } from '../../../../components/audioflow';
+import { AudioFlowScreenWithHeader } from '../../../../components/audioflow-global-navigation';
 import { FadeZoomContent } from '../../../../components/FadeZoomContent';
 import type {
   PageImageResponse,
@@ -532,11 +532,11 @@ export default function ProjectImagesScreen() {
 
   if (loading) {
     return (
-      <AudioFlowScreen>
+      <AudioFlowScreenWithHeader title="Zdjęcia">
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={t.color.accent.pearl} />
         </View>
-      </AudioFlowScreen>
+      </AudioFlowScreenWithHeader>
     );
   }
 
@@ -592,7 +592,7 @@ export default function ProjectImagesScreen() {
   );
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreenWithHeader title="Zdjęcia">
       <FadeZoomContent>
         <View style={styles.container} ref={dropRef} {...dropZoneProps}>
           {isDragOver && (
@@ -773,7 +773,7 @@ export default function ProjectImagesScreen() {
         rightDisabled={Platform.OS === 'web'}
         onPlayerPress={takePhoto}
       />
-    </AudioFlowScreen>
+    </AudioFlowScreenWithHeader>
   );
 }
 

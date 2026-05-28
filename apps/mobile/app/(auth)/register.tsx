@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { useAuth } from '../../lib/auth-context';
-import { AudioFlowScreen } from '../../components/audioflow';
+import { AudioFlowScreenWithHeader } from '../../components/audioflow-global-navigation';
 import { FadeZoomContent } from '../../components/FadeZoomContent';
 
 export default function RegisterScreen() {
@@ -46,7 +46,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreenWithHeader title="Rejestracja">
       <FadeZoomContent>
       <View style={styles.container}>
         <Text style={styles.title}>Utwórz konto</Text>
@@ -93,7 +93,7 @@ export default function RegisterScreen() {
         </Link>
       </View>
       </FadeZoomContent>
-    </AudioFlowScreen>
+    </AudioFlowScreenWithHeader>
   );
 }
 

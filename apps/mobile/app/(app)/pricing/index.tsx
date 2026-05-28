@@ -7,8 +7,8 @@ import { Feather } from '@expo/vector-icons';
 
 import {
   AudioFlowFooterMenu,
-  AudioFlowScreen,
 } from '../../../components/audioflow';
+import { AudioFlowScreenWithHeader } from '../../../components/audioflow-global-navigation';
 import { FadeZoomContent } from '../../../components/FadeZoomContent';
 import { audioFlowTokens } from '../../../components/audioflow-tokens';
 import { api } from '../../../lib/api';
@@ -62,7 +62,7 @@ export default function PricingScreen() {
 
   if (loading) {
     return (
-      <AudioFlowScreen>
+      <AudioFlowScreenWithHeader title="Cennik i plan">
         <FadeZoomContent>
           <View style={styles.centered}>
             <ActivityIndicator size="large" color={t.color.accent.danger} />
@@ -76,12 +76,12 @@ export default function PricingScreen() {
           onLibraryPress={() => router.replace('/(app)')}
           playerDisabled
         />
-      </AudioFlowScreen>
+      </AudioFlowScreenWithHeader>
     );
   }
 
   return (
-    <AudioFlowScreen>
+    <AudioFlowScreenWithHeader title="Cennik i plan">
       <FadeZoomContent>
         <ScrollView
           style={styles.container}
@@ -99,7 +99,7 @@ export default function PricingScreen() {
               </View>
               <View style={styles.barsRow}>
                 <UsageBar label="Strony" used={usage.pagesUsed} limit={usage.pagesLimit} />
-                <UsageBar label="Projekty" used={usage.projectsUsed} limit={usage.projectsLimit} />
+                <UsageBar label="Audiobooki" used={usage.projectsUsed} limit={usage.projectsLimit} />
               </View>
               <Text style={styles.period}>Okres: {usage.periodMonth}</Text>
             </View>
@@ -129,7 +129,7 @@ export default function PricingScreen() {
                 </View>
 
                 <View style={styles.limitsRow}>
-                  <LimitChip icon="layers" label={`${plan.limits.maxActiveProjects} projektów`} />
+                  <LimitChip icon="layers" label={`${plan.limits.maxActiveProjects} audiobooków`} />
                   <LimitChip icon="file-text" label={`${plan.limits.maxPagesPerMonth} stron/msc`} />
                 </View>
 
@@ -156,7 +156,7 @@ export default function PricingScreen() {
         onLibraryPress={() => router.replace('/(app)')}
         playerDisabled
       />
-    </AudioFlowScreen>
+    </AudioFlowScreenWithHeader>
   );
 }
 

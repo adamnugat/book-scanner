@@ -676,7 +676,7 @@ export function AudioFlowPlayerPanel({
   onSkipForward?: () => void;
 }) {
   return (
-    <GlassPanel style={styles.playerPanel}>
+    <View style={styles.playerPanel}>
       <AudioFlowProgressBar progress={progress} />
       <View style={styles.playerTimeRow}>
         <Text style={styles.playerTimeCurrent}>{currentTime}</Text>
@@ -728,7 +728,7 @@ export function AudioFlowPlayerPanel({
           onPress={onNextPress ?? onPlayPress}
         />
       </View>
-    </GlassPanel>
+    </View>
   );
 }
 

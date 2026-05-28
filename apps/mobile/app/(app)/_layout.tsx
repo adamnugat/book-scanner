@@ -1,5 +1,4 @@
 import { Stack } from 'expo-router';
-import { AudioFlowTopNavigation } from '../../components/audioflow-global-navigation';
 
 const SCREEN_BG = '#131316';
 
@@ -10,18 +9,13 @@ export default function AppLayout() {
         animation: 'none',
         contentStyle: { flex: 1, backgroundColor: SCREEN_BG },
         freezeOnBlur: false,
-        header: (props) => <AudioFlowTopNavigation {...props} />,
-        headerShadowVisible: false,
-        headerShown: true,
-        headerStyle: { backgroundColor: SCREEN_BG },
-        headerTintColor: '#F0EAD6',
-        headerTitleStyle: { fontWeight: 'bold' },
+        headerShown: false,
       }}
     >
       <Stack.Screen name="index" options={{ headerBackVisible: false, title: '' }} />
       <Stack.Screen name="projects/new/index" options={{ title: 'Nowy audiobook' }} />
-      <Stack.Screen name="projects/[id]/index" options={{ title: 'Projekt' }} />
-      <Stack.Screen name="projects/[id]/edit" options={{ title: 'Edycja projektu' }} />
+      <Stack.Screen name="projects/[id]/index" options={{ title: 'Audiobook' }} />
+      <Stack.Screen name="projects/[id]/edit" options={{ title: 'Edycja audiobooka' }} />
       {/* Dynamic title set in screen: "Dodaj zdjęcia" / "Edytuj zdjęcia". OCR region selection
           and OCR correction are presented as modals on this screen, not separate routes. */}
       <Stack.Screen name="projects/[id]/images" options={{ title: 'Dodaj zdjęcia' }} />

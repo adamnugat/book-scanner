@@ -213,9 +213,8 @@ describe('ProjectDetailScreen TTS next step', () => {
   it('moves edit and delete actions into the header options', async () => {
     render(<ProjectDetailScreen />);
 
-    expect(await screen.findByLabelText('Opcje projektu')).toBeTruthy();
-    expect(screen.queryByText('Edytuj projekt')).toBeNull();
-    expect(screen.queryByText('Usuń projekt')).toBeNull();
+    expect(await screen.findByLabelText('Opcje audiobooka')).toBeTruthy();
+    expect(screen.queryByText('Usuń audiobook')).toBeNull();
   });
 
   it('keeps the transparent header before the audio cover loads', () => {

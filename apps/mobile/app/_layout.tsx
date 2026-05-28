@@ -4,9 +4,9 @@ import { Slot } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { View } from 'react-native';
 import { AuthProvider } from '../lib/auth-context';
 import { ToastProvider } from '../components/Toast';
-import { AudioFlowScreen } from '../components/audioflow';
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -24,9 +24,9 @@ export default function RootLayout() {
       <AuthProvider>
         <ToastProvider>
           <StatusBar style="light" />
-          <AudioFlowScreen>
+          <View style={{ flex: 1, backgroundColor: '#131316' }}>
             <Slot />
-          </AudioFlowScreen>
+          </View>
         </ToastProvider>
       </AuthProvider>
     </SafeAreaProvider>

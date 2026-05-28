@@ -1,5 +1,4 @@
 import { Stack } from 'expo-router';
-import { AudioFlowTopNavigation } from '../../components/audioflow-global-navigation';
 
 const SCREEN_BG = '#131316';
 
@@ -10,11 +9,7 @@ export default function AuthLayout() {
         animation: 'none',
         contentStyle: { flex: 1, backgroundColor: SCREEN_BG },
         freezeOnBlur: false,
-        header: (props) => <AudioFlowTopNavigation {...props} />,
-        headerShadowVisible: false,
-        headerShown: true,
-        headerStyle: { backgroundColor: SCREEN_BG },
-        headerTintColor: '#F0EAD6',
+        headerShown: false,
       }}
     >
       <Stack.Screen name="login" options={{ headerShown: false, title: 'Logowanie' }} />

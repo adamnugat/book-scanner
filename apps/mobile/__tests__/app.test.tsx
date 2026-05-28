@@ -140,7 +140,7 @@ describe('ProjectsScreen – last-played section', () => {
   it('does not render last-played widget when projects list is empty', async () => {
     mockGetProjects.mockImplementation(() => Promise.resolve([]));
     render(<ProjectsScreen />);
-    await screen.findByText('Nie masz jeszcze żadnych projektów', {}, { timeout: 3000 });
+    await screen.findByText('Nie masz jeszcze żadnych audiobooków', {}, { timeout: 3000 });
     expect(screen.queryByTestId('dashboard-last-played')).toBeNull();
   });
 
@@ -191,7 +191,7 @@ describe('ProjectsScreen – empty state', () => {
     mockGetProjects.mockImplementation(() => Promise.resolve([]));
     render(<ProjectsScreen />);
     expect(
-      await screen.findByText('Nie masz jeszcze żadnych projektów', {}, { timeout: 3000 }),
+      await screen.findByText('Nie masz jeszcze żadnych audiobooków', {}, { timeout: 3000 }),
     ).toBeTruthy();
     expect(screen.getByText('Stwórz swój pierwszy audiobook!')).toBeTruthy();
     expect(StyleSheet.flatten(screen.getByTestId('dashboard-state-panel').props.style)).toEqual(
