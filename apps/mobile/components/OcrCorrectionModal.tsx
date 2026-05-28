@@ -5,12 +5,12 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 
 import { ZoomableImage } from './ZoomableImage';
@@ -44,6 +44,7 @@ export function OcrCorrectionModal({
 }: OcrCorrectionModalProps) {
   const [text, setText] = useState(initialText);
   const zoomResetKey = useRef(0);
+  const insets = useSafeAreaInsets();
 
   // Reset the editable buffer and zoom state whenever a new correction target is opened.
   useEffect(() => {
@@ -61,7 +62,7 @@ export function OcrCorrectionModal({
         style={styles.backdrop}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { paddingTop: 14 + insets.top }]}>
           <View style={styles.header}>
             <Text style={styles.title} numberOfLines={1}>
               Korekta OCR · {pageLabel}
@@ -88,22 +89,19 @@ export function OcrCorrectionModal({
                 style={styles.thumb}
                 resizeMode="contain"
               />
-              <ScrollView
-                contentContainerStyle={styles.content}
-                keyboardShouldPersistTaps="handled"
-              >
-                <TextInput
-                  accessibilityLabel="Tekst OCR"
-                  style={styles.textArea}
-                  multiline
-                  value={text}
-                  onChangeText={setText}
-                  placeholder="Tekst rozpoznany przez OCR…"
-                  placeholderTextColor={t.color.text.onSurfaceMuted}
-                  textAlignVertical="top"
-                  testID="ocr-correction-input"
-                />
-              </ScrollView>
+              <TextInput
+                accessibilityLabel="Tekst OCR"
+                style={styles.textArea}
+                multiline
+                value={text}
+                onChangeText={setText}
+                placeholder="Tekst rozpoznany przez OCR…"
+                placeholderTextColor={t.color.text.onSurfaceMuted}
+                textAlignVertical="top"
+                testID="ocr-correction-input"
+                scrollEnabled
+                nestedScrollEnabled
+              />
             </>
           )}
 
@@ -139,12 +137,11 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    maxHeight: '92%',
+    flex: 1,
     backgroundColor: t.color.background.deep1,
     borderTopLeftRadius: t.radius.card,
     borderTopRightRadius: t.radius.card,
     paddingHorizontal: t.spacing.gutterMobile,
-    paddingTop: 14,
     paddingBottom: 18,
   },
   header: {
@@ -168,7 +165,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   centered: { paddingVertical: 60, alignItems: 'center', justifyContent: 'center' },
-  content: { paddingBottom: 14 },
   thumb: {
     width: '100%',
     height: 220,
@@ -177,6 +173,7 @@ const styles = StyleSheet.create({
     backgroundColor: t.color.surface.glass,
   },
   textArea: {
+    flex: 1,
     backgroundColor: t.color.surface.glass,
     color: t.color.text.onDark,
     borderRadius: t.radius.md,
@@ -185,7 +182,6 @@ const styles = StyleSheet.create({
     padding: 14,
     fontSize: 15,
     lineHeight: 23,
-    minHeight: 180,
   },
   saveBtn: {
     marginTop: 14,

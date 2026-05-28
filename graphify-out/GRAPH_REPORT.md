@@ -1,16 +1,16 @@
-# Graph Report - book-scaner  (2026-05-27)
+# Graph Report - book-scaner  (2026-05-28)
 
 ## Corpus Check
-- 322 files · ~243,297 words
+- 332 files · ~246,535 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4136 nodes · 4967 edges · 365 communities (339 shown, 26 thin omitted)
+- 4177 nodes · 5005 edges · 368 communities (342 shown, 26 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 192 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `91d37755`
+- Built from commit: `f1880e15`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -370,6 +370,9 @@
 - [[_COMMUNITY_Community 362|Community 362]]
 - [[_COMMUNITY_Community 363|Community 363]]
 - [[_COMMUNITY_Community 364|Community 364]]
+- [[_COMMUNITY_Community 365|Community 365]]
+- [[_COMMUNITY_Community 366|Community 366]]
+- [[_COMMUNITY_Community 367|Community 367]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `files` - 57 edges
@@ -395,7 +398,7 @@
 - `TextRegionInput` --references--> `packages/shared Workspace`  [INFERRED]
   apps/mobile/lib/text-region-geometry.ts → openspec/config.yaml
 
-## Communities (365 total, 26 thin omitted)
+## Communities (368 total, 26 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.05
@@ -403,15 +406,15 @@ Nodes (73): ElevenLabs TTS provider, Google Cloud Vision OCR provider, JWT authe
 
 ### Community 1 - "Community 1"
 Cohesion: 0.07
-Nodes (32): audioFlowFooterMenuHeight(), AudioFlowGlobalMenuButton(), EditorRegion, EMPTY_LAYOUT, OcrEditorTarget, OcrRegionEditor(), OcrRegionEditorProps, styles (+24 more)
+Nodes (33): AudioFlowGlobalMenuButton(), EditorRegion, EMPTY_LAYOUT, OcrEditorTarget, OcrRegionEditor(), OcrRegionEditorProps, styles, PageImagePreviewProps (+25 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.07
 Nodes (29): dependencies, @book-scanner/shared, expo, expo-av, expo-blur, expo-constants, expo-font, @expo-google-fonts/quicksand (+21 more)
 
 ### Community 3 - "Community 3"
-Cohesion: 0.08
-Nodes (35): plan-based limits (free/premium/max), project sharing and QR deep-link, globalForPrisma, prisma (db client), TokenPayload, verifyToken(), checkPageLimit(), checkProjectLimit() (+27 more)
+Cohesion: 0.1
+Nodes (29): plan-based limits (free/premium/max), prisma (db client), checkPageLimit(), checkProjectLimit(), currentPeriod(), getUserPlan(), getUserUsage(), incrementPageUsage() (+21 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.11
@@ -419,11 +422,11 @@ Nodes (26): Audiobook Jingle Between Tracks (Change), Advanced Mode (Audiobook C
 
 ### Community 5 - "Community 5"
 Cohesion: 0.08
-Nodes (35): ProjectsScreen, CARD_HEIGHT_REST, CARD_HEIGHT_SECOND, dashboardPlaybackProgress(), ProjectsScreen(), STATUS_LABELS, styles, AudioFlowButtonProps (+27 more)
+Nodes (29): styles, AudioFlowButtonProps, AudioFlowLogo(), audioFlowReferenceViews, AudioFlowScreenProps, audioFlowStyles, AudioFlowTextField(), audioFlowTokens (+21 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.11
-Nodes (14): apiFetch(), refreshAccessToken(), shouldAttemptTokenRefresh(), Plan, PLAN_ACCENT, PLAN_COLORS, styles, Usage (+6 more)
+Cohesion: 0.2
+Nodes (13): ProjectsScreen, CARD_HEIGHT_REST, CARD_HEIGHT_SECOND, dashboardPlaybackProgress(), ProjectsScreen(), STATUS_LABELS, audioFlowFontFamilies, AudioFlowBottomNavigation() (+5 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.07
@@ -435,15 +438,15 @@ Nodes (12): Change: Audiobook Creation Progress Design System, Component: GlassP
 
 ### Community 9 - "Community 9"
 Cohesion: 0.08
-Nodes (28): ElevenLabsVoice, estimateDuration(), listTtsVoices(), synthesizeSpeech(), synthesizeWithElevenLabs(), synthesizeWithMock(), TtsResult, TtsVoice (+20 more)
+Nodes (26): ElevenLabsVoice, estimateDuration(), listTtsVoices(), synthesizeSpeech(), synthesizeWithElevenLabs(), synthesizeWithMock(), TtsResult, TtsVoice (+18 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.07
-Nodes (33): sharp, verifyAssetToken(), createBucketIfMissing(), deleteFile(), downloadFileWithMetadata(), ensureBucketExists(), s3, uploadFile() (+25 more)
+Cohesion: 0.08
+Nodes (38): project sharing and QR deep-link, verifyAssetToken(), requireRouteParam(), routeParam(), createBucketIfMissing(), deleteFile(), downloadFileWithMetadata(), ensureBucketExists() (+30 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.08
-Nodes (37): PlayerScreen, Offline Playback / Cache, formatTime(), PlayerScreen(), styles, buildPlaylistWithJingles(), getLocalJingle(), LOCAL_JINGLES (+29 more)
+Cohesion: 0.1
+Nodes (30): PlayerScreen, Offline Playback / Cache, formatTime(), PlayerScreen(), styles, buildPlaylistWithJingles(), getLocalJingle(), LOCAL_JINGLES (+22 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.12
@@ -454,8 +457,8 @@ Cohesion: 0.2
 Nodes (11): Capability: project-dashboard-ui, Change: Apply AudioFlow Project Details, Change: Apply AudioFlow Dashboard, Login, Navigation, Design: Dashboard, Login, Nav (AudioFlow), Proposal: Apply AudioFlow Dashboard, Login, Navigation, Requirement: AudioFlow Project Library Dashboard, Requirement: AudioFlow Project Detail Shell, Requirement: Dynamic Dashboard States (Consumption vs Creation) (+3 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.12
-Nodes (24): AppLayout, background.jpg (app background), AuthLayout(), LoginScreen(), RegisterScreen(), AudioFlow Design System, AudioFlowGlobalNavigation, AudioFlowTopNavigation() (+16 more)
+Cohesion: 0.15
+Nodes (22): background.jpg (app background), LoginScreen(), RegisterScreen(), AudioFlow Design System, audioFlowFooterMenuHeight(), AudioFlowGlobalNavigation, FadeZoomContent, PageImagePreview (+14 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.07
@@ -466,16 +469,16 @@ Cohesion: 0.13
 Nodes (24): annotateImagesWithGoogle(), chunkGoogleInputs(), extractRegionText(), getBlockText(), getGoogleCredentialsFromJson(), getGoogleVisionClientOptions(), GoogleTextAnnotation, GoogleVisionClientOptions (+16 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.15
-Nodes (14): signRefreshToken(), collectErrors(), validateEmail(), validatePassword(), ValidationError, authRouter, decoded, { email } (+6 more)
+Cohesion: 0.11
+Nodes (21): ACCESS_EXPIRES, ASSET_EXPIRES, AssetTokenPayload, REFRESH_EXPIRES, signRefreshToken(), TokenPayload, verifyToken(), collectErrors() (+13 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.13
-Nodes (25): PricingScreen, EditProjectScreen, ProjectImagesScreen, ProjectDetailScreen, ScenesScreen, SharingScreen, TextRegionsScreen, AudioFlowFooterMenu() (+17 more)
+Cohesion: 0.09
+Nodes (31): PricingScreen, EditProjectScreen, ProjectImagesScreen, ProjectDetailScreen, ScenesScreen, SharingScreen, TextRegionsScreen, AudioFlowFooterMenu() (+23 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.13
-Nodes (19): signAssetToken(), allowed, buildPageImageUrls(), created, data, { editedText, status }, existingImageIds, imageIds (+11 more)
+Cohesion: 0.12
+Nodes (21): signAssetToken(), imageResponse(), allowed, buildPageImageUrls(), created, data, { editedText, status }, existingImageIds (+13 more)
 
 ### Community 20 - "Community 20"
 Cohesion: 0.08
@@ -490,8 +493,8 @@ Cohesion: 0.09
 Nodes (11): getTextureIndex(), ProjectCoverTexture(), styles, TEXTURES, getTextureIndex (test), ids, idx, ProjectCoverTexture (test) (+3 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.21
-Nodes (14): requireRouteParam(), routeParam(), requireProjectOwner(), audioRouter, buildAudioTrackUrl(), projectId, trackId, playlistRouter (+6 more)
+Cohesion: 0.29
+Nodes (6): globalErrorHandler(), apiLimiter, authLimiter, audioRouter, healthRouter, response
 
 ### Community 24 - "Community 24"
 Cohesion: 0.06
@@ -534,12 +537,12 @@ Cohesion: 0.16
 Nodes (16): Change: Fix Page Photo Display Preview, packages/shared/src/constants.ts, packages/shared/src/index.ts, packages/shared/package.json, Component: apps/mobile Project Images Screen, Concept: Local Capture Preview Before Upload, Capability: page-image-capture-preview, Concept: Page Image Rendering (thumbnail/imageUrl fallback, load/error states) (+8 more)
 
 ### Community 34 - "Community 34"
-Cohesion: 0.33
-Nodes (4): Props, SceneTranscriptBox(), styles, { rerender }
+Cohesion: 0.17
+Nodes (11): 1. Wyodrębniony komponent `ZoomableImage`, 2. PanResponder + Animated zamiast Gesture Handler, 3. ScrollView vs zoomable container, 4. Granice pan, 5. Double-tap, Context, Decisions, Goals / Non-Goals (+3 more)
 
 ### Community 35 - "Community 35"
-Cohesion: 0.13
-Nodes (15): dependencies, @aws-sdk/client-s3, bcryptjs, @book-scanner/shared, cors, dotenv, express, express-rate-limit (+7 more)
+Cohesion: 0.12
+Nodes (16): dependencies, @aws-sdk/client-s3, bcryptjs, @book-scanner/shared, cors, dotenv, express, express-rate-limit (+8 more)
 
 ### Community 36 - "Community 36"
 Cohesion: 0.13
@@ -562,8 +565,8 @@ Cohesion: 0.19
 Nodes (14): AudioTrackResponse, CreateProjectRequest, InterstitialPresetResponse, PageImageResponse, PlaylistItemResponse, PlaylistItemType, ProjectResponse, ProjectStatus (+6 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.11
-Nodes (18): IndexRedirect(), styles, RootLayout(), styles, NavigationMenuSheet(), styles, ToastContext, ToastContextValue (+10 more)
+Cohesion: 0.08
+Nodes (24): IndexRedirect(), styles, RootLayout(), styles, NavigationMenuSheet(), styles, ToastContext, ToastContextValue (+16 more)
 
 ### Community 42 - "Community 42"
 Cohesion: 0.15
@@ -854,8 +857,8 @@ Cohesion: 0.17
 Nodes (11): 1. Użycie `audioFlowTokens` zamiast inline stałych, 2. `TopAppBar` zamiast własnego nagłówka, 3. `GlassPanel` dla kart list, 4. `PearlButton` / `GhostButton` dla CTA, 5. `AudioFlowTextField` w `sharing.tsx`, 6. `RoundIconButton` dla play/pause, Context, Decisions (+3 more)
 
 ### Community 145 - "Community 145"
-Cohesion: 0.07
-Nodes (24): DraggableImageList(), DraggableImageListProps, RowProps, OcrCorrectionModal(), OcrCorrectionModalProps, styles, FeatherIconName, IconActionButtonProps (+16 more)
+Cohesion: 0.06
+Nodes (28): DraggableImageList(), DraggableImageListProps, RowProps, OcrCorrectionModal(), OcrCorrectionModalProps, styles, FeatherIconName, IconActionButtonProps (+20 more)
 
 ### Community 146 - "Community 146"
 Cohesion: 0.18
@@ -1106,8 +1109,8 @@ Cohesion: 0.29
 Nodes (6): Capabilities, Impact, Modified Capabilities, New Capabilities, What Changes, Why
 
 ### Community 208 - "Community 208"
-Cohesion: 0.2
-Nodes (9): db, interstitial, now, projectA, scene1, scene2, tokenA, track1 (+1 more)
+Cohesion: 0.17
+Nodes (10): ADDED Requirements, Requirement: Double-tap resetuje lub ustawia zoom do 2×, Requirement: Zdjęcie w modalu korekty OCR obsługuje pinch-to-zoom, Requirement: Zoom zdjęcia nie blokuje edycji pola tekstowego, Scenario: Double-tap przy skali 1× — powiększenie do 2×, Scenario: Double-tap przy skali > 1× — reset do 1×, Scenario: Edycja tekstu po użyciu zoom, Scenario: Pomniejszenie zdjęcia gestem pinch (+2 more)
 
 ### Community 209 - "Community 209"
 Cohesion: 0.29
@@ -1618,8 +1621,8 @@ Cohesion: 0.17
 Nodes (11): 1. Wspólny komponent `components/PageImageCard.tsx`, 2. Ikony Feather, 3. Layout 3 grup, 4. Widok „Zdjęcia stron” zyskuje przycisk obszarów, 5. Wymiar dotykowy ≥ 44×44 pt, code:ts (type PageImageCardProps = {), Context, Decisions (+3 more)
 
 ### Community 341 - "Community 341"
-Cohesion: 0.1
-Nodes (19): AudioFlowPlayerPanel(), AudioFlowStackHeader(), AudioFlowTopChrome(), PLAN_ACCENT, stackHeaderBg(), styles, Usage, ProjectToolTile() (+11 more)
+Cohesion: 0.08
+Nodes (22): AppLayout, AuthLayout(), AudioFlowPlayerPanel(), AudioFlowStackHeader(), AudioFlowTopChrome(), AudioFlowTopNavigation(), PLAN_ACCENT, stackHeaderBg() (+14 more)
 
 ### Community 342 - "Community 342"
 Cohesion: 0.18
@@ -1630,8 +1633,8 @@ Cohesion: 0.2
 Nodes (9): 1. Przycisk zamknięcia X — `RoundIconButton` w nagłówku arkusza, 2. Dane użycia — `useEffect` w `NavigationMenuSheet`, 3. Komponent `MenuUsageCard` — lokalny w pliku nawigacji, 4. Layout arkusza — nagłówek + content + footer usage, code:block1 (menuSheet), Context, Decisions, Goals / Non-Goals (+1 more)
 
 ### Community 344 - "Community 344"
-Cohesion: 0.32
-Nodes (6): EXTENSION_BY_MIME_TYPE, extensionFromPath(), imageMimeTypeFromAsset(), MIME_TYPE_BY_EXTENSION, UploadableImageFile, uploadFileFromImagePickerAsset()
+Cohesion: 0.18
+Nodes (10): db, endpoints, fakeExe, img, jpegHeader, now, project, scene (+2 more)
 
 ### Community 345 - "Community 345"
 Cohesion: 0.22
@@ -1646,8 +1649,8 @@ Cohesion: 0.22
 Nodes (8): 1. Backend — cleanup audio przy usuwaniu obrazu (apps/api), 2. Backend — utrwalenie kontraktu inkrementalnego OCR (apps/api), 3. Mobile — zmiana etykiety przycisku stopki (apps/mobile), 4. Mobile — implementacja pełnego submitu (apps/mobile), 5. Mobile — odbiór newSceneIds w widoku głosu (apps/mobile), 6. Czyszczenie i dokumentacja, 7. Weryfikacja końcowa, code:tsx ({)
 
 ### Community 348 - "Community 348"
-Cohesion: 0.06
-Nodes (37): ACCESS_EXPIRES, ASSET_EXPIRES, AssetTokenPayload, REFRESH_EXPIRES, signAccessToken(), globalErrorHandler(), apiLimiter, authLimiter (+29 more)
+Cohesion: 0.05
+Nodes (37): globalForPrisma, signAccessToken(), app, expired, mockedPrisma, token, db, tokenA (+29 more)
 
 ### Community 349 - "Community 349"
 Cohesion: 0.22
@@ -1702,8 +1705,8 @@ Cohesion: 0.33
 Nodes (5): 1. Przycisk zamknięcia X w nagłówku arkusza menu, 2. Pobieranie danych użycia w menu, 3. Komponent `MenuUsageCard`, 4. Integracja `MenuUsageCard` w arkuszu menu, 5. Weryfikacja
 
 ### Community 362 - "Community 362"
-Cohesion: 0.33
-Nodes (5): ADDED Requirements, Requirement: Korekta tekstu OCR odbywa się w modalu, Scenario: Otwarcie modala korekty, Scenario: Zapis zmienionego tekstu, Scenario: Zmieniony tekst zasila TTS
+Cohesion: 0.22
+Nodes (6): ADDED Requirements, MODIFIED Requirements, Requirement: Korekta tekstu OCR odbywa się w modalu, Scenario: Otwarcie modala korekty, Scenario: Zapis zmienionego tekstu, Scenario: Zmieniony tekst zasila TTS
 
 ### Community 363 - "Community 363"
 Cohesion: 0.33
@@ -1712,6 +1715,18 @@ Nodes (6): scripts, build:web, dev, dev:web, lint, test
 ### Community 364 - "Community 364"
 Cohesion: 0.5
 Nodes (3): mockLogin, mockReplace, { Text }
+
+### Community 365 - "Community 365"
+Cohesion: 0.25
+Nodes (8): offlineCache.deleteProjectCache, offlineCache.downloadProject, offlineCache.getCachedAudioForTrack, offlineCache.getCachedPlaylist, offlineCache.getCacheSize, getFileSystem(), offlineCache.getTotalCacheSize, offlineCache.isProjectCached
+
+### Community 366 - "Community 366"
+Cohesion: 0.29
+Nodes (6): Capabilities, Impact, Modified Capabilities, New Capabilities, What Changes, Why
+
+### Community 367 - "Community 367"
+Cohesion: 0.5
+Nodes (3): 1. Komponent ZoomableImage, 2. Integracja z OcrCorrectionModal, 3. Weryfikacja
 
 ## Ambiguous Edges - Review These
 - `page-turn-1.mp3` → `OCR -> TTS Audio Generation Pipeline`  [AMBIGUOUS]
@@ -1722,7 +1737,7 @@ Nodes (3): mockLogin, mockReplace, { Text }
   apps/mobile/assets/audio/page-turn-3.mp3 · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **2688 isolated node(s):** `$schema`, `dependsOn`, `outputs`, `cache`, `persistent` (+2683 more)
+- **2713 isolated node(s):** `OcrCorrectionModalProps`, `styles`, `ToastType`, `ToastMessage`, `ToastContextValue` (+2708 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **26 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -1736,10 +1751,10 @@ _Questions this graph is uniquely positioned to answer:_
 - **What is the exact relationship between `page-turn-3.mp3` and `OCR -> TTS Audio Generation Pipeline`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
 - **Why does `OCR pipeline concept (mock and Google Vision)` connect `Community 0` to `Community 3`, `Community 18`, `Community 19`?**
-  _High betweenness centrality (0.030) - this node is a cross-community bridge._
-- **Why does `ocrRouter` connect `Community 3` to `Community 0`, `Community 16`, `Community 19`, `Community 23`, `Community 348`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Why does `files` connect `Community 335` to `Community 159`, `Community 291`, `Community 292`, `Community 293`, `Community 294`, `Community 295`, `Community 296`, `Community 297`, `Community 298`, `Community 299`, `Community 300`, `Community 301`, `Community 60`, `Community 302`, `Community 303`, `Community 305`, `Community 306`, `Community 307`, `Community 308`, `Community 309`, `Community 310`, `Community 311`, `Community 312`, `Community 313`, `Community 314`, `Community 315`, `Community 316`, `Community 317`, `Community 318`, `Community 319`, `Community 320`, `Community 321`, `Community 322`, `Community 323`, `Community 324`, `Community 325`, `Community 326`, `Community 327`, `Community 328`, `Community 329`, `Community 330`, `Community 331`, `Community 332`, `Community 333`, `Community 334`, `Community 72`, `Community 73`, `Community 74`, `Community 75`, `Community 77`, `Community 80`, `Community 81`, `Community 82`, `Community 216`, `Community 304`?**
+  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+- **Why does `ocrRouter` connect `Community 3` to `Community 0`, `Community 10`, `Community 16`, `Community 19`, `Community 23`?**
   _High betweenness centrality (0.015) - this node is a cross-community bridge._
-- **What connects `$schema`, `dependsOn`, `outputs` to the rest of the system?**
-  _2696 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `OcrCorrectionModalProps`, `styles`, `ToastType` to the rest of the system?**
+  _2721 weakly-connected nodes found - possible documentation gaps or missing edges._
