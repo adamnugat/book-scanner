@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-import { PageImagePreview } from './PageImagePreview';
+import { ZoomableImage } from './ZoomableImage';
 import { audioFlowTokens } from './audioflow-tokens';
 
 const t = audioFlowTokens;
@@ -43,11 +43,17 @@ export function OcrCorrectionModal({
   onSave,
 }: OcrCorrectionModalProps) {
   const [text, setText] = useState(initialText);
+  const zoomResetKey = useRef(0);
 
-  // Reset the editable buffer whenever a new correction target is opened.
+  // Reset the editable buffer and zoom state whenever a new correction target is opened.
   useEffect(() => {
-    if (visible) setText(initialText);
+    if (visible) {
+      setText(initialText);
+      zoomResetKey.current += 1;
+    }
   }, [visible, initialText]);
+
+  const imageUri = imageUrl ?? thumbnailUrl ?? null;
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -75,25 +81,30 @@ export function OcrCorrectionModal({
               <ActivityIndicator color={t.color.accent.pearl} size="large" />
             </View>
           ) : (
-            <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-              <PageImagePreview
-                imageUrl={imageUrl ?? null}
-                thumbnailUrl={thumbnailUrl ?? null}
+            <>
+              <ZoomableImage
+                key={zoomResetKey.current}
+                uri={imageUri}
                 style={styles.thumb}
                 resizeMode="contain"
               />
-              <TextInput
-                accessibilityLabel="Tekst OCR"
-                style={styles.textArea}
-                multiline
-                value={text}
-                onChangeText={setText}
-                placeholder="Tekst rozpoznany przez OCR…"
-                placeholderTextColor={t.color.text.onSurfaceMuted}
-                textAlignVertical="top"
-                testID="ocr-correction-input"
-              />
-            </ScrollView>
+              <ScrollView
+                contentContainerStyle={styles.content}
+                keyboardShouldPersistTaps="handled"
+              >
+                <TextInput
+                  accessibilityLabel="Tekst OCR"
+                  style={styles.textArea}
+                  multiline
+                  value={text}
+                  onChangeText={setText}
+                  placeholder="Tekst rozpoznany przez OCR…"
+                  placeholderTextColor={t.color.text.onSurfaceMuted}
+                  textAlignVertical="top"
+                  testID="ocr-correction-input"
+                />
+              </ScrollView>
+            </>
           )}
 
           <Pressable
@@ -160,7 +171,7 @@ const styles = StyleSheet.create({
   content: { paddingBottom: 14 },
   thumb: {
     width: '100%',
-    height: 200,
+    height: 220,
     borderRadius: t.radius.md,
     marginBottom: 12,
     backgroundColor: t.color.surface.glass,

@@ -78,7 +78,7 @@ function ToastItem({ toast }: { toast: ToastMessage }) {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 130,
     left: 20,
     right: 20,
     alignItems: 'center',

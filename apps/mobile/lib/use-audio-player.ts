@@ -164,6 +164,8 @@ export function useAudioPlayer(projectId: string, enabled = true): UseAudioPlaye
         }
       } catch (err) {
         console.error('Player init failed', err);
+        const status = (err as { status?: number }).status;
+        if (status === 429) return;
         const msg = err instanceof Error ? err.message : 'Nieznany błąd';
         Alert.alert('Nie udało się załadować playlisty', msg);
       } finally {
